@@ -2,7 +2,7 @@
 
 CouchApp is a set of helpers and a [jQuery](http://jquery.com) plugin that conspire to get you up and running on [CouchDB](http://couchdb.org) quickly and correctly. It is maintained and designed by CouchDB committers and community-members to bring clarity and order to the freedom of CouchDB's document-based approach.
 
-CouchApp *is by no means the only way to use CouchDB*. CouchDB's technical roots make it well suited for **very large installations**. CouchApp concentrates instead on a more personal use case: **developing and deploying standalone applications to CouchDB instances around the web.** There are apps you can build with server-side components that you can't build with just CouchApp. But by the same token, there are apps you can build on CouchApp, that you can't build any other way.
+CouchApp *is by no means the only way to use CouchDB*. CouchDB's technical roots make it well suited for **very large installations**. CouchApp concentrates instead on a more personal use case: **developing and deploying standalone applications to CouchDB instances around the web.** There are apps you can build with server-side components that you can't build with just CouchApp. But by the same token, there are apps you can build on CouchApp alone that you can't build any other way.
 
 ## Begin Here
 
