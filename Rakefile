@@ -3,6 +3,9 @@ require "rake/rdoctask"
 require 'spec/rake/spectask'
 require 'rake/gempackagetask'
 
+require File.join(File.expand_path(File.dirname(__FILE__)), 
+  'ruby','lib','couchapp')
+
 spec = Gem::Specification.new do |s|
   s.name = "couchapp"
   s.version = "0.1.0"

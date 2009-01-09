@@ -1,9 +1,5 @@
-require 'rubygems'
-require 'couchrest'
-require 'digest/md5'
-
 module CouchApp
-  
+    
   class FileManager
     attr_reader :db
     attr_accessor :loud
