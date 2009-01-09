@@ -29,7 +29,6 @@ Gem::Specification.new do |s|
  "ruby/lib/file_manager.rb",
  "ruby/spec/couchapp_spec.rb",
  "ruby/spec/file_manager_spec.rb",
- "ruby/spec/scratch",
  "ruby/spec/spec.opts",
  "ruby/spec/spec_helper.rb"]
   s.has_rdoc = "true"
