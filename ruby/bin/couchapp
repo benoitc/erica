@@ -2,7 +2,8 @@
 
 require 'optparse'
 require 'rubygems'
-require "couchrest"
+require 'couchrest'
+require File.expand_path(File.dirname(__FILE__)) + '/../lib/file_manager'
 
 options = {
   :loud => true,
@@ -27,7 +28,7 @@ when /generate/
   current = Dir.getwd 
   appdir = File.join(current, appname)
   puts "generating couchapp in #{appdir}"
-  CouchRest::FileManager.generate_app(appdir)
+  CouchApp::FileManager.generate_app(appdir)
   
 when /push/
   dirname = ARGV.shift
@@ -47,7 +48,7 @@ when /push/
   end
   CouchRest.database!(dbstring)
   dbspec = CouchRest.parse(dbstring)
-  fm = CouchRest::FileManager.new(dbspec[:database], dbspec[:host])
+  fm = CouchApp::FileManager.new(dbspec[:database], dbspec[:host])
   fm.push_app(dir, appname)
   
 when /pull/
