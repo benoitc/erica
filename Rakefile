@@ -16,7 +16,7 @@ spec = Gem::Specification.new do |s|
   s.description = "CouchApp is a set of helpers and a jQuery plugin that conspire to get you up and running on CouchDB quickly and correctly. It brings clarity and order to the freedom of CouchDB’s document-based approach."
   s.has_rdoc = true
   s.authors = ["J Chris Anderson", "Jan Lehnardt", "Greg Borenstein"]
-  s.files = %w( LICENSE README.md Rakefile ) + 
+  s.files = %w( LICENSE README.md Rakefile ) + Dir["app-template/**/*"] +
     Dir["ruby/{bin,lib,spec}/**/*"] - Dir["ruby/spec/scratch"]
   s.extra_rdoc_files = %w( README.md LICENSE )
   s.require_path = "ruby/lib"
