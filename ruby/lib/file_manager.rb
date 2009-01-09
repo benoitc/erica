@@ -21,8 +21,8 @@ module CouchApp
     def self.generate_app(app_dir, loud = false)      
       templatedir = File.join(File.expand_path(File.dirname(__FILE__)), 
         '..', '..', 'app-template')
-      puts Dir[templatedir+'/**/*'] if loud
       FileUtils.cp_r(templatedir, app_dir)
+      puts Dir[app_dir+'/**/*'] if loud
     end
    
     # instance methods
