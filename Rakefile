@@ -9,7 +9,6 @@ require File.join(File.expand_path(File.dirname(__FILE__)),
 spec = Gem::Specification.new do |s|
   s.name = "couchapp"
   s.version = CouchApp::VERSION
-  s.date = "2009-01-08"
   s.summary = "Standalone CouchDB Application Development Made Simple"
   s.email = "jchris@apache.org"
   s.homepage = "http://github.com/jchris/couchapp"
