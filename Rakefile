@@ -60,21 +60,21 @@ end
 
 desc "Run all specs"
 Spec::Rake::SpecTask.new('spec') do |t|
-	t.spec_files = FileList['spec/**/*_spec.rb']
+	t.spec_files = FileList['ruby/spec/**/*_spec.rb']
 end
 
 desc "Print specdocs"
 Spec::Rake::SpecTask.new(:doc) do |t|
 	t.spec_opts = ["--format", "specdoc"]
-	t.spec_files = FileList['spec/*_spec.rb']
+	t.spec_files = FileList['ruby/spec/*_spec.rb']
 end
 
 desc "Generate the rdoc"
 Rake::RDocTask.new do |rdoc|
-  files = ["README.rdoc", "LICENSE", "lib/**/*.rb"]
+  files = ["README.md", "LICENSE", "ruby/lib/**/*.rb"]
   rdoc.rdoc_files.add(files)
-  rdoc.main = "README.rdoc"
-  rdoc.title = "CouchRest: Ruby CouchDB, close to the metal"
+  rdoc.main = "README.md"
+  rdoc.title = "CouchApp: Standalone CouchDB Application Development Made Simple"
 end
 
 
