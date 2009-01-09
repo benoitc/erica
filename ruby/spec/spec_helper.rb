@@ -2,8 +2,8 @@ require "rubygems"
 require "spec" # Satisfies Autotest and anyone else not using the Rake tasks
 require "couchrest"
 
-FIXTURE_PATH = File.dirname(__FILE__) + '/fixtures'
-
+COUCHAPP = ARGV[0] || File.expand_path(File.dirname(__FILE__)) + '/../bin/couchapp'
+SCRATCH_PATH = File.dirname(__FILE__) + '/scratch'
 COUCHHOST = "http://127.0.0.1:5984"
 TESTDB = 'couchrest-test'
 

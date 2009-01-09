@@ -2,11 +2,10 @@ require File.dirname(__FILE__) + '/spec_helper'
 
 describe "couchapp" do
   before(:all) do
-    @fixdir = FIXTURE_PATH + '/couchapp-test'
-    @couchapp = File.expand_path(File.dirname(__FILE__)) + '/../bin/couchapp'
+    @fixdir = SCRATCH_PATH + '/couchapp-test'
     `rm -rf #{@fixdir}`
     `mkdir -p #{@fixdir}`
-    @run = "cd #{@fixdir} && #{@couchapp}"
+    @run = "cd #{@fixdir} && #{COUCHAPP}"
   end
 
   describe "--help" do
@@ -89,7 +88,7 @@ describe "couchapp" do
       `#{@run} generate my-app`
     end
     it "should create the design document" do
-      `cd #{@fixdir}/my-app && #{@couchapp} push . #{TESTDB}`
+      `cd #{@fixdir}/my-app && #{COUCHAPP} push . #{TESTDB}`
       lambda{@db.get("_design/my-app")}.should_not raise_error
     end
   end
