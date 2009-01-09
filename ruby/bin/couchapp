@@ -10,7 +10,7 @@ options = {
 }
 
 opts = OptionParser.new do |opts|
-  opts.banner = "Usage: #$0 [options] (push|pull|generate)"
+  opts.banner = "Usage: #$0 [options] (push|generate)"
   opts.on('-q', '--quiet', "Omit extra debug info") do
     options[:loud] = false
   end
@@ -27,8 +27,8 @@ when /generate/
   appname = ARGV.shift
   current = Dir.getwd 
   appdir = File.join(current, appname)
-  puts "generating couchapp in #{appdir}"
-  CouchApp::FileManager.generate_app(appdir)
+  puts "Generating a new CouchApp in #{appdir}"
+  CouchApp::FileManager.generate_app(appdir, options[:loud])
   
 when /push/
   dirname = ARGV.shift

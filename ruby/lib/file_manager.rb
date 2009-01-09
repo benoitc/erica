@@ -3,6 +3,7 @@ require 'couchrest'
 require 'digest/md5'
 
 module CouchApp
+  
   class FileManager
     attr_reader :db
     attr_accessor :loud
@@ -21,8 +22,10 @@ module CouchApp
     # Generate an application in the given directory.
     # This is a class method because it doesn't depend on 
     # specifying a database.
-    def self.generate_app(app_dir)      
-      templatedir = File.join(File.expand_path(File.dirname(__FILE__)), '..', '..', 'app-template')
+    def self.generate_app(app_dir, loud = false)      
+      templatedir = File.join(File.expand_path(File.dirname(__FILE__)), 
+        '..', '..', 'app-template')
+      puts Dir[templatedir+'/**/*'] if loud
       FileUtils.cp_r(templatedir, app_dir)
     end
    
