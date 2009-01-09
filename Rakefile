@@ -41,12 +41,13 @@ spec = Gem::Specification.new do |s|
     http://github.com/jchris/couchrest
     >= 0.11.0
 
-    mime-types
-    MIME Types manages a MIME Content-Type that will return the Content-Type for a given filename.
-    http://mime-types.rubyforge.org/
-    >=1.15.0
+    "
 
-  "
+  #   mime-types
+  #   MIME Types manages a MIME Content-Type that will return the Content-Type for a given filename.
+  #   http://mime-types.rubyforge.org/
+  #   >=1.15.0
+
   dependencies = dependencies.strip.gsub(/^ +/,'').split(/\n\n/).map{|x|x.split(/\n/)}
 
   dependencies.each{|d|
@@ -95,7 +96,7 @@ task :gemspec do
     if name == "dependencies"
       value.each do |d|
         dep, *ver = d.to_s.split(" ")
-        result <<  "  s.add_dependency #{dep.inspect}, [#{ /\(([^\,]*)/ . match(ver.join(" "))[1].inspect}]\n"
+        result <<  "  s.add_dependency #{dep.inspect}, #{ /\(([^\,]*)/ . match(ver.join(" "))[1].inspect}\n"
       end
     else        
       case value
