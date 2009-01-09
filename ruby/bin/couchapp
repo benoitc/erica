@@ -1,7 +1,8 @@
 #!/usr/bin/env ruby
 
 require 'optparse'
-require File.expand_path(File.dirname(__FILE__)) + '/../lib/couchrest'
+require 'rubygems'
+require "couchrest"
 
 options = {
   :loud => true,
