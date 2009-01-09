@@ -4,13 +4,32 @@ Gem::Specification.new do |s|
   s.executables = ["couchapp"]
   s.authors = ["J Chris Anderson", "Jan Lehnardt", "Greg Borenstein"]
   s.required_rubygems_version = ">= 0"
-  s.version = "0.1.0"
+  s.version = "0.1.1"
   s.files = ["LICENSE",
  "README.md",
  "Rakefile",
  "ruby/bin/couchapp",
+ "ruby/lib/couchapp.rb",
  "ruby/lib/file_manager.rb",
  "ruby/spec/couchapp_spec.rb",
+ "ruby/spec/scratch/couchapp-test",
+ "ruby/spec/scratch/couchapp-test/my-app",
+ "ruby/spec/scratch/couchapp-test/my-app/_attachments",
+ "ruby/spec/scratch/couchapp-test/my-app/_attachments/index.html",
+ "ruby/spec/scratch/couchapp-test/my-app/foo",
+ "ruby/spec/scratch/couchapp-test/my-app/foo/bar.txt",
+ "ruby/spec/scratch/couchapp-test/my-app/forms",
+ "ruby/spec/scratch/couchapp-test/my-app/forms/example-form.js",
+ "ruby/spec/scratch/couchapp-test/my-app/lib",
+ "ruby/spec/scratch/couchapp-test/my-app/lib/helpers",
+ "ruby/spec/scratch/couchapp-test/my-app/lib/helpers/math.js",
+ "ruby/spec/scratch/couchapp-test/my-app/lib/helpers/template.js",
+ "ruby/spec/scratch/couchapp-test/my-app/lib/templates",
+ "ruby/spec/scratch/couchapp-test/my-app/lib/templates/example.html",
+ "ruby/spec/scratch/couchapp-test/my-app/views",
+ "ruby/spec/scratch/couchapp-test/my-app/views/example",
+ "ruby/spec/scratch/couchapp-test/my-app/views/example/map.js",
+ "ruby/spec/scratch/couchapp-test/my-app/views/example/reduce.js",
  "ruby/spec/spec.opts",
  "ruby/spec/spec_helper.rb"]
   s.has_rdoc = "true"
