@@ -35,6 +35,10 @@ describe "couchapp" do
       Dir["#{@fixdir}/my-app/forms/*"].select{|x|x =~ /example-form.js/}.length.should == 1
       Dir["#{@fixdir}/my-app/lib/templates/*"].select{|x|x =~ /example.html/}.length.should == 1
     end
+    it "should show deep attachment capabilities" do
+      Dir["#{@fixdir}/my-app/_attachments/**/*"].select{|x|x =~ /main.css/}.
+        first.should include('style')
+    end
   end
   
   describe "push my-app #{TESTDB}" do

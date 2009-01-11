@@ -8,12 +8,19 @@ CouchApp *is by no means the only way to use CouchDB*. CouchDB's technical roots
 
 Once you run `couchapp generate relax && cd relax`, you're ready to get started. Views are found in the `views` directory, attachments are stored in the `_attachments` directory,  forms are stored in `forms`, and the generation script drops some more files in with additional information about how you can build `_design/` docs using your text editor.
 
+## Usage
+
+about push... and db syntax
+
+!code and !json
+
 There are a few apps out there already using CouchApp. Please send a pull request adding yours to the list if you're using it too.
 
 ## Apps Using CouchApp
 
-* [Sofa](http://github.com/jchris/sofa/tree/master)
-* [Couch-Wiki](http://github.com/janl/couch-wiki/tree/master)
+* [Sofa](http://github.com/jchris/sofa)
+* [Couch-Wiki](http://github.com/janl/couch-wiki)
+* [CouchDB Twitter Client](http://github.com/jchris/couchdb-twitter-client)
 
 ## License
 
