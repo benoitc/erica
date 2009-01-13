@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.extra_rdoc_files = ["README.md", "LICENSE"]
-  s.date = "Fri Jan 09 00:00:00 -0800 2009"
+  s.date = "Tue Jan 13 00:00:00 -0800 2009"
   s.executables = ["couchapp"]
   s.authors = ["J Chris Anderson", "Jan Lehnardt", "Greg Borenstein"]
   s.required_rubygems_version = ">= 0"
@@ -10,11 +10,12 @@ Gem::Specification.new do |s|
  "Rakefile",
  "ruby/bin/couchapp",
  "app-template/_attachments/index.html",
+ "app-template/_attachments/style/main.css",
  "app-template/foo/bar.txt",
- "app-template/forms/example-form.js",
  "app-template/lib/helpers/math.js",
  "app-template/lib/helpers/template.js",
  "app-template/lib/templates/example.html",
+ "app-template/show/docs/example-show.js",
  "app-template/views/example/map.js",
  "app-template/views/example/reduce.js",
  "ruby/lib/couchapp.rb",
