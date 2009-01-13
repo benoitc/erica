@@ -6,6 +6,19 @@ To run CouchApp's Ruby uploader script, you'll need Ruby 1.8.6 or better, hopefu
 
 You'll also [need to install RubyGems.]() I've never had an easy time doing this part of a dev-env bootstrap, so let me wish you luck. There's a nacent Python implementation, so if the Ruby depedencies aren't your style, watch [Jan's CouchApp repo](http://github.com/janl/couchapp), where he's at work on the Python scripts.
 
+### Easy Way
+
+It's recommended that you try this first, if it doesn't work, the next option is less fancy, but maybe more reliable.
+
+    # get the latest rubygems
+    sudo gem update --system
+    # install CouchApp
+    sudo gem install couchapp
+
+Once this is done, run `couchapp generate relax` and generally pick up with the README.
+
+### Hard Way
+
 Once you've got RubyGems, (please excuse the `sudo`, it's to install the `couchapp` script in your path) run:
 
     git clone git@github.com:jchris/couchapp.git && cd couchapp
