@@ -18,6 +18,10 @@ opts = OptionParser.new do |opts|
     puts opts
     exit
   end
+  opts.on_tail('-v', '--version', "Display version number") do
+    puts CouchApp::VERSION
+    exit
+  end
 end
 
 opts.parse!(ARGV)
