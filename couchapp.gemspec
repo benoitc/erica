@@ -36,8 +36,8 @@ Gem::Specification.new do |s|
   s.platform = "ruby"
   s.summary = "Standalone CouchDB Application Development Made Simple"
   s.description = "CouchApp is a set of helpers and a jQuery plugin that conspire to get you up and running on CouchDB quickly and correctly. It brings clarity and order to the freedom of CouchDB\342\200\231s document-based approach."
-  s.add_dependency "json", ">= 1.1.3"
-  s.add_dependency "json_pure", ">= 1.1.3"
-  s.add_dependency "couchrest", ">= 0.11.0"
+  s.add_dependency "json", [">= 1.1.3"]
+  s.add_dependency "json_pure", [">= 1.1.3"]
+  s.add_dependency "couchrest", [">= 0.12.1"]
   s.require_paths = ["ruby/lib"]
 end
