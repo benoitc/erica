@@ -28,11 +28,11 @@ describe "couchapp" do
       Dir["#{@fixdir}/my-app/*"].select{|x|x =~ /_attachments/}.length.should == 1
       Dir["#{@fixdir}/my-app/_attachments/*"].select{|x|x =~ /index.html/}.length.should == 1
     end
-    it "should create a forms directory" do
-      Dir["#{@fixdir}/my-app/*"].select{|x|x =~ /forms/}.length.should == 1
+    it "should create a show directory" do
+      Dir["#{@fixdir}/my-app/*"].select{|x|x =~ /show/}.length.should == 1
     end
     it "should create a forms and libs" do
-      Dir["#{@fixdir}/my-app/forms/*"].select{|x|x =~ /example-form.js/}.length.should == 1
+      Dir["#{@fixdir}/my-app/show/docs/*"].select{|x|x =~ /example-show.js/}.length.should == 1
       Dir["#{@fixdir}/my-app/lib/templates/*"].select{|x|x =~ /example.html/}.length.should == 1
     end
     it "should show deep attachment capabilities" do
@@ -59,7 +59,7 @@ describe "couchapp" do
     end
     it "should create the view libs" do
       @doc['views']['example']['map'].should match(/stddev/)
-      @doc['forms']['example-form'].should_not match(/\"helpers\"/)
+      @doc['show']['docs']['example-show'].should_not match(/\"helpers\"/)
     end
     it "should create view for all the views" do
       `mkdir -p #{@fixdir}/my-app/views/more`
@@ -72,14 +72,14 @@ describe "couchapp" do
       @doc['_attachments']['index.html']["content_type"].should == 'text/html'
     end
     it "should push the forms" do
-      @doc['forms']['example-form'].should match(/Generated CouchApp Form Template/)
+      @doc['show']['docs']['example-show'].should match(/Generated CouchApp Form Template/)
     end
     it "should allow deeper includes" do
-      @doc['forms']['example-form'].should_not match(/\"helpers\"/)
+      @doc['show']['docs']['example-show'].should_not match(/\"helpers\"/)
     end
     it "deep requires" do
-      @doc['forms']['example-form'].should_not match(/\"template\"/)
-      @doc['forms']['example-form'].should match(/Resig/)
+      @doc['show']['docs']['example-show'].should_not match(/\"template\"/)
+      @doc['show']['docs']['example-show'].should match(/Resig/)
     end
   end
 

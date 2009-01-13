@@ -39,7 +39,7 @@ module CouchApp
       attachdir = File.join(appdir,"_attachments")
 
       @doc = dir_to_fields(appdir)
-      package_forms(@doc["forms"]) if @doc['forms']
+      package_shows(@doc["show"]["docs"]) if (@doc["show"] && @show["show"]["docs"])
       package_views(@doc["views"]) if @doc['views']
 
       docid = "_design/#{appname}"
@@ -154,7 +154,7 @@ module CouchApp
   
     private
   
-    def package_forms(funcs)
+    def package_shows(funcs)
       apply_lib(funcs)
     end
   
@@ -184,10 +184,8 @@ module CouchApp
       end
     end
   
-  
+    # process includes
     def process_include(f_string)
-
-      # process includes
       included = {}
       f_string.gsub /(\/\/|#)\ ?!json (.*)/ do
         fields = $2.split('.')
