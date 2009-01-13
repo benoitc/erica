@@ -39,7 +39,7 @@ module CouchApp
       attachdir = File.join(appdir,"_attachments")
 
       @doc = dir_to_fields(appdir)
-      package_shows(@doc["show"]["docs"]) if (@doc["show"] && @show["show"]["docs"])
+      package_shows(@doc["show"]["docs"]) if (@doc["show"] && @doc["show"]["docs"])
       package_views(@doc["views"]) if @doc['views']
 
       docid = "_design/#{appname}"
