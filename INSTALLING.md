@@ -18,4 +18,4 @@ Once this is done, run `couchapp generate relax` and generally pick up with the 
 
 ## Python
 
-See [Jan's CouchApp repo](http://github.com/janl/couchapp) for the latest Python action. Currently we're working to get a common set of specs. We have the Ruby specs but they are a bit clumsy with all the shelling out. I'm thinking of doing a set of JSON specs that either language can execute with a lightweight runner. We'll just do integration tests, at the command-line level, so each language can set about porting it's peers unit tests if there are implementation questions.
+See [Jan's CouchApp repo](http://github.com/janl/couchapp) for the latest Python action. Currently we're working to get a common set of specs. We have the Ruby specs but they are a bit clumsy with all the shelling out. I'm thinking of doing a set of JSON specs that either language can execute with a lightweight runner. We'll just do shared integration tests, at the command-line level, so each language can set about porting it's peers unit tests if there are implementation questions.
