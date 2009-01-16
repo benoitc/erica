@@ -93,9 +93,9 @@ class Couchapp():
         
         if app_name in db:
             db[app_name] = {'_rev': db[app_name].rev}
+            doc = {'_rev': db[app_name].rev}
         else:
             doc = {}
-        doc
         
         # read objects recursively
         self.get_files()
@@ -108,12 +108,12 @@ class Couchapp():
     #    for name, content in pushfiles['_attachments'].items():
     #        pushfiles['signatures'][name] = md5(content).hexdigest()
         
-        
-        db[app_name] = self.files
+        doc.update(self.files)
+        db[app_name] = doc
         
         for filename in self.attachments:
             pathname = os.path.join(self.dir, '_attachments', filename)
-            #db.put_attachment(doc, file(pathname).read(), filename=filename)
+            db.put_attachment(doc, file(pathname).read(), filename=filename)
 
 
 
