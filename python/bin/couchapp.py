@@ -31,9 +31,6 @@ class InvalidApplicationNameException(Exception):
     """The current directory includes invalid characters"""
 
 
-# add a depth param and skip all startswith('_') at depth==0
-
-
 class Couchapp():
     """manages file hierarchies and design docs"""
     
@@ -129,7 +126,7 @@ def recurse_dirs(dir, depth=0):
     for entry in entries:
         if entry.startswith('.'):
             continue
-        elif entry == '_attachments':
+        elif depth == 0 and entry.startswith('_'):
             continue
         
         elif os.path.isdir(os.path.join(dir, entry)):
