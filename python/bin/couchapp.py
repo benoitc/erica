@@ -104,9 +104,11 @@ class Couchapp():
         self.get_attachments()
         
         # calc md5s for _attachments
-        self.files['signatures'] = {}
-    #    for name, content in pushfiles['_attachments'].items():
-    #        pushfiles['signatures'][name] = md5(content).hexdigest()
+        if self.attachments:
+            self.files['signatures'] = {}
+            for name in self.attachments:
+                filepath = os.path.join(self.dir, '_attachments', name)
+                self.files['signatures'][name] = md5(file(filepath).read()).hexdigest()
         
         doc.update(self.files)
         db[app_name] = doc
