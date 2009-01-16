@@ -171,9 +171,9 @@ def main():
     
     
     app = Couchapp(options['dir'])
-    if options['command'] == 'test':
+    if options.get('command') == 'test':
         app.push('couchapp_test', 'apptest')
-    elif options['command'] == 'push':
+    elif options.get('command') == 'push':
         app.push(options['name'], options['target'])
     
     # if options.command == 'generate':
