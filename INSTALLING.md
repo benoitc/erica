@@ -10,7 +10,7 @@ You'll also [need to install RubyGems.]() I've never had an easy time doing this
 
 It's recommended that you try this first, if it doesn't work, the next option is less fancy, but maybe more reliable.
 
-    # get the latest rubygems
+    # get the latest rubygems (optional)
     sudo gem update --system
     # install CouchApp
     sudo gem install couchapp
@@ -25,7 +25,7 @@ Once you've got RubyGems, (please excuse the `sudo`, it's to install the `coucha
     gem build couchapp.gemspec
     sudo gem install couchapp-*.gem
 
-You might have to satisfy some dependencies, especially [CouchRest](http://github.com/jchris/couchrest). (I am actively working on getting my gems house in order.)
+You might have to satisfy some dependencies, especially [CouchRest](http://github.com/jchris/couchrest). Plan B here is `gem install couchrest`, which you might have to sudo, depending on your system.
 
 Once this is done, run `couchapp generate relax` and generally pick up with the README.
 
