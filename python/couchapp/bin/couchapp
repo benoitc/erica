@@ -70,7 +70,7 @@ def main():
     elif args[0] == 'pull':
         print "pull isn't implemented yet"
     else:
-        print "%s is unknown"
+        print "%s is unknown" % args[0]
 
 if __name__ == '__main__':
     main()
