@@ -1,0 +1,76 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Copyright 2008 Jan Lehnardt <jan@apache.org>
+# Copyright 2009 Benoit Chesneau <benoitc@e-engura.org>
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
+
+"""
+Script that pushes a file system heirarchy into a CouchDB design document.
+
+Good for pure couch application development.
+
+A port of couchapp of `couchrest` (http://github.com/jchris/couchrest/)
+"""
+
+import os
+import sys
+from optparse import OptionParser
+
+
+import couchapp
+
+
+VERSION = '0.1'
+
+
+def generate(appname):
+    appdir = os.path.normpath(os.path.join(os.getcwd(), appname))
+    print "Generating a new CouchApp in %s" % appdir
+    couchapp.FileManager.generate_app(appdir)
+
+def push(appdir, appname, dburl):
+    fm = couchapp.FileManager(dburl)
+    fm.push_app(appdir, appname)
+
+def main():
+    parser = OptionParser(usage='%prog [options] cmd', version=couchapp.__VERSION__)
+    parser.add_option('-u', '--username', action='store', dest='username',
+                      help='the username to use for authentication')
+    parser.add_option('-p', '--password', action='store', dest='password',
+                      help='the password to use for authentication')
+
+    options, args = parser.parse_args()
+
+    if len(args) < 1:
+        return parser.error('incorrect number of arguments')
+
+    if args[0] == 'generate':
+        if len(args) < 2:
+            return parser.error('cmd: "generate appname"'+
+                    '\n\nIncorrect number of arguments, appname is'+
+                    ' missing')
+        appname = args[1]
+        generate(appname)
+    elif args[0] == 'push':
+        if len(args) < 3:
+            return parser.error('cmd: "push dirname [appname] dburl"'+
+                    '\n\nIncorrect number of arguments, appname is'+
+                    ' missing')
+        appdir = os.path.normpath(os.path.join(os.getcwd(), args[1]))
+        if len(args) == 4:
+            appname = args[2]
+            dburl = args[3]
+        else:
+            appname = ''.join(appdir.split('/')[-1:])
+            dburl = args[2]
+        push(appdir, appname, dburl)
+    elif args[0] == 'pull':
+        print "pull isn't implemented yet"
+    else:
+        print "%s is unknown"
+
+if __name__ == '__main__':
+    main()
