@@ -12,7 +12,7 @@ import sys
 from setuptools import setup
 
 
-packages, data_files = [], []
+data_files = []
 root_dir = os.path.dirname(__file__)
 if root_dir != '':
     os.chdir(root_dir)
