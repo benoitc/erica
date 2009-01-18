@@ -8,53 +8,20 @@
 
 import os
 import sys
-import shutil
 
 from setuptools import setup
 
-def fullsplit(path, result=None):
-    """
-    Split a pathname into components (the opposite of os.path.join) in a
-    platform-neutral way.
-    """
-    if result is None:
-        result = []
-    head, tail = os.path.split(path)
-    if head == '':
-        return [tail] + result
-    if head == path:
-        return result
-    return fullsplit(head, [tail] + result)
 
 packages, data_files = [], []
-root_dir = os.path.join(os.path.dirname(__file__), 'python')
+root_dir = os.path.dirname(__file__)
 if root_dir != '':
     os.chdir(root_dir)
 
-
-
-
-couchapp_dir = 'couchapp'
-
-for dirpath, dirnames, filenames in os.walk(couchapp_dir):
-    for i, dirname in enumerate(dirnames):
-        if dirname.startswith('.'): del dirnames[i]
-    if '__init__.py' in filenames:
-        packages.append('.'.join(fullsplit(dirpath)))
-    elif filenames:
-        data_files.append([dirpath, [os.path.join(dirpath, f) for f in filenames]])
-
-# add templates to dir
-templates_path = os.path.abspath(os.path.join(os.getcwd(),
-    '../app-template'))
-
-
-for dirpath, dirnames, filenames in os.walk('../app-template'):
+for dirpath, dirnames, filenames in os.walk('app-template'):
     for i, dirname in enumerate(dirnames):
         if dirname.startswith('.'): del dirnames[i]
     
-    name = dirpath[3:]
-    data_files.append([name, [os.path.join(dirpath, f) for f in filenames]])
+    data_files.append([dirpath, [os.path.join(dirpath, f) for f in filenames]])
 
 
 
@@ -73,10 +40,12 @@ setup(
     keywords = 'couchdb couchapp',
     platforms = 'any',
     zip_safe = False,
-    scripts = ['couchapp/bin/couchapp'],
-    packages= packages,
+    
+    packages= ['couchapp'],
+    package_dir={'couchapp': 'python/couchapp'},
     data_files = data_files,
     include_package_data = True,
+    scripts = ['python/couchapp/bin/couchapp'],
     classifiers = [
         'License :: OSI Approved :: Apache Software License',
         'Intended Audience :: Developers',
