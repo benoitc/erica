@@ -65,8 +65,7 @@ describe "couchapp" do
       @doc['show']['docs']['example-show'].should_not match(/\"helpers\"/)
     end
     it "should create view for all the views" do
-      doc = @db.get("_design/my-app")
-      doc['views']['more']['map'].should match(/moremap/)
+      @doc['views']['more']['map'].should match(/moremap/)
     end
     it "should create the index" do
       @doc['_attachments']['index.html']["content_type"].should == 'text/html'
@@ -82,38 +81,21 @@ describe "couchapp" do
       @doc['show']['docs']['example-show'].should match(/Resig/)
     end
     
-    it "should work on . dir as well" do
-      @db = reset_test_db!
-      `cd #{@fixdir}/my-app && #{COUCHAPP} push . #{TESTDB}`
-      lambda{@db.get("_design/my-app")}.should_not raise_error
-    end
-    
-  end
-
-  # describe "push . #{TESTDB}" do
-  #   before(:all) do
-  #     @cr = CouchRest.new(COUCHHOST)
-  #     @db = @cr.database(TESTDB)
-  #     @db.delete! rescue nil
-  #     @db = @cr.create_db(TESTDB) rescue nil
-  #     `#{@run} generate my-app`
-  #   end
-  #   it "should create the design document" do
-  #   end
-  # end
-  
-  describe "push my-app my-design #{TESTDB}" do
-    before(:all) do
-      @cr = CouchRest.new(COUCHHOST)
-      @db = @cr.database(TESTDB)
-      @db.delete! rescue nil
-      @db = @cr.create_db(TESTDB) rescue nil
-      `#{@run} generate my-app`
-    end
-    it "should create the design document" do
+    it "should push to other design docs" do
+      lambda{@db.get("_design/my-design")}.should raise_error
       `#{@run} push my-app my-design #{TESTDB}`
       lambda{@db.get("_design/my-design")}.should_not raise_error
     end
+    
+    # cd should be last
+    it "should work on . dir as well" do
+      @db = reset_test_db!
+      lambda{@db.get("_design/my-app")}.should raise_error
+      `cd #{@fixdir}/my-app && #{COUCHAPP} push . #{TESTDB}`
+      lambda{@db.get("_design/my-app")}.should_not raise_error
+    end
   end
+
+
 end
 
