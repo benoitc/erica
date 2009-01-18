@@ -4,15 +4,15 @@
 # Copyright 2008 Jan Lehnardt <jan@apache.org>
 # Copyright 2009 Benoit Chesneau <benoitc@e-engura.org>
 #
-# This software is licensed as described in the file COPYING, which
+# This software is licensed as described in the file LICENSE, which
 # you should have received as part of this distribution.
 
 """
-Script that pushes a file system heirarchy into a CouchDB design document.
+Script that pushes a file system hierarchy into a CouchDB design document.
 
-Good for pure couch application development.
+Good for pure Couch application development.
 
-A port of couchapp of `couchrest` (http://github.com/jchris/couchrest/)
+A port of couchapp from Ruby (http://github.com/jchris/couchapp)
 """
 
 import os

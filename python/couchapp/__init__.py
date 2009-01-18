@@ -3,7 +3,7 @@
 #
 # Copyright 2009 Benoit Chesneau <benoitc@e-engura.org>
 #
-# This software is licensed as described in the file COPYING, which
+# This software is licensed as described in the file LICENSE, which
 # you should have received as part of this distribution.
 
 __VERSION__ = '0.1.4'
