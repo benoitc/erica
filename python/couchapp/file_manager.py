@@ -53,7 +53,7 @@ class FileManager(object):
     @classmethod
     def generate_app(cls, app_dir, loud=False):
         template_dir = os.path.normpath(os.path.join(os.path.dirname(__file__),
-                'app-template'))
+                '../app-template'))
         shutil.copytree(template_dir, app_dir)
 
     def push_app(self, app_dir, app_name):

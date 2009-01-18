@@ -31,6 +31,9 @@ root_dir = os.path.join(os.path.dirname(__file__), 'python')
 if root_dir != '':
     os.chdir(root_dir)
 
+
+
+
 couchapp_dir = 'couchapp'
 
 for dirpath, dirnames, filenames in os.walk(couchapp_dir):
@@ -42,13 +45,16 @@ for dirpath, dirnames, filenames in os.walk(couchapp_dir):
         data_files.append([dirpath, [os.path.join(dirpath, f) for f in filenames]])
 
 # add templates to dir
+templates_path = os.path.abspath(os.path.join(os.getcwd(),
+    '../app-template'))
 
-for dirpath, dirnames, filenames in os.walk('app-template'):
+
+for dirpath, dirnames, filenames in os.walk('../app-template'):
     for i, dirname in enumerate(dirnames):
         if dirname.startswith('.'): del dirnames[i]
-    data_files.append([dirpath, [os.path.join(dirpath, f) for f in filenames]])
-
-
+    
+    name = dirpath[3:]
+    data_files.append([name, [os.path.join(dirpath, f) for f in filenames]])
 
 
 
