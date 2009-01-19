@@ -168,7 +168,8 @@ class FileManager(object):
 
         attach_dir = os.path.join(app_dir, '_attachments')
 
-        doc = self.dir_to_fields(app_dir)
+        manifest = []
+        doc = self.dir_to_fields(app_dir, manifest=manifest)
 
         if docid in self.db:
             design = self.db[docid]
@@ -177,6 +178,9 @@ class FileManager(object):
                     '_id': docid,
                     '_rev': design['_rev'],
                     'signatures': design.get('signatures', {}),
+                    'app_meta': {
+                        'manifest': manifest
+                    },
                     '_attachments': design['_attachments']
             })
         
@@ -199,31 +203,103 @@ class FileManager(object):
         if not app_dir:
             app_dir = os.path.normpath(os.path.join(os.getcwd(), app_name))
 
+        metadata_dir = '%s/.couchapp' % app_dir
+        rc_file = '%s/rc.json' % metadata_dir
+
         if not os.path.isdir(app_dir):
             os.makedirs(app_dir)
-        
-        design = db[docid]
+                        
+        try:
+            design = db[docid]
+        except ResourceNotFound:
+            print >>sys.stderr, "%s don't exist" % app_name
 
+        # init signatures
         signatures = design.get('signatures', {})
 
+        # get manifest
+        metadata = design.get('app_meta', {})
+        manifest = metadata.get('manifest', {})
 
-        print "sign %s " % signatures
-        # get views and show
-        for vs in ['views', 'show']:
-            if vs in design:
-                vs_dir = os.path.join(app_dir, vs)
-                if not os.path.isdir(vs_dir):
-                    os.makedirs(vs_dir)
+        if metadata:
+            # save metadata in repo
+            
+            if manifest:
+                del metadata['manifest']
 
-                for vsname, vs_item in design[vs].iteritems():
-                    vs_item_dir = os.path.join(vs_dir, vsname)
-                    if not os.path.isdir(vs_item_dir):
-                        os.makedirs(vs_item_dir)
-    
-                    for func_name, func in vs_item.iteritems():
-                        filename = os.path.join(vs_item_dir, '%s.js' %
-                            func_name)
-                        open(filename, 'w').write(func)
+            if not os.path.isdir(metadata_dir):
+                os.makedirs(metadata_dir)
+                write_json(rc_file, { 'app_meta': metadata }) 
+            else:
+                conf = read_json(rc_file)
+                conf['app_meta'] = metadata
+                write_json(rc_file, conf) 
+
+        # create files from manifest
+        if manifest:
+            for filename in manifest:
+                file_path = os.path.join(app_dir, filename)
+                if filename.endswith('/'): 
+                    if not os.path.isdir(file_path):
+                        os.makedirs(file_path)
+                else:
+                    parts = filename.split('/')
+                    fname = ''.join(parts[-1:])
+                    v = {}
+                    for key in parts[:-1]:
+                        if not v:
+                            v = design[key]
+                        else:
+                            v = v[key]
+                    
+                    if fname.endswith('.json'):
+                        content = json.dumps(v[fname[:-5]])
+                    elif fname.endswith('js'):
+                        content = v[fname[:-3]]
+                    else:
+                        content = v[fname]
+
+                    f = open(file_path, 'wb')
+                    f.write(content)
+                    f.close()
+        else:
+            # manifest isn't in couchapp so we try 
+            # to recreate couchapp folder we save
+            # others fields as json value or text if 
+            #  first level
+            for key in design.iterkeys():
+                if key.startswith('_'): 
+                    continue
+                elif key == 'signatures':
+                    continue
+                elif key in ('show', 'views'):
+                    vs_dir = os.path.join(app_dir, key)
+                    if not os.path.isdir(vs_dir):
+                        os.makedirs(vs_dir)
+                    for vsname, vs_item in design[key].iteritems():
+                        vs_item_dir = os.path.join(vs_dir, vsname)
+                        if not os.path.isdir(vs_item_dir):
+                            os.makedirs(vs_item_dir)
+                        for func_name, func in vs_item.iteritems():
+                            filename = os.path.join(vs_item_dir, '%s.js' % 
+                                    func_name)
+                            open(filename, 'w').write(func)
+                else:
+                    file_dir = os.path.join(app_dir, key)
+                    if isinstance(design[key], (list, tuple,)):
+                        write_json(file_dir, design[key])
+                    elif isinstance(design[key], dict):
+                        if not os.path.isdir(file_dir):
+                            os.makedirs(file_dir)
+                        for field, value in design[key].iteritems():
+                            field_path = os.path.join(file_dir, field)
+                            if isinstance(value, basestring):
+                                open(field_path, 'w').write(value)
+                            else:
+                                write_json(field_path + '.json', value)
+                    else:
+                        open(file_dir, 'w').write(design[key])
+   
 
         # get attachments
         if '_attachments' in design:
@@ -243,6 +319,7 @@ class FileManager(object):
                     f.close()
 
         
+                
 
 
     def _load_file(self, fname):
@@ -251,18 +328,23 @@ class FileManager(object):
         f.close
         return data
 
-    def dir_to_fields(self, app_dir, depth=0):
+    def dir_to_fields(self, app_dir, current_dir='', depth=0, manifest=[]):
         fields={}
-        for name in os.listdir(app_dir):
-            current_path = os.path.join(app_dir, name)
+        if not current_dir:
+            current_dir = app_dir
+        for name in os.listdir(current_dir):
+            current_path = os.path.join(current_dir, name)
+            rel_path = current_path.split("%s/" % app_dir)[1]
             if name.startswith('.'):
                 continue
             elif depth == 0 and name.startswith('_'):
                 continue
             elif os.path.isdir(current_path):
-                fields[name] = self.dir_to_fields(current_path,
-                        depth=depth+1)
+                manifest.append('%s/' % rel_path)
+                fields[name] = self.dir_to_fields(app_dir, current_path,
+                        depth=depth+1, manifest=manifest)
             else:
+                manifest.append(rel_path)
                 content = self._load_file(current_path)
                 if name.endswith('.json'):
                     fields[name[:-5]] = json.loads(content)

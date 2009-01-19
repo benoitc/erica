@@ -82,7 +82,7 @@ def main():
             else:
                 dbstring = ''
         push(appdir, appname, dbstring)
-    elif args[0] == 'clone':
+    elif args[0] == 'clone' or args[0] == 'pull':
         if len(args) < 2:
             return parser.error('incorrect number of arguments')
         if len(args) == 3:
@@ -90,8 +90,7 @@ def main():
         else:
             app_dir = ''
         clone(args[1], app_dir)
-    elif args[0] == 'pull':
-        print "pull isn't implemented yet"
+    
     elif args[0] == 'init':
         try:
             appdir = args[1]
