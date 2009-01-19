@@ -54,8 +54,6 @@ class FileManager(object):
         except: # db already exist
             self.db = self.couchdb_server[self.db_name]
 
-            
-
     @classmethod
     def generate_app(cls, app_dir, loud=False):
         template_dir = os.path.normpath(os.path.join(os.path.dirname(__file__),
@@ -71,9 +69,11 @@ class FileManager(object):
 
         if docid in self.db:
             design = self.db[docid]
+
             doc.update({
                     '_id': docid,
                     '_rev': design['_rev'],
+                    'signatures': design.get('signatures', {}),
                     '_attachments': design['_attachments']
             })
         
@@ -101,7 +101,7 @@ class FileManager(object):
             else:
                 content = self._load_file(current_path)
                 if name.endswith('.json'):
-                    fields[name] = json.loads(content)
+                    fields[name[:-5]] = json.loads(content)
                 elif name.endswith('.js'):
                     fields[name[:-3]] = content
                 else:
@@ -109,10 +109,9 @@ class FileManager(object):
         return fields
     
     def push_directory(self, attach_dir, docid):
-        design = self.db[docid]
-
+        # get attachments
         signatures = {}
-        attachements = {}
+        attachments = {}
         for root, dirs, files in os.walk(attach_dir):
             if files:
                 for filename in files:
@@ -121,24 +120,21 @@ class FileManager(object):
                     name = file_path.split('%s/' % attach_dir)[1] 
                     signature = _md5(file_path).hexdigest()
                     signatures[name] = signature
-                    attachments[name] = {
-                            'file': file,
-                            'signature': signature
-                    }
+                    attachments[name] = file
         
         # detect attachments to be removed and keep
         # only new version attachments to update.
+        design = self.db[docid]
         if 'signatures' in design:
             for filename in design['signatures'].iterkeys():
                 if filename not in signatures:
                     self.db.delete_attachment(design, filename)
-
-                if filename in attachments:
-                    if attachements[filename]['signature'] == design['signatures'][filename]:
-                        del attachements[filename]
+                else:
+                    if signatures[filename] == design['signatures'][filename]:
+                        del attachments[filename]
 
         for filename, value in attachments.iteritems():
-            self.db.put(design, value['file'], filename)
+            self.db.put_attachment(design, value, filename)
        
         # update signatures
         design = self.db[docid]
