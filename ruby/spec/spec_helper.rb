@@ -4,7 +4,14 @@ require "couchrest"
 
 require File.expand_path(File.dirname(__FILE__)) + '/../lib/couchapp'
 
-COUCHAPP = ARGV[0] || File.expand_path(File.dirname(__FILE__)) + '/../bin/couchapp'
+COUCHAPP = if (ARGV[1] == 'python')
+  puts "testing Python version"
+  File.expand_path(File.dirname(__FILE__)) + '/../../python/couchapp/bin/couchapp'
+else
+  puts "testing Ruby version"
+  File.expand_path(File.dirname(__FILE__)) + '/../bin/couchapp'
+end
+
 SCRATCH_PATH = File.dirname(__FILE__) + '/scratch'
 COUCHHOST = "http://127.0.0.1:5984"
 TESTDB = 'couchapp-test'

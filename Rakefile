@@ -68,6 +68,11 @@ Spec::Rake::SpecTask.new('spec') do |t|
 	t.spec_files = FileList['ruby/spec/**/*_spec.rb']
 end
 
+desc "Run Ruby specs on the Python version" 
+task :python do
+  system "ruby ruby/spec/couchapp_spec.rb -- python"
+end
+
 desc "Print specdocs"
 Spec::Rake::SpecTask.new(:doc) do |t|
 	t.spec_opts = ["--format", "specdoc"]
