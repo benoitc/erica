@@ -79,11 +79,19 @@ def parse_uri(string):
             docid = '/'.join(path[i:])
 
     server_uri = '%s://%s' % (parts[0], parts[1])
-    print dbname, docid
     return server_uri, dbname, docid
 
 def get_appname(docid):
     return docid.split('_design/')[1]
+
+
+def sign_file(file_path):
+    if os.path.isfile(file_path):
+        f = open(file_path, 'rb')
+        content = f.read()
+        f.close()
+        return _md5(content).hexdigest()
+    return ''
 
 class FileManager(object):
     
@@ -177,7 +185,8 @@ class FileManager(object):
         self.push_directory(attach_dir, docid)
 
     @classmethod
-    def clone(self, app_uri):
+    def clone(cls, app_uri, app_dir):
+        
         server_uri, db_name, docid = parse_uri(app_uri) 
         
         couchdb_server = Server(server_uri)
@@ -187,7 +196,54 @@ class FileManager(object):
             db = couchdb_server[db_name]
  
         app_name = get_appname(docid)
+        if not app_dir:
+            app_dir = os.path.normpath(os.path.join(os.getcwd(), app_name))
+
+        if not os.path.isdir(app_dir):
+            os.makedirs(app_dir)
+        
         design = db[docid]
+
+        signatures = design.get('signatures', {})
+
+
+        print "sign %s " % signatures
+        # get views and show
+        for vs in ['views', 'show']:
+            if vs in design:
+                vs_dir = os.path.join(app_dir, vs)
+                if not os.path.isdir(vs_dir):
+                    os.makedirs(vs_dir)
+
+                for vsname, vs_item in design[vs].iteritems():
+                    vs_item_dir = os.path.join(vs_dir, vsname)
+                    if not os.path.isdir(vs_item_dir):
+                        os.makedirs(vs_item_dir)
+    
+                    for func_name, func in vs_item.iteritems():
+                        filename = os.path.join(vs_item_dir, '%s.js' %
+                            func_name)
+                        open(filename, 'w').write(func)
+
+        # get attachments
+        if '_attachments' in design:
+            attach_dir = os.path.join(app_dir, '_attachments')
+            if not os.path.isdir(attach_dir):
+                os.makedirs(attach_dir)
+            for filename in design['_attachments'].iterkeys():
+                file_path = os.path.join(attach_dir, filename)
+                current_dir = os.path.dirname(file_path)
+                if not os.path.isdir(current_dir):
+                    os.makedirs(current_dir)
+        
+                if signatures.get(filename) != sign_file(file_path):
+                    content = db.get_attachment(docid, filename)
+                    f = open(file_path, 'wb')
+                    f.write(content)
+                    f.close()
+
+        
+
 
     def _load_file(self, fname):
         f = file(fname, 'r')
@@ -224,9 +280,9 @@ class FileManager(object):
             if files:
                 for filename in files:
                     file_path = os.path.join(root, filename)
-                    file = open(file_path, 'rb')
+                    
                     name = file_path.split('%s/' % attach_dir)[1] 
-                    signature = _md5(file_path).hexdigest()
+                    signature = sign_file(file_path)
                     signatures[name] = signature
                     attachments[name] = file
         
