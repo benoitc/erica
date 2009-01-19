@@ -13,6 +13,7 @@ import os
 import shutil
 import sys
 import urlparse
+import urllib
 
 # compatibility with python 2.4
 try:
@@ -27,7 +28,7 @@ except ImportError:
     import json # Python 2.6
 
 
-from couchdb import Server
+from couchdb import Server, ResourceNotFound
 
 __all__ = ['DEFAULT_SERVER_URI', 'FileManager']
 
@@ -51,11 +52,46 @@ def read_json(filename):
     return data
 
 
+def parse_uri(string):
+    parts = urlparse.urlsplit(string)
+    if parts[0] != 'http' and parts[0] != 'https':
+        raise ValueError('Invalid dbstring')
+     
+    path = parts[2].strip('/').split('/')
+
+    dbname = ''
+    docid = ''
+    if len(path) >= 1:
+        print "ici"
+        db_parts=[]
+        i = 0
+        while 1:
+            try:
+                p = path[i]
+            except IndexError:
+                break
+
+            if p == '_design': break
+            db_parts.append(p)
+            i = i + 1
+        dbname = '/'.join(db_parts)
+        
+        if i < len(path) - 1:
+            docid = '/'.join(path[i:])
+
+    server_uri = '%s://%s' % (parts[0], parts[1])
+    return server_uri, dbname, docid
+
+def get_appname(docid):
+    print docid
+    return urllib.unquote(docid).split('_design/')[1]
+
 class FileManager(object):
     
     def __init__(self, dbstring, app_dir='.'):
         self.app_dir = app_dir 
 
+        # load conf
         self.conf = self.load_metadata(app_dir)
         
         # init default
@@ -73,14 +109,7 @@ class FileManager(object):
 
             self.server_uri = self.default_server
         else:
-            # split dburl
-            parts = urlparse.urlsplit(dbstring)
-            if parts[0] != 'http' and parts[0] != 'https':
-                raise ValueError('Invalid dbstring')
-        
-            db_path = parts[2].strip('/').split('/')
-            self.db_name = db_path[0]
-            self.server_uri = '%s://%s' % (parts[0], parts[1])
+            self.server_uri, self.db_name, docid = parse_uri(dbstring)
 
         self.couchdb_server = Server(self.server_uri)
 
@@ -96,7 +125,6 @@ class FileManager(object):
                 '../app-template'))
         shutil.copytree(template_dir, app_dir)
         cls.init(app_dir)
-
 
     @classmethod
     def init(cls, app_dir):
@@ -120,7 +148,7 @@ class FileManager(object):
             self.load_metadata(self.app_dir)
         if self.conf and 'default' in self.conf:
             default = self.conf['default']
-            self.default_server = default.get('server_uri',
+            self.default_server = default.get('server',
                 DEFAULT_SERVER_URI)
             self.default_dbname = default.get('dbname')
             return
@@ -149,12 +177,24 @@ class FileManager(object):
 
         self.push_directory(attach_dir, docid)
 
+    @classmethod
+    def clone(self, app_uri):
+        server_uri, db_name, docid = parse_uri(app_uri) 
+        
+        couchdb_server = Server(server_uri)
+        try:
+            db = couchdb_server.create(db_name)
+        except: # db already exist
+            db = couchdb_server[db_name]
+ 
+        app_name = get_appname(docid)
+        design = db[docid]
+
     def _load_file(self, fname):
         f = file(fname, 'r')
         data = f.read()
         f.close
         return data
-
 
     def dir_to_fields(self, app_dir, depth=0):
         fields={}
