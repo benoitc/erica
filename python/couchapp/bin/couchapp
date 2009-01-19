@@ -33,6 +33,7 @@ def generate(appname):
 
 def push(appdir, appname, dburl):
     fm = couchapp.FileManager(dburl)
+    print "Pushing CouchApp in %s to %s/_design/%s" % (appdir, dburl, appname)
     fm.push_app(appdir, appname)
 
 def main():
