@@ -71,11 +71,13 @@ class FileManager(object):
 
         if docid in self.db:
             design = self.db[docid]
-            design.update(doc)
-            self.db[docid] = design
-        else:
-            self.db[docid] = doc 
-
+            doc.update({
+                    '_id': docid,
+                    '_rev': design['_rev'],
+                    '_attachments': design['_attachments']
+            })
+        
+        self.db[docid] = doc 
 
         self.push_directory(attach_dir, docid)
 
@@ -110,22 +112,35 @@ class FileManager(object):
         design = self.db[docid]
 
         signatures = {}
+        attachements = {}
         for root, dirs, files in os.walk(attach_dir):
             if files:
                 for filename in files:
                     file_path = os.path.join(root, filename)
                     file = open(file_path, 'rb')
                     name = file_path.split('%s/' % attach_dir)[1] 
-                    signatures[name] = _md5(file_path).hexdigest()
-                    self.db.put_attachment(design, file, name)
+                    signature = _md5(file_path).hexdigest()
+                    signatures[name] = signature
+                    attachments[name] = {
+                            'file': file,
+                            'signature': signature
+                    }
         
-        # attachments to be removed
+        # detect attachments to be removed and keep
+        # only new version attachments to update.
         if 'signatures' in design:
             for filename in design['signatures'].iterkeys():
                 if filename not in signatures:
-                    print filename
                     self.db.delete_attachment(design, filename)
-        
+
+                if filename in attachments:
+                    if attachements[filename]['signature'] == design['signatures'][filename]:
+                        del attachements[filename]
+
+        for filename, value in attachments.iteritems():
+            self.db.put(design, value['file'], filename)
+       
+        # update signatures
         design = self.db[docid]
         design.update({'signatures': signatures})
         self.db[docid] = design
