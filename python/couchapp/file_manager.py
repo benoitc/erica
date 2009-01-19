@@ -53,7 +53,7 @@ def read_json(filename):
 
 
 def parse_uri(string):
-    parts = urlparse.urlsplit(string)
+    parts = urlparse.urlsplit(urllib.unquote(string))
     if parts[0] != 'http' and parts[0] != 'https':
         raise ValueError('Invalid dbstring')
      
@@ -62,7 +62,6 @@ def parse_uri(string):
     dbname = ''
     docid = ''
     if len(path) >= 1:
-        print "ici"
         db_parts=[]
         i = 0
         while 1:
@@ -80,11 +79,11 @@ def parse_uri(string):
             docid = '/'.join(path[i:])
 
     server_uri = '%s://%s' % (parts[0], parts[1])
+    print dbname, docid
     return server_uri, dbname, docid
 
 def get_appname(docid):
-    print docid
-    return urllib.unquote(docid).split('_design/')[1]
+    return docid.split('_design/')[1]
 
 class FileManager(object):
     
