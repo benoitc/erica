@@ -366,7 +366,7 @@ class FileManager(object):
                     name = file_path.split('%s/' % attach_dir)[1] 
                     signature = sign_file(file_path)
                     signatures[name] = signature
-                    attachments[name] = file
+                    attachments[name] = open(file_path, 'rb')
         
         # detect attachments to be removed and keep
         # only new version attachments to update.
