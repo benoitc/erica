@@ -28,18 +28,24 @@ except ImportError:
 
 from couchdb import Server
 
+DEFAULT_SERVER_URI = 'http://127.0.0.1:5984/'
+
 class FileManager(object):
     
-    def __init__(self, dburl):
-        # split dburl
-        parts = urlparse.urlsplit(dburl)
-        if parts[0] != 'http' and parts[0] != 'https':
-            raise ValueError('Invalid dburl')
+    def __init__(self, dbstring):
+        if not "/" in dbstring:
+            self.db_name = dbstring
+            self.server_uri = DEFAULT_SERVER_URI
+        else:
+            # split dburl
+            parts = urlparse.urlsplit(dbstring)
+            if parts[0] != 'http' and parts[0] != 'https':
+                raise ValueError('Invalid dbstring')
         
-        db_path = parts[2].strip('/').split('/')
-        self.db_name = db_path[0]
-        
-        self.server_uri = '%s://%s' % (parts[0], parts[1])
+            db_path = parts[2].strip('/').split('/')
+            self.db_name = db_path[0]
+            self.server_uri = '%s://%s' % (parts[0], parts[1])
+
         self.couchdb_server = Server(self.server_uri)
 
         # create db if it don't exist
