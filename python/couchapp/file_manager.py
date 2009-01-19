@@ -11,6 +11,7 @@ from glob import glob
 from mimetypes import guess_type
 import os
 import shutil
+import sys
 import urlparse
 
 # compatibility with python 2.4
@@ -28,14 +29,49 @@ except ImportError:
 
 from couchdb import Server
 
+__all__ = ['DEFAULT_SERVER_URI', 'FileManager']
+
 DEFAULT_SERVER_URI = 'http://127.0.0.1:5984/'
+
+def write_json(filename, content):
+    f = open(filename, 'w')
+    f.write(json.dumps(content))
+    f.close()
+
+def read_json(filename):
+    try:
+        f = file(filename, 'r')
+        
+    except IOError, e:
+        if e[0] == 2:
+            return {}
+        raise
+    data = json.loads(f.read())
+    f.close()
+    return data
+
 
 class FileManager(object):
     
-    def __init__(self, dbstring):
-        if not "/" in dbstring:
-            self.db_name = dbstring
-            self.server_uri = DEFAULT_SERVER_URI
+    def __init__(self, dbstring, app_dir='.'):
+        self.app_dir = app_dir 
+
+        self.conf = self.load_metadata(app_dir)
+        
+        # init default
+        self.get_default()
+
+        if not dbstring or not "/" in dbstring:
+            
+            if dbstring:
+                self.db_name = dbstring
+            else: 
+                if self.default_dbname:
+                    self.db_name = self.default_dbname
+                else:
+                    raise ValueError("database isn't specified")
+
+            self.server_uri = self.default_server
         else:
             # split dburl
             parts = urlparse.urlsplit(dbstring)
@@ -55,10 +91,42 @@ class FileManager(object):
             self.db = self.couchdb_server[self.db_name]
 
     @classmethod
-    def generate_app(cls, app_dir, loud=False):
+    def generate_app(cls, app_dir):
         template_dir = os.path.normpath(os.path.join(os.path.dirname(__file__),
                 '../app-template'))
         shutil.copytree(template_dir, app_dir)
+        cls.init(app_dir)
+
+
+    @classmethod
+    def init(cls, app_dir):
+        if not os.path.isdir(app_dir):
+            print>>sys.stderr, "%s don't exist" % app_dir
+            return
+        metadata_dir = '%s/.couchapp' % app_dir
+        if not os.path.isdir(metadata_dir):
+            os.makedirs(metadata_dir)
+            write_json('%s/rc.json' % metadata_dir, {})
+        else:
+            print>>sys.stderr, "couchapp already initialized"
+
+    def load_metadata(self, app_dir):
+        rc_file = '%s/.couchapp/rc.json' % app_dir
+        if os.path.isfile(rc_file):
+            self.conf = read_json(rc_file)
+
+    def get_default(self):
+        if not self.conf:
+            self.load_metadata(self.app_dir)
+        if self.conf and 'default' in self.conf:
+            default = self.conf['default']
+            self.default_server = default.get('server_uri',
+                DEFAULT_SERVER_URI)
+            self.default_dbname = default.get('dbname')
+            return
+        self.default_server = DEFAULT_SERVER_URI
+        self.default_dbname = ''
+
 
     def push_app(self, app_dir, app_name):
         docid = '_design/%s' % app_name
@@ -86,6 +154,7 @@ class FileManager(object):
         data = f.read()
         f.close
         return data
+
 
     def dir_to_fields(self, app_dir, depth=0):
         fields={}
