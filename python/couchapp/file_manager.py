@@ -206,12 +206,27 @@ class FileManager(object):
         if not app_dir:
             app_dir = os.path.normpath(os.path.join(os.getcwd(), app_name))
 
-        metadata_dir = '%s/.couchapp' % app_dir
-        rc_file = '%s/rc.json' % metadata_dir
+        metadata_dir = os.path.join(app_dir, '.couchapp')
+        rc_file = os.path.join(metadata_dir, 'rc.json')
 
         if not os.path.isdir(app_dir):
             os.makedirs(app_dir)
-                        
+        else:
+            # delete only if there is .couchapp folder
+            if os.path.isdir(metadata_dir):
+                for root, dirs, files in os.walk(app_dir,
+                        topdown=False):
+                    if root == app_dir:
+                        if '_attachments' in dirs:
+                            dirs.remove('_attachments') 
+                        if '.couchapp' in dirs:
+                            dirs.remove('.couchapp')
+                    for name in files:
+                        os.remove(os.path.join(root, name))
+
+                    for name in dirs:
+                        os.rmdir(os.path.join(root, name))
+        
         try:
             design = db[docid]
         except ResourceNotFound:
@@ -235,7 +250,17 @@ class FileManager(object):
                 write_json(rc_file, { 'app_meta': metadata }) 
             else:
                 conf = read_json(rc_file)
-                conf['app_meta'] = metadata
+                if not 'env' in conf:
+                    conf['env'] = {}
+                conf['env'].update({
+                    'origin': {
+                        'db': db.resource.uri
+                    }
+                })
+                if not 'app_meta' in conf:
+                    conf['app_meta'] = {}
+
+                conf['app_meta'].update(metadata)
                 write_json(rc_file, conf) 
 
         # create files from manifest
