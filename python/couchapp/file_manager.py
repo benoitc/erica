@@ -347,7 +347,7 @@ class FileManager(object):
                     f.close()
 
     def _load_file(self, fname):
-        f = file(fname, 'r')
+        f = file(fname, 'rb')
         data = f.read()
         f.close
         return data
