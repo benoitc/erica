@@ -28,7 +28,7 @@ try:
 except ImportError:
     import json # Python 2.6
 
-
+import httplib2
 from couchdb import Server, ResourceNotFound
 
 __all__ = ['DEFAULT_SERVER_URI', 'FileManager']
@@ -81,6 +81,21 @@ def parse_uri(string):
     server_uri = '%s://%s' % (parts[0], parts[1])
     return server_uri, dbname, docid
 
+
+def parse_auth(string):
+    parts = urlparse.urlsplit(urllib.unquote(string))
+    
+    server_parts = parts[1].split('@')
+    if ":" in server_parts[0]:
+        username, password = server_parts[0].split(":")
+    else:
+        username = server_parts[0]
+        password = ''
+
+    server_uri = "%s://%s" % (parts[0], server_parts[1])
+
+    return username, password, server_uri
+
 def get_appname(docid):
     return docid.split('_design/')[1]
 
@@ -125,7 +140,15 @@ class FileManager(object):
         for s in self.db_url:
             server_uri, db_name, docid = parse_uri(s)
 
-            couchdb_server = Server(server_uri)
+            http = httplib2.Http()
+            if "@" in server_uri:
+                username, password, server_uri = parse_auth(server_uri) 
+                couchdb_server = Server(server_uri)
+                http.add_credentials(username, password)
+                couchdb_server.resource.http = http
+            else:
+                couchdb_server = Server(server_uri)
+
 
             # create dbs if it don't exist
             try:

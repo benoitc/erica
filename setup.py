@@ -59,7 +59,7 @@ setup(
 
     setup_requires = [
         'setuptools>=0.6c9',
-        'couchdb>=0.5',
+        'couchdb>=0.5dev',
     ]
 )
 
