@@ -23,8 +23,6 @@ from optparse import OptionParser
 import couchapp
 from couchapp.utils import in_couchapp
 
-VERSION = '0.1'
-
 
 def generate(appname):
     appdir = os.path.normpath(os.path.join(os.getcwd(), appname))
@@ -47,11 +45,12 @@ def clone(app_uri, app_dir):
     couchapp.FileManager.clone(app_uri, app_dir)
 
 def main():
-    parser = OptionParser(usage='%prog [options] cmd', version=couchapp.__VERSION__)
+    parser = OptionParser(usage='%prog [options] cmd', version="%prog " + couchapp.__VERSION__)
     parser.add_option('-u', '--username', action='store', dest='username',
                       help='the username to use for authentication')
     parser.add_option('-p', '--password', action='store', dest='password',
                       help='the password to use for authentication')
+
 
     options, args = parser.parse_args()
 
