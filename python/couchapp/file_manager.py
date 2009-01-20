@@ -13,15 +13,7 @@ import os
 import re
 import shutil
 import sys
-import urlparse
 import urllib
-
-# compatibility with python 2.4
-try:
-    from hashlib import md5 as _md5
-except ImportError:
-    import md5
-    _md5 = md5.new
 
 try:
     import simplejson as json
@@ -30,6 +22,8 @@ except ImportError:
 
 import httplib2
 from couchdb import Server, ResourceNotFound
+
+from couchapp.utils import parse_uri, parse_auth, get_appname, sign_file 
 
 __all__ = ['DEFAULT_SERVER_URI', 'FileManager']
 
@@ -50,63 +44,6 @@ def read_json(filename):
     data = json.loads(f.read())
     f.close()
     return data
-
-
-def parse_uri(string):
-    parts = urlparse.urlsplit(urllib.unquote(string))
-    if parts[0] != 'http' and parts[0] != 'https':
-        raise ValueError('Invalid dbstring')
-     
-    path = parts[2].strip('/').split('/')
-
-    dbname = ''
-    docid = ''
-    if len(path) >= 1:
-        db_parts=[]
-        i = 0
-        while 1:
-            try:
-                p = path[i]
-            except IndexError:
-                break
-
-            if p == '_design': break
-            db_parts.append(p)
-            i = i + 1
-        dbname = '/'.join(db_parts)
-        
-        if i < len(path) - 1:
-            docid = '/'.join(path[i:])
-
-    server_uri = '%s://%s' % (parts[0], parts[1])
-    return server_uri, dbname, docid
-
-
-def parse_auth(string):
-    parts = urlparse.urlsplit(urllib.unquote(string))
-    
-    server_parts = parts[1].split('@')
-    if ":" in server_parts[0]:
-        username, password = server_parts[0].split(":")
-    else:
-        username = server_parts[0]
-        password = ''
-
-    server_uri = "%s://%s" % (parts[0], server_parts[1])
-
-    return username, password, server_uri
-
-def get_appname(docid):
-    return docid.split('_design/')[1]
-
-
-def sign_file(file_path):
-    if os.path.isfile(file_path):
-        f = open(file_path, 'rb')
-        content = f.read()
-        f.close()
-        return _md5(content).hexdigest()
-    return ''
 
 class FileManager(object):
     
@@ -139,9 +76,9 @@ class FileManager(object):
         db = []
         for s in self.db_url:
             server_uri, db_name, docid = parse_uri(s)
-
-            http = httplib2.Http()
+ 
             if "@" in server_uri:
+                http = httplib2.Http()
                 username, password, server_uri = parse_auth(server_uri) 
                 couchdb_server = Server(server_uri)
                 http.add_credentials(username, password)
@@ -226,8 +163,16 @@ class FileManager(object):
     def clone(cls, app_uri, app_dir):
         
         server_uri, db_name, docid = parse_uri(app_uri) 
+       
+        if "@" in server_uri:
+            http = httplib2.Http()
+            username, password, server_uri = parse_auth(server_uri) 
+            couchdb_server = Server(server_uri)
+            http.add_credentials(username, password)
+            couchdb_server.resource.http = http
+        else:
+            couchdb_server = Server(server_uri)
         
-        couchdb_server = Server(server_uri)
         try:
             db = couchdb_server.create(db_name)
         except: # db already exist
