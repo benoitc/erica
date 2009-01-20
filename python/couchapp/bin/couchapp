@@ -21,7 +21,7 @@ from optparse import OptionParser
 
 
 import couchapp
-
+from couchapp.utils import in_couchapp
 
 VERSION = '0.1'
 
@@ -40,9 +40,8 @@ def push(appdir, appname, dbstring):
         fm = couchapp.FileManager(dbstring, appdir)
     except ValueError, e:
         print>>sys.stderr, e
-        return 
-    print "Pushing CouchApp in %s to %s/_design/%s" % (appdir, dbstring, appname)
-    fm.push_app(appdir, appname)
+        return  
+    fm.push_app(appdir, appname,verbose=True)
 
 def clone(app_uri, app_dir):
     couchapp.FileManager.clone(app_uri, app_dir)
@@ -67,20 +66,32 @@ def main():
         appname = args[1]
         generate(appname)
     elif args[0] == 'push':
-        if len(args) < 3:
-            rel_path = '.'
-        else:
-            rel_path = args[1]
-        appdir = os.path.normpath(os.path.join(os.getcwd(), rel_path))
+        appname = ''
+        rel_path = '.'
+        dbstring = ''
         if len(args) == 4:
+            if in_couchapp():
+                return parser.error('incorrect number of arguments')
+            rel_path = args[1]
             appname = args[2]
             dbstring = args[3]
-        else:
-            appname = ''.join(appdir.split('/')[-1:])
-            if len(args) == 3:
+        elif len(args) == 3:
+            rel_path = in_couchapp()
+            if rel_path:
+                appname = args[1]
                 dbstring = args[2]
             else:
-                dbstring = ''
+                rel_path = args[1]
+                dbstring = args[2]
+        elif len(args) == 2:
+            rel_path = in_couchapp()
+            if rel_path:
+                dbstring = args[1]
+            else:
+                rel_path = args[1]
+        appdir = os.path.normpath(os.path.join(os.getcwd(), rel_path))
+        if not appname: 
+            appname = ''.join(appdir.split('/')[-1:])
         push(appdir, appname, dbstring)
     elif args[0] == 'clone' or args[0] == 'pull':
         if len(args) < 2:

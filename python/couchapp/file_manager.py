@@ -42,7 +42,6 @@ def write_json(filename, content):
 def read_json(filename):
     try:
         f = file(filename, 'r')
-        
     except IOError, e:
         if e[0] == 2:
             return {}
@@ -99,32 +98,41 @@ class FileManager(object):
         self.app_dir = app_dir 
 
         # load conf
-        self.conf = self.load_metadata(app_dir)
-        
-        # init default
-        self.get_default()
-
+        self.load_metadata(app_dir)
+       
         if not dbstring or not "/" in dbstring:
-            
+            env = self.conf.get('env', {})
             if dbstring:
-                self.db_name = dbstring
+                if dbstring in env:
+                    db_env = env[dbstring]['db']
+                else: 
+                    db_env = "%s/%s" % (DEFAULT_SERVER_URI, dbstring)
             else: 
-                if self.default_dbname:
-                    self.db_name = self.default_dbname
+                if 'default' in env:
+                    db_env = env['default']['db']
                 else:
                     raise ValueError("database isn't specified")
 
-            self.server_uri = self.default_server
+            if isinstance(db_env, basestring):
+                self.db_url = [db_env]
+            else:
+                self.db_url = db_env
         else:
-            self.server_uri, self.db_name, docid = parse_uri(dbstring)
+            self.db_url = [dbstring]
 
-        self.couchdb_server = Server(self.server_uri)
+        db = []
+        for s in self.db_url:
+            server_uri, db_name, docid = parse_uri(s)
 
-        # create db if it don't exist
-        try:
-            self.db = self.couchdb_server.create(self.db_name)
-        except: # db already exist
-            self.db = self.couchdb_server[self.db_name]
+            couchdb_server = Server(server_uri)
+
+            # create dbs if it don't exist
+            try:
+                _db = couchdb_server.create(db_name)
+            except: # db already exist
+                _db = couchdb_server[db_name]
+            db.append(_db)
+        self.db = db
 
     @classmethod
     def generate_app(cls, app_dir):
@@ -146,24 +154,13 @@ class FileManager(object):
             print>>sys.stderr, "couchapp already initialized"
 
     def load_metadata(self, app_dir):
-        rc_file = '%s/.couchapp/rc.json' % app_dir
+        rc_file = os.path.join(app_dir, '.couchapp/rc.json')
         if os.path.isfile(rc_file):
             self.conf = read_json(rc_file)
-
-    def get_default(self):
-        if not self.conf:
-            self.load_metadata(self.app_dir)
-        if self.conf and 'default' in self.conf:
-            default = self.conf['default']
-            self.default_server = default.get('server',
-                DEFAULT_SERVER_URI)
-            self.default_dbname = default.get('dbname')
             return
-        self.default_server = DEFAULT_SERVER_URI
-        self.default_dbname = ''
+        self.conf = {}
 
-
-    def push_app(self, app_dir, app_name):
+    def push_app(self, app_dir, app_name, verbose=False):
         docid = '_design/%s' % app_name
 
         attach_dir = os.path.join(app_dir, '_attachments')
@@ -171,20 +168,26 @@ class FileManager(object):
         manifest = []
         doc = self.dir_to_fields(app_dir, manifest=manifest)
 
-        if docid in self.db:
-            design = self.db[docid]
+        for db in self.db:
+            if verbose:
+                print "Pushing CouchApp in %s to %s/_design/%s" % (app_dir,
+                    db.resource.uri, app_name)
+            new_doc = doc.copy()
 
-            doc.update({
+            if docid in db:
+                design = db[docid]
+
+                new_doc.update({
                     '_id': docid,
                     '_rev': design['_rev'],
                     'signatures': design.get('signatures', {}),
                     'app_meta': {
                         'manifest': manifest
                     },
-                    '_attachments': design['_attachments']
-            })
+                    '_attachments': design.get('_attachments', {})
+                })
         
-        self.db[docid] = doc 
+            db[docid] = new_doc 
 
         self.push_directory(attach_dir, docid)
 
@@ -318,10 +321,6 @@ class FileManager(object):
                     f.write(content)
                     f.close()
 
-        
-                
-
-
     def _load_file(self, fname):
         f = file(fname, 'r')
         data = f.read()
@@ -356,8 +355,8 @@ class FileManager(object):
     
     def push_directory(self, attach_dir, docid):
         # get attachments
-        signatures = {}
-        attachments = {}
+        _signatures = {}
+        _attachments = {}
         for root, dirs, files in os.walk(attach_dir):
             if files:
                 for filename in files:
@@ -365,24 +364,26 @@ class FileManager(object):
                     
                     name = file_path.split('%s/' % attach_dir)[1] 
                     signature = sign_file(file_path)
-                    signatures[name] = signature
-                    attachments[name] = open(file_path, 'rb')
+                    _signatures[name] = signature
+                    _attachments[name] = open(file_path, 'rb')
         
         # detect attachments to be removed and keep
         # only new version attachments to update.
-        design = self.db[docid]
-        if 'signatures' in design:
-            for filename in design['signatures'].iterkeys():
-                if filename not in signatures:
-                    self.db.delete_attachment(design, filename)
-                else:
-                    if signatures[filename] == design['signatures'][filename]:
-                        del attachments[filename]
+        for db in self.db:
+            design = db[docid]
+            attachments = _attachments.copy()
+            if 'signatures' in design:
+                for filename in design['signatures'].iterkeys():
+                    if filename not in _signatures:
+                        db.delete_attachment(design, filename)
+                    else:
+                        if _signatures[filename] == design['signatures'][filename]:
+                            del attachments[filename]
 
-        for filename, value in attachments.iteritems():
-            self.db.put_attachment(design, value, filename)
+            for filename, value in attachments.iteritems():
+                db.put_attachment(design, value, filename)
        
-        # update signatures
-        design = self.db[docid]
-        design.update({'signatures': signatures})
-        self.db[docid] = design
+            # update signatures
+            design = db[docid]
+            design['signatures'] = _signatures
+            db[docid] = design
