@@ -89,6 +89,11 @@ def main():
                 dbstring = args[1]
             else:
                 rel_path = args[1]
+        elif len(args) == 1:
+            rel_path = in_couchapp()
+            if not rel_path:
+                rel_path = '.'
+
         appdir = os.path.normpath(os.path.join(os.getcwd(), rel_path))
         if not appname: 
             appname = ''.join(appdir.split('/')[-1:])
