@@ -13,7 +13,6 @@ import os
 import re
 import shutil
 import sys
-import urlparse
 import urllib
 
 # compatibility with python 2.4
@@ -30,6 +29,8 @@ except ImportError:
 
 import httplib2
 from couchdb import Server, ResourceNotFound
+
+from couchapp.utils import parse_uri, parse_auth
 
 __all__ = ['DEFAULT_SERVER_URI', 'FileManager']
 
@@ -52,49 +53,7 @@ def read_json(filename):
     return data
 
 
-def parse_uri(string):
-    parts = urlparse.urlsplit(urllib.unquote(string))
-    if parts[0] != 'http' and parts[0] != 'https':
-        raise ValueError('Invalid dbstring')
-     
-    path = parts[2].strip('/').split('/')
 
-    dbname = ''
-    docid = ''
-    if len(path) >= 1:
-        db_parts=[]
-        i = 0
-        while 1:
-            try:
-                p = path[i]
-            except IndexError:
-                break
-
-            if p == '_design': break
-            db_parts.append(p)
-            i = i + 1
-        dbname = '/'.join(db_parts)
-        
-        if i < len(path) - 1:
-            docid = '/'.join(path[i:])
-
-    server_uri = '%s://%s' % (parts[0], parts[1])
-    return server_uri, dbname, docid
-
-
-def parse_auth(string):
-    parts = urlparse.urlsplit(urllib.unquote(string))
-    
-    server_parts = parts[1].split('@')
-    if ":" in server_parts[0]:
-        username, password = server_parts[0].split(":")
-    else:
-        username = server_parts[0]
-        password = ''
-
-    server_uri = "%s://%s" % (parts[0], server_parts[1])
-
-    return username, password, server_uri
 
 def get_appname(docid):
     return docid.split('_design/')[1]
