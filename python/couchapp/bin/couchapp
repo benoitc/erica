@@ -77,7 +77,8 @@ def main():
         elif len(args) == 3:
             rel_path = in_couchapp()
             if rel_path:
-                appname = args[1]
+                if args[1] != '.':
+                    appname = args[1]
                 dbstring = args[2]
             else:
                 rel_path = args[1]
@@ -85,7 +86,8 @@ def main():
         elif len(args) == 2:
             rel_path = in_couchapp()
             if rel_path:
-                dbstring = args[1]
+                if args[1] != '.':
+                    dbstring = args[1]
             else:
                 rel_path = args[1]
         elif len(args) == 1:
