@@ -139,9 +139,9 @@ class FileManager(object):
         db = []
         for s in self.db_url:
             server_uri, db_name, docid = parse_uri(s)
-
-            http = httplib2.Http()
+ 
             if "@" in server_uri:
+                http = httplib2.Http()
                 username, password, server_uri = parse_auth(server_uri) 
                 couchdb_server = Server(server_uri)
                 http.add_credentials(username, password)
@@ -226,8 +226,16 @@ class FileManager(object):
     def clone(cls, app_uri, app_dir):
         
         server_uri, db_name, docid = parse_uri(app_uri) 
+       
+        if "@" in server_uri:
+            http = httplib2.Http()
+            username, password, server_uri = parse_auth(server_uri) 
+            couchdb_server = Server(server_uri)
+            http.add_credentials(username, password)
+            couchdb_server.resource.http = http
+        else:
+            couchdb_server = Server(server_uri)
         
-        couchdb_server = Server(server_uri)
         try:
             db = couchdb_server.create(db_name)
         except: # db already exist
