@@ -11,6 +11,13 @@ import os
 import urlparse
 import urllib
 
+# compatibility with python 2.4
+try:
+    from hashlib import md5 as _md5
+except ImportError:
+    import md5
+    _md5 = md5.new
+
 
 def in_couchapp():
     current_path = os.getcwd()
@@ -67,3 +74,17 @@ def parse_auth(string):
     server_uri = "%s://%s" % (parts[0], server_parts[1])
 
     return username, password, server_uri
+
+
+
+def get_appname(docid):
+    return docid.split('_design/')[1]
+
+
+def sign_file(file_path):
+    if os.path.isfile(file_path):
+        f = open(file_path, 'rb')
+        content = f.read()
+        f.close()
+        return _md5(content).hexdigest()
+    return ''

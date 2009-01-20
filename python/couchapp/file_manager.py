@@ -15,13 +15,6 @@ import shutil
 import sys
 import urllib
 
-# compatibility with python 2.4
-try:
-    from hashlib import md5 as _md5
-except ImportError:
-    import md5
-    _md5 = md5.new
-
 try:
     import simplejson as json
 except ImportError:
@@ -30,7 +23,7 @@ except ImportError:
 import httplib2
 from couchdb import Server, ResourceNotFound
 
-from couchapp.utils import parse_uri, parse_auth
+from couchapp.utils import parse_uri, parse_auth, get_appname, sign_file 
 
 __all__ = ['DEFAULT_SERVER_URI', 'FileManager']
 
@@ -51,21 +44,6 @@ def read_json(filename):
     data = json.loads(f.read())
     f.close()
     return data
-
-
-
-
-def get_appname(docid):
-    return docid.split('_design/')[1]
-
-
-def sign_file(file_path):
-    if os.path.isfile(file_path):
-        f = open(file_path, 'rb')
-        content = f.read()
-        f.close()
-        return _md5(content).hexdigest()
-    return ''
 
 class FileManager(object):
     
