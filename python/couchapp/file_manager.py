@@ -10,6 +10,7 @@
 from glob import glob
 from mimetypes import guess_type
 import os
+import re
 import shutil
 import sys
 import urlparse
@@ -166,7 +167,14 @@ class FileManager(object):
         attach_dir = os.path.join(app_dir, '_attachments')
 
         manifest = []
-        doc = self.dir_to_fields(app_dir, manifest=manifest)
+        self.doc = doc = self.dir_to_fields(app_dir, manifest=manifest)
+
+        if 'show' in doc and 'docs' in doc['show']:
+            self.package_shows(doc['show']['docs'])
+
+        if 'views' in doc:
+            self.package_views(doc["views"])
+
 
         for db in self.db:
             if verbose:
@@ -412,3 +420,65 @@ class FileManager(object):
             design = db[docid]
             design['signatures'] = _signatures
             db[docid] = design
+
+    def package_shows(self, funcs):
+        self.apply_lib(funcs)
+
+    def package_views(self, views):
+        for view, funcs in views.iteritems():
+            self.apply_lib(funcs)
+
+    def apply_lib(self, funcs):
+        for k, v in funcs.iteritems():
+            if not isinstance(v, basestring):
+                continue
+            funcs[k] = self.process_include(self.process_requires(v))
+
+    def process_requires(self, f_string):
+        def rreq(mo):
+            fields = mo.group(2).split('.')
+            library = self.doc
+            for field in fields:
+                if not field in library: break
+                library = library[field]
+            return library
+
+        re_code = re.compile('(\/\/|#)\ ?!code (.*)')
+        return re_code.sub(rreq, f_string)
+
+    def process_include(self, f_string):
+        included = {}
+        varstrings = []
+
+        def rjson(mo):
+            fields = mo.group(2).split('.')
+            library = self.doc
+            count = len(fields)
+            include_to = included
+            for i, field in enumerate(fields):
+                if not field in library: break
+                library = library[field]
+                if i+1 < count:
+                    include_to[field] = include_to.get(field, {})
+                    include_to = include_to[field]
+                else:
+                    include_to[field] = library
+
+            return f_string
+
+        def rjson2(mo):
+            return '\n'.join(varstrings)
+
+        re_json = re.compile('(\/\/|#)\ ?!json (.*)')
+        re_json.sub(rjson, f_string)
+
+        if not included:
+            return f_string
+
+        for k, v in included.iteritems():
+            varstrings.append("var %s = %s;" % (k, json.dumps(v)))
+
+        return re_json.sub(rjson2, f_string)
+
+
+
