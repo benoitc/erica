@@ -58,8 +58,9 @@ setup(
     ],
 
     setup_requires = [
-        'setuptools>=0.6c9',
-        'couchdb',
+        'setuptools>=0.6c8'
     ],
+
+    install_requires = ['couchdb'],
 )
 
