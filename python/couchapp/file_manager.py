@@ -161,7 +161,13 @@ class FileManager(object):
                     },
                     '_attachments': design.get('_attachments', {})
                 })
-        
+            else:
+                new_doc.update({
+                    'app_meta': {
+                        'manifest': manifest
+                    }
+                })
+
             db[docid] = new_doc 
 
         self.push_directory(attach_dir, docid)

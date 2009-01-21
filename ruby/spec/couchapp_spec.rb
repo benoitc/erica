@@ -70,6 +70,9 @@ describe "couchapp" do
     it "should create the index" do
       @doc['_attachments']['index.html']["content_type"].should == 'text/html'
     end
+    it "should create the manifest" do
+      @doc['app_meta']['manifest'][0].should match(/foo\//)
+    end
     it "should push the forms" do
       @doc['show']['docs']['example-show'].should match(/Generated CouchApp Form Template/)
     end
