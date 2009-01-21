@@ -29,10 +29,13 @@ __all__ = ['DEFAULT_SERVER_URI', 'FileManager']
 
 DEFAULT_SERVER_URI = 'http://127.0.0.1:5984/'
 
+def write_content(filename, content):
+    f = open(filename, 'wb')
+    f.write(content)
+    f.close
+
 def write_json(filename, content):
-    f = open(filename, 'w')
-    f.write(json.dumps(content))
-    f.close()
+    write_content(filename, json.dumps(content))
 
 def read_json(filename):
     try:
@@ -44,6 +47,18 @@ def read_json(filename):
     data = json.loads(f.read())
     f.close()
     return data
+
+
+def _server(server_uri):
+    if "@" in server_uri:
+        http = httplib2.Http()
+        username, password, server_uri = parse_auth(server_uri) 
+        couchdb_server = Server(server_uri)
+        http.add_credentials(username, password)
+        couchdb_server.resource.http = http
+    else:
+        couchdb_server = Server(server_uri)
+    return couchdb_server
 
 class FileManager(object):
     
@@ -77,15 +92,7 @@ class FileManager(object):
         for s in self.db_url:
             server_uri, db_name, docid = parse_uri(s)
  
-            if "@" in server_uri:
-                http = httplib2.Http()
-                username, password, server_uri = parse_auth(server_uri) 
-                couchdb_server = Server(server_uri)
-                http.add_credentials(username, password)
-                couchdb_server.resource.http = http
-            else:
-                couchdb_server = Server(server_uri)
-
+            couchdb_server = _server(server_uri)
 
             # create dbs if it don't exist
             try:
@@ -154,25 +161,22 @@ class FileManager(object):
                     },
                     '_attachments': design.get('_attachments', {})
                 })
-        
+            else:
+                new_doc.update({
+                    'app_meta': {
+                        'manifest': manifest
+                    }
+                })
+
             db[docid] = new_doc 
 
         self.push_directory(attach_dir, docid)
 
     @classmethod
     def clone(cls, app_uri, app_dir):
-        
         server_uri, db_name, docid = parse_uri(app_uri) 
-       
-        if "@" in server_uri:
-            http = httplib2.Http()
-            username, password, server_uri = parse_auth(server_uri) 
-            couchdb_server = Server(server_uri)
-            http.add_credentials(username, password)
-            couchdb_server.resource.http = http
-        else:
-            couchdb_server = Server(server_uri)
-        
+        couchdb_server = _server(server_uri)
+
         try:
             db = couchdb_server.create(db_name)
         except: # db already exist
@@ -207,6 +211,7 @@ class FileManager(object):
             design = db[docid]
         except ResourceNotFound:
             print >>sys.stderr, "%s don't exist" % app_name
+            return
 
         # init signatures
         signatures = design.get('signatures', {})
@@ -221,23 +226,23 @@ class FileManager(object):
             if manifest:
                 del metadata['manifest']
 
-            if not os.path.isdir(metadata_dir):
-                os.makedirs(metadata_dir)
-                write_json(rc_file, { 'app_meta': metadata }) 
-            else:
-                conf = read_json(rc_file)
-                if not 'env' in conf:
-                    conf['env'] = {}
-                conf['env'].update({
-                    'origin': {
-                        'db': db.resource.uri
-                    }
-                })
-                if not 'app_meta' in conf:
-                    conf['app_meta'] = {}
+        if not os.path.isdir(metadata_dir):
+            os.makedirs(metadata_dir)
+        
+        conf = read_json(rc_file)
+        if not 'env' in conf:
+            conf['env'] = {}
+        conf['env'].update({
+            'origin': {
+                'db': db.resource.uri
+            }
+        })
 
-                conf['app_meta'].update(metadata)
-                write_json(rc_file, conf) 
+        if not 'app_meta' in conf:
+            conf['app_meta'] = {}
+
+        conf['app_meta'].update(metadata)
+        write_json(rc_file, conf) 
 
         # create files from manifest
         if manifest:
@@ -249,60 +254,78 @@ class FileManager(object):
                 else:
                     parts = filename.split('/')
                     fname = ''.join(parts[-1:])
-                    v = {}
-                    for key in parts[:-1]:
-                        if not v:
-                            v = design[key]
-                        else:
-                            v = v[key]
-                    
-                    if fname.endswith('.json'):
-                        content = json.dumps(v[fname[:-5]])
-                    elif fname.endswith('js'):
-                        content = v[fname[:-3]]
-                    else:
-                        content = v[fname]
+                    v = design
+                    while 1:
+                        try:
+                            for key in parts[:-1]:
+                                v = v[key]
+                        except KeyError:
+                            break
 
-                    f = open(file_path, 'wb')
-                    f.write(content)
-                    f.close()
-        else:
-            # manifest isn't in couchapp so we try 
-            # to recreate couchapp folder we save
-            # others fields as json value or text if 
-            #  first level
-            for key in design.iterkeys():
-                if key.startswith('_'): 
-                    continue
-                elif key == 'signatures':
-                    continue
-                elif key in ('show', 'views'):
-                    vs_dir = os.path.join(app_dir, key)
-                    if not os.path.isdir(vs_dir):
-                        os.makedirs(vs_dir)
-                    for vsname, vs_item in design[key].iteritems():
-                        vs_item_dir = os.path.join(vs_dir, vsname)
-                        if not os.path.isdir(vs_item_dir):
-                            os.makedirs(vs_item_dir)
-                        for func_name, func in vs_item.iteritems():
-                            filename = os.path.join(vs_item_dir, '%s.js' % 
-                                    func_name)
-                            open(filename, 'w').write(func)
-                else:
-                    file_dir = os.path.join(app_dir, key)
-                    if isinstance(design[key], (list, tuple,)):
-                        write_json(file_dir, design[key])
-                    elif isinstance(design[key], dict):
+                        if fname.endswith('.json'):
+                            last_key = fname[:-5]
+                            content = json.dumps(v[last_key])
+                        elif fname.endswith('js'):
+                            last_key = fname[:-3]
+                            content = v[last_key]
+                        else:
+                            last_key = fname
+                            content = v[last_key]
+                        del v[last_key]
+
+                        # make sure file dir have been created
+                        file_dir = os.path.dirname(file_path)
                         if not os.path.isdir(file_dir):
                             os.makedirs(file_dir)
-                        for field, value in design[key].iteritems():
-                            field_path = os.path.join(file_dir, field)
-                            if isinstance(value, basestring):
-                                open(field_path, 'w').write(value)
-                            else:
-                                write_json(field_path + '.json', value)
-                    else:
-                        open(file_dir, 'w').write(design[key])
+
+                        write_content(file_path, content)
+
+                        # remove the key from design doc
+                        temp = design
+                        for key2 in parts[:-1]:
+                            if key2 == key:
+                                if not temp[key2]:
+                                    del temp[key2]
+                                break
+                            temp = temp[key2]
+        
+        # second pass for missing key or in case
+        # manifest isn't in app
+        for key in design.iterkeys():
+            if key.startswith('_'): 
+                continue
+            elif key in ('signatures', 'app_meta'):
+                continue
+            elif key in ('show', 'views'):
+                vs_dir = os.path.join(app_dir, key)
+                if not os.path.isdir(vs_dir):
+                    os.makedirs(vs_dir)
+                for vsname, vs_item in design[key].iteritems():
+                    vs_item_dir = os.path.join(vs_dir, vsname)
+                    if not os.path.isdir(vs_item_dir):
+                        os.makedirs(vs_item_dir)
+                    for func_name, func in vs_item.iteritems():
+                        filename = os.path.join(vs_item_dir, '%s.js' % 
+                                func_name)
+                        open(filename, 'w').write(func)
+            else:
+                file_dir = os.path.join(app_dir, key)
+                if isinstance(design[key], (list, tuple,)):
+                    write_json(file_dir + ".json", design[key])
+                elif isinstance(design[key], dict):
+                    if not os.path.isdir(file_dir):
+                        os.makedirs(file_dir)
+                    for field, value in design[key].iteritems():
+                        field_path = os.path.join(file_dir, field)
+                        if isinstance(value, basestring):
+                            write_content(field_path, value)
+                        else:
+                            write_json(field_path + '.json', value)
+                else:
+                    value = design[key]
+                    if not isinstance(value, basestring):
+                        value = str(value)
+                    write_content(file_dir, value)
    
 
         # get attachments
@@ -318,9 +341,7 @@ class FileManager(object):
         
                 if signatures.get(filename) != sign_file(file_path):
                     content = db.get_attachment(docid, filename)
-                    f = open(file_path, 'wb')
-                    f.write(content)
-                    f.close()
+                    write_content(file_path, content)
 
     def _load_file(self, fname):
         f = file(fname, 'rb')
