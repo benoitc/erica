@@ -17,7 +17,7 @@ A port of couchapp from Ruby (http://github.com/jchris/couchapp)
 
 import os
 import sys
-from optparse import OptionParser
+from optparse import OptionParser, OptionGroup
 
 
 import couchapp
@@ -29,9 +29,9 @@ def generate(appname):
     print "Generating a new CouchApp in %s" % appdir
     couchapp.FileManager.generate_app(appdir)
 
-def init(appdir):
+def init(appdir, dburl):
     print "Init a new CouchApp in %s" % appdir
-    couchapp.FileManager.init(appdir)
+    couchapp.FileManager.init(appdir, dburl)
 
 def push(appdir, appname, dbstring):
     try:
@@ -46,6 +46,10 @@ def clone(app_uri, app_dir):
 
 def main():
     parser = OptionParser(usage='%prog [options] cmd', version="%prog " + couchapp.__VERSION__)
+    group = OptionGroup(parser, "init", "couchapp init [options] [appdir]")
+    group.add_option("--db", action="store", help="full uri of default database")
+    parser.add_option_group(group)
+
     options, args = parser.parse_args()
 
     if len(args) < 1:
@@ -103,11 +107,12 @@ def main():
         clone(args[1], app_dir)
     
     elif args[0] == 'init':
+        dburl = options.db or ''
         try:
             appdir = args[1]
         except IndexError:
             appdir = '.'
-        init(appdir)
+        init(appdir, dburl)
     else:
         print "%s is unknown" % args[0]
 

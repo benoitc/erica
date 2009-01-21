@@ -112,14 +112,22 @@ class FileManager(object):
         cls.init(app_dir)
 
     @classmethod
-    def init(cls, app_dir):
+    def init(cls, app_dir, db_url):
         if not os.path.isdir(app_dir):
             print>>sys.stderr, "%s don't exist" % app_dir
             return
         metadata_dir = '%s/.couchapp' % app_dir
         if not os.path.isdir(metadata_dir):
             os.makedirs(metadata_dir)
-            write_json('%s/rc.json' % metadata_dir, {})
+            conf = {}
+            if db_url:
+                conf.update({ "env": { 
+                    "default": {
+                        "db": db_url
+                    }
+                }})
+
+            write_json('%s/rc.json' % metadata_dir, conf)
         else:
             print>>sys.stderr, "couchapp already initialized"
 
