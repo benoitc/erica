@@ -13,7 +13,9 @@ import os
 import re
 import shutil
 import sys
+import time
 import urllib
+
 
 try:
     import simplejson as json
@@ -403,6 +405,7 @@ class FileManager(object):
                             del attachments[filename]
 
             for filename, value in attachments.iteritems():
+                time.sleep(0.4) 
                 db.put_attachment(design, value, filename)
        
             # update signatures
