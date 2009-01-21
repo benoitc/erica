@@ -35,7 +35,7 @@ setup(
     description = 'Standalone CouchDB Application Development Made Simple.',
     long_description = """CouchApp is a set of helpers and a jQuery plugin
     that conspire to get you up and running on CouchDB quickly and
-    correctly. It brings clarity and order to the freedom of CouchDB’s
+    correctly. It brings clarity and order to the freedom of CouchDB's
     document-based approach.""",
     keywords = 'couchdb couchapp',
     platforms = 'any',
@@ -59,7 +59,7 @@ setup(
 
     setup_requires = [
         'setuptools>=0.6c9',
-        'couchdb>=0.5dev',
-    ]
+        'couchdb',
+    ],
 )
 
