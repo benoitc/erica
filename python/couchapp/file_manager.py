@@ -273,6 +273,11 @@ class FileManager(object):
                             content = v[last_key]
                         del v[last_key]
 
+                        # make sure file dir have been created
+                        file_dir = os.path.dirname(file_path)
+                        if not os.path.isdir(file_dir):
+                            os.makedirs(file_dir)
+
                         write_content(file_path, content)
 
                         # remove the key from design doc

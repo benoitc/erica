@@ -99,6 +99,75 @@ describe "couchapp" do
     end
   end
 
+  describe "clone #{TESTDB}/_design/my-app" do
+    before(:all) do
+      @cr = CouchRest.new(COUCHHOST)
+      @db = @cr.database(TESTDB)
+      @db.delete! rescue nil
+      @db = @cr.create_db(TESTDB) rescue nil
+      `#{@run} generate my-app`
+      `#{@run} push my-app #{TESTDB}`
+      @doc = @db.get("_design/my-app")
+    end
+    it "should clone the views" do
+      `rm -rf #{@fixdir}/my-app`
+      `cd #{@fixdir} && #{COUCHAPP} clone http://127.0.0.1:5984/#{TESTDB}/_design/my-app`
+      File.exist?("#{@fixdir}/my-app/views").should == true
+    end
+    it "should create foo/bar.txt file" do
+      `rm -rf #{@fixdir}/my-app`
+      `cd #{@fixdir} && #{COUCHAPP} clone http://127.0.0.1:5984/#{TESTDB}/_design/my-app`
+      File.exist?("#{@fixdir}/my-app/foo/bar.txt").should == true
+    end
+    it "should create lib/helpers/math.js file" do
+      `rm -rf #{@fixdir}/my-app`
+      `cd #{@fixdir} && #{COUCHAPP} clone http://127.0.0.1:5984/#{TESTDB}/_design/my-app`
+      File.exist?("#{@fixdir}/my-app/lib/helpers/math.js").should == true
+    end
+    it "should work when design doc is edited manually" do
+      @doc['test.txt'] = "essai"
+      @doc.save()
+      `rm -rf #{@fixdir}/my-app`
+      `cd #{@fixdir} && #{COUCHAPP} clone http://127.0.0.1:5984/#{TESTDB}/_design/my-app`
+      File.exist?("#{@fixdir}/my-app/test.txt").should == true
+    end
+    it "should work when a view is added manually" do
+      @doc["views"]["more"] = { "map" => "function(doc) { emit(null, doc); }" }
+      @doc.save()
+      `rm -rf #{@fixdir}/my-app`
+      `cd #{@fixdir} && #{COUCHAPP} clone http://127.0.0.1:5984/#{TESTDB}/_design/my-app`
+      File.exist?("#{@fixdir}/my-app/views/more/map.js").should == true
+    end
+    it "should create view even if file dir is missing in manifest" do
+      @doc['app_meta']["manifest"].delete_at(12)
+      @doc.save()
+      `rm -rf #{@fixdir}/my-app`
+      `cd #{@fixdir} && #{COUCHAPP} clone http://127.0.0.1:5984/#{TESTDB}/_design/my-app`
+      File.exist?("#{@fixdir}/my-app/views/example/map.js").should == true
+    end
+    it "should work without manifest" do
+      @doc['app_meta'].delete('manifest')
+      @doc.save()
+      `rm -rf #{@fixdir}/my-app`
+      `cd #{@fixdir} && #{COUCHAPP} clone http://127.0.0.1:5984/#{TESTDB}/_design/my-app`
+      File.exist?("#{@fixdir}/my-app/views").should == true
+    end
+    it "should create foo/bar.txt without manifest" do
+      @doc['app_meta'].delete('manifest')
+      @doc.save()
+      `rm -rf #{@fixdir}/my-app`
+      `cd #{@fixdir} && #{COUCHAPP} clone http://127.0.0.1:5984/#{TESTDB}/_design/my-app`
+      File.exist?("#{@fixdir}/my-app/foo/bar.txt").should == true
+    end
+    it "should create lib/helpers.json without manifest" do
+      @doc['app_meta'].delete('manifest')
+      @doc.save()
+      `rm -rf #{@fixdir}/my-app`
+      `cd #{@fixdir} && #{COUCHAPP} clone http://127.0.0.1:5984/#{TESTDB}/_design/my-app`
+      File.exist?("#{@fixdir}/my-app/lib/helpers.json").should == true
+    end
+    
 
+  end
 end
 
