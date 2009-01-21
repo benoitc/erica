@@ -29,10 +29,13 @@ __all__ = ['DEFAULT_SERVER_URI', 'FileManager']
 
 DEFAULT_SERVER_URI = 'http://127.0.0.1:5984/'
 
+def write_content(filename, content):
+    f = open(filename, 'wb')
+    f.write(content)
+    f.close
+
 def write_json(filename, content):
-    f = open(filename, 'w')
-    f.write(json.dumps(content))
-    f.close()
+    write_content(filename, json.dumps(content))
 
 def read_json(filename):
     try:
@@ -44,6 +47,7 @@ def read_json(filename):
     data = json.loads(f.read())
     f.close()
     return data
+
 
 def _server(server_uri):
     if "@" in server_uri:
@@ -263,9 +267,7 @@ class FileManager(object):
                             content = v[last_key]
                         del v[last_key]
 
-                        f = open(file_path, 'wb')
-                        f.write(content)
-                        f.close()
+                        write_content(file_path, content)
 
                         # remove the key from design doc
                         temp = design
@@ -305,14 +307,14 @@ class FileManager(object):
                     for field, value in design[key].iteritems():
                         field_path = os.path.join(file_dir, field)
                         if isinstance(value, basestring):
-                            open(field_path, 'w').write(value)
+                            write_content(field_path, value)
                         else:
                             write_json(field_path + '.json', value)
                 else:
                     value = design[key]
                     if not isinstance(value, basestring):
                         value = str(value)
-                    open(file_dir, 'w').write(value)
+                    write_content(file_dir, value)
    
 
         # get attachments
@@ -328,9 +330,7 @@ class FileManager(object):
         
                 if signatures.get(filename) != sign_file(file_path):
                     content = db.get_attachment(docid, filename)
-                    f = open(file_path, 'wb')
-                    f.write(content)
-                    f.close()
+                    write_content(file_path, content)
 
     def _load_file(self, fname):
         f = file(fname, 'rb')
