@@ -216,23 +216,23 @@ class FileManager(object):
             if manifest:
                 del metadata['manifest']
 
-            if not os.path.isdir(metadata_dir):
-                os.makedirs(metadata_dir)
-                write_json(rc_file, { 'app_meta': metadata }) 
-            else:
-                conf = read_json(rc_file)
-                if not 'env' in conf:
-                    conf['env'] = {}
-                conf['env'].update({
-                    'origin': {
-                        'db': db.resource.uri
-                    }
-                })
-                if not 'app_meta' in conf:
-                    conf['app_meta'] = {}
+        if not os.path.isdir(metadata_dir):
+            os.makedirs(metadata_dir)
+        
+        conf = read_json(rc_file)
+        if not 'env' in conf:
+            conf['env'] = {}
+        conf['env'].update({
+            'origin': {
+                'db': db.resource.uri
+            }
+        })
 
-                conf['app_meta'].update(metadata)
-                write_json(rc_file, conf) 
+        if not 'app_meta' in conf:
+            conf['app_meta'] = {}
+
+        conf['app_meta'].update(metadata)
+        write_json(rc_file, conf) 
 
         # create files from manifest
         if manifest:
@@ -272,11 +272,9 @@ class FileManager(object):
                         for key2 in parts[:-1]:
                             if key2 == key:
                                 if not temp[key2]:
-                                    print "là"
                                     del temp[key2]
                                 break
                             temp = temp[key2]
-            print design
         
         # second pass for missing key or in case
         # manifest isn't in app
