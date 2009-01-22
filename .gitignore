@@ -1,4 +1,7 @@
 *.gem
+*.swp
+*.pyc
 Couchapp.egg-info
 build
 dist
+setuptools-*

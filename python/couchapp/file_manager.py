@@ -9,6 +9,7 @@
 
 from glob import glob
 from mimetypes import guess_type
+import pkg_resources
 import os
 import re
 import shutil
@@ -106,8 +107,15 @@ class FileManager(object):
 
     @classmethod
     def generate_app(cls, app_dir):
-        template_dir = os.path.normpath(os.path.join(os.path.dirname(__file__),
-                '../app-template'))
+        #template_dir = os.path.normpath(os.path.join(os.path.dirname(__file__),
+        #        'app-template'))
+
+        paths = ['app-template', '../../app-template']
+        
+        for path in paths:
+            template_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), path))
+            if os.path.isdir(template_dir): break
+
         shutil.copytree(template_dir, app_dir)
         cls.init(app_dir)
 
