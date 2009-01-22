@@ -6,7 +6,8 @@ require File.expand_path(File.dirname(__FILE__)) + '/../lib/couchapp'
 
 COUCHAPP = if (ARGV[1] == 'python')
   puts "testing Python version"
-  File.expand_path(File.dirname(__FILE__)) + '/../../python/couchapp/bin/couchapp'
+  ENV['PYTHONPATH'] = File.expand_path(File.dirname(__FILE__)) + '/../../python/couchapp/'
+  File.expand_path(File.dirname(__FILE__)) + '/../../python/couchapp/bin/couchapp_cli.py'
 else
   puts "testing Ruby version"
   File.expand_path(File.dirname(__FILE__)) + '/../bin/couchapp'
