@@ -112,7 +112,7 @@ class FileManager(object):
         cls.init(app_dir)
 
     @classmethod
-    def init(cls, app_dir, db_url):
+    def init(cls, app_dir, db_url=''):
         if not os.path.isdir(app_dir):
             print>>sys.stderr, "%s don't exist" % app_dir
             return
