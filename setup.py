@@ -5,25 +5,19 @@
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
+import ez_setup
+ez_setup.use_setuptools()
+
+from setuptools import setup, find_packages
 
 import os
 import sys
 
-from setuptools import setup
-
-
 data_files = []
-root_dir = os.path.dirname(__file__)
-if root_dir != '':
-    os.chdir(root_dir)
 
-for dirpath, dirnames, filenames in os.walk('app-template'):
-    for i, dirname in enumerate(dirnames):
-        if dirname.startswith('.'): del dirnames[i]
-    
-    data_files.append([dirpath, [os.path.join(dirpath, f) for f in filenames]])
-
-
+for dir, dirs, files in os.walk('app-template'):
+    data_files.append((os.path.join('couchapp', dir), 
+        [os.path.join(dir, file_) for file_ in files]))
 
 setup(
     name = 'Couchapp',
@@ -41,11 +35,17 @@ setup(
     platforms = 'any',
     zip_safe = False,
     
-    packages= ['couchapp'],
-    package_dir={'couchapp': 'python/couchapp'},
+    packages=find_packages('python'),
+    package_dir={
+        '': 'python'
+    },
     data_files = data_files,
     include_package_data = True,
-    scripts = ['python/couchapp/bin/couchapp'],
+    entry_points = {
+        'console_scripts': [
+            'couchapp = couchapp.bin.couchapp_cli:main',
+        ]
+    },
     classifiers = [
         'License :: OSI Approved :: Apache Software License',
         'Intended Audience :: Developers',
