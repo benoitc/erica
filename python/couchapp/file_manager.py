@@ -164,14 +164,13 @@ class FileManager(object):
 
             if docid in db:
                 design = db[docid]
+                app_meta = design.get('app_meta', {})
+                app_meta['manifest'] = manifest
 
                 new_doc.update({
                     '_id': docid,
                     '_rev': design['_rev'],
-                    'signatures': design.get('signatures', {}),
-                    'app_meta': {
-                        'manifest': manifest
-                    },
+                    'app_meta': app_meta,
                     '_attachments': design.get('_attachments', {})
                 })
             else:
@@ -225,18 +224,20 @@ class FileManager(object):
             print >>sys.stderr, "%s don't exist" % app_name
             return
 
-        # init signatures
-        signatures = design.get('signatures', {})
-
-        # get manifest
         metadata = design.get('app_meta', {})
+        
+        # get manifest
         manifest = metadata.get('manifest', {})
+
+        # get signatures
+        signatures = metadata.get('signatures', {})
 
         if metadata:
             # save metadata in repo
-            
             if manifest:
                 del metadata['manifest']
+            if signatures:
+                del metadata['signatures']
 
         conf = read_json(rc_file)
         if not 'env' in conf:
@@ -303,7 +304,7 @@ class FileManager(object):
         for key in design.iterkeys():
             if key.startswith('_'): 
                 continue
-            elif key in ('signatures', 'app_meta'):
+            elif key in ('app_meta'):
                 continue
             elif key in ('show', 'views'):
                 vs_dir = os.path.join(app_dir, key)
@@ -404,13 +405,14 @@ class FileManager(object):
         # only new version attachments to update.
         for db in self.db:
             design = db[docid]
+            metadata = design.get('app_meta', {})
             attachments = _attachments.copy()
-            if 'signatures' in design:
-                for filename in design['signatures'].iterkeys():
+            if 'signatures' in metadata:
+                for filename in metadata['signatures'].iterkeys():
                     if filename not in _signatures:
                         db.delete_attachment(design, filename)
                     else:
-                        if _signatures[filename] == design['signatures'][filename]:
+                        if _signatures[filename] == metadata['signatures'][filename]:
                             del attachments[filename]
 
             for filename, value in attachments.iteritems():
@@ -419,7 +421,9 @@ class FileManager(object):
        
             # update signatures
             design = db[docid]
-            design['signatures'] = _signatures
+            if not 'app_meta' in design:
+                design['app_meta'] = {}
+            design['app_meta'].update({'signatures': _signatures})
             db[docid] = design
 
     def package_shows(self, funcs):
