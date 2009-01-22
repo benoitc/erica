@@ -396,12 +396,14 @@ class FileManager(object):
         for root, dirs, files in os.walk(attach_dir):
             if files:
                 for filename in files:
-                    file_path = os.path.join(root, filename)
-                    
-                    name = file_path.split('%s/' % attach_dir)[1] 
-                    signature = sign_file(file_path)
-                    _signatures[name] = signature
-                    _attachments[name] = open(file_path, 'rb')
+                    if filename.startswith('.'):
+                        continue
+                    else:
+                        file_path = os.path.join(root, filename) 
+                        name = file_path.split('%s/' % attach_dir)[1] 
+                        signature = sign_file(file_path)
+                        _signatures[name] = signature
+                        _attachments[name] = open(file_path, 'rb')
         
         # detect attachments to be removed and keep
         # only new version attachments to update.
