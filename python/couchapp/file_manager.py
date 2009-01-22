@@ -120,9 +120,8 @@ class FileManager(object):
         if not os.path.isdir(app_dir):
             print>>sys.stderr, "%s don't exist" % app_dir
             return
-        metadata_dir = '%s/.couchapp' % app_dir
-        if not os.path.isdir(metadata_dir):
-            os.makedirs(metadata_dir)
+        rc_file = '%s/.couchapprc' % app_dir
+        if not os.path.isfile(rc_file):
             conf = {}
             if db_url:
                 conf.update({ "env": { 
@@ -131,12 +130,12 @@ class FileManager(object):
                     }
                 }})
 
-            write_json('%s/rc.json' % metadata_dir, conf)
+            write_json(rc_file, conf)
         else:
             print>>sys.stderr, "couchapp already initialized"
 
     def load_metadata(self, app_dir):
-        rc_file = os.path.join(app_dir, '.couchapp/rc.json')
+        rc_file = os.path.join(app_dir, '.couchapprc')
         if os.path.isfile(rc_file):
             self.conf = read_json(rc_file)
             return
@@ -200,21 +199,20 @@ class FileManager(object):
         if not app_dir:
             app_dir = os.path.normpath(os.path.join(os.getcwd(), app_name))
 
-        metadata_dir = os.path.join(app_dir, '.couchapp')
-        rc_file = os.path.join(metadata_dir, 'rc.json')
+        rc_file = os.path.join(app_dir, '.couchapprc')
 
         if not os.path.isdir(app_dir):
             os.makedirs(app_dir)
         else:
             # delete only if there is .couchapp folder
-            if os.path.isdir(metadata_dir):
+            if os.path.isfile(rc_file):
                 for root, dirs, files in os.walk(app_dir,
                         topdown=False):
                     if root == app_dir:
                         if '_attachments' in dirs:
                             dirs.remove('_attachments') 
-                        if '.couchapp' in dirs:
-                            dirs.remove('.couchapp')
+                        if '.couchapprc' in files:
+                            files.remove('.couchapprc')
                     for name in files:
                         os.remove(os.path.join(root, name))
 
@@ -240,9 +238,6 @@ class FileManager(object):
             if manifest:
                 del metadata['manifest']
 
-        if not os.path.isdir(metadata_dir):
-            os.makedirs(metadata_dir)
-        
         conf = read_json(rc_file)
         if not 'env' in conf:
             conf['env'] = {}
