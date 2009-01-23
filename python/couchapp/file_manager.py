@@ -474,10 +474,9 @@ class FileManager(object):
                         break
 
                     if nb_try > 3:
-                        print >>sys.stderr, "% not uploaded"
+                        print >>sys.stderr, "%s not uploaded" % filename
                         break
                         
-
             # update signatures
             design = db[docid]
             if not 'couchapp' in design:
