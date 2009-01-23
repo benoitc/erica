@@ -164,8 +164,12 @@ class FileManager(object):
 
             if docid in db:
                 design = db[docid]
-                app_meta = design.get('app_meta', {})
-                app_meta['manifest'] = manifest
+                _app_meta = design.get('app_meta', {})
+
+                app_meta = {
+                    'manifest': manifest,
+                    'signatures': _app_meta.get('signatures', {})
+                }
 
                 new_doc.update({
                     '_id': docid,
@@ -179,6 +183,9 @@ class FileManager(object):
                         'manifest': manifest
                     }
                 })
+
+            if 'app_meta' in doc:
+                new_doc['app_meta'].update(doc['app_meta'])
 
             db[docid] = new_doc 
 
@@ -232,13 +239,6 @@ class FileManager(object):
         # get signatures
         signatures = metadata.get('signatures', {})
 
-        if metadata:
-            # save metadata in repo
-            if manifest:
-                del metadata['manifest']
-            if signatures:
-                del metadata['signatures']
-
         conf = read_json(rc_file)
         if not 'env' in conf:
             conf['env'] = {}
@@ -248,10 +248,6 @@ class FileManager(object):
             }
         })
 
-        if not 'app_meta' in conf:
-            conf['app_meta'] = {}
-
-        conf['app_meta'].update(metadata)
         write_json(rc_file, conf) 
 
         # create files from manifest
@@ -261,13 +257,17 @@ class FileManager(object):
                 if filename.endswith('/'): 
                     if not os.path.isdir(file_path):
                         os.makedirs(file_path)
+                elif filename == "couchapp.json":
+                    continue
                 else:
                     parts = filename.split('/')
-                    fname = ''.join(parts[-1:])
+                    fname = parts.pop()
+                    if parts and parts[0] == "couchapp":
+                        parts[0] = 'app_meta'
                     v = design
                     while 1:
                         try:
-                            for key in parts[:-1]:
+                            for key in parts:
                                 v = v[key]
                         except KeyError:
                             break
@@ -287,12 +287,12 @@ class FileManager(object):
                         file_dir = os.path.dirname(file_path)
                         if not os.path.isdir(file_dir):
                             os.makedirs(file_dir)
-
+                        
                         write_content(file_path, content)
 
                         # remove the key from design doc
                         temp = design
-                        for key2 in parts[:-1]:
+                        for key2 in parts:
                             if key2 == key:
                                 if not temp[key2]:
                                     del temp[key2]
@@ -305,7 +305,14 @@ class FileManager(object):
             if key.startswith('_'): 
                 continue
             elif key in ('app_meta'):
-                continue
+                app_meta = design['app_meta'].copy()
+                if 'signatures' in app_meta:
+                    del app_meta['signatures']
+                if 'manifest' in app_meta:
+                    del app_meta['manifest']
+                if app_meta:
+                    couchapp_file = os.path.join(app_dir, 'couchapp.json')
+                    write_json(couchapp_file, app_meta)
             elif key in ('show', 'views'):
                 vs_dir = os.path.join(app_dir, key)
                 if not os.path.isdir(vs_dir):
@@ -370,6 +377,25 @@ class FileManager(object):
                 continue
             elif depth == 0 and name.startswith('_'):
                 continue
+            elif depth == 0 and name in ('couchapp', 'couchapp.json'):
+                # we are in app_meta
+                if name == "couchapp":
+                    manifest.append('%s/' % rel_path)
+                    content = self.dir_to_fields(app_dir, current_path,
+                        depth=depth+1, manifest=manifest)
+                else:
+                    manifest.append(rel_path)
+                    content = self._load_file(current_path)
+                    content = json.loads(content)
+                    if not isinstance(content, dict):
+                        content = { "meta": content }
+                if 'signatures' in content:
+                    del content['signatures']
+
+                if 'app_meta' in fields:
+                    fields['app_meta'].update(content)
+                else:
+                    fields['app_meta'] = content
             elif os.path.isdir(current_path):
                 manifest.append('%s/' % rel_path)
                 fields[name] = self.dir_to_fields(app_dir, current_path,
