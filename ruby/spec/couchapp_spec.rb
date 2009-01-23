@@ -117,7 +117,7 @@ describe "couchapp" do
     it "should create foo/bar.txt file" do
       `rm -rf #{@fixdir}/my-app`
       `cd #{@fixdir} && #{COUCHAPP} clone http://127.0.0.1:5984/#{TESTDB}/_design/my-app`
-      File.exist?("#{@fixdir}/my-app/foo/bar.txt").should == true
+      File.exist?("#{@fixdir}/my-app/foo/bar").should == true
     end
     it "should create lib/helpers/math.js file" do
       `rm -rf #{@fixdir}/my-app`
