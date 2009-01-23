@@ -79,6 +79,9 @@ describe "couchapp" do
     it "should push and macro the view lists" do
       @doc['lists']['feed'].should match(/Test XML Feed/)
     end
+    it "should include lib stuff" do
+      @doc['lib']['templates']['example'].should match(/Generated CouchApp Form Template/)
+    end
     it "should allow deeper includes" do
       @doc['shows']['example-show'].should_not match(/\"helpers\"/)
     end
