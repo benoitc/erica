@@ -149,8 +149,11 @@ class FileManager(object):
         manifest = []
         self.doc = doc = self.dir_to_fields(app_dir, manifest=manifest)
 
-        if 'show' in doc and 'docs' in doc['show']:
-            self.package_shows(doc['show']['docs'])
+        if 'shows' in doc:
+            self.package_shows(doc['shows'])
+
+        if 'lists' in doc:
+            self.package_shows(doc['lists'])
 
         if 'views' in doc:
             self.package_views(doc["views"])

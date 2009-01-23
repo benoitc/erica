@@ -29,12 +29,12 @@ describe "couchapp" do
       @files.select{|x|x =~ /_attachments\Z/}.length.should == 1
       @files.select{|x|x =~ /_attachments\/index.html/}.length.should == 1
     end
-    it "should create a show directory" do
-      @files.select{|x|x =~ /show\Z/}.length.should == 1
-    end
-    it "should create a forms and libs" do
+    it "should create a shows directory" do
+      @files.select{|x|x =~ /shows\Z/}.length.should == 1
       @files.select{|x|x =~ /example-show.js/}.length.should == 1
-      @files.select{|x|x =~ /example.html/}.length.should == 1
+    end
+    it "should create a libs" do
+      @files.select{|x|x =~ /templates\/example.html/}.length.should == 1
     end
     it "should show deep attachment capabilities" do
       @files.select{|x|x =~ /main.css/}.
@@ -62,7 +62,7 @@ describe "couchapp" do
     end
     it "should create the view libs" do
       @doc['views']['example']['map'].should match(/stddev/)
-      @doc['show']['docs']['example-show'].should_not match(/\"helpers\"/)
+      @doc['shows']['example-show'].should match(/ejohn\.org/)
     end
     it "should create view for all the views" do
       @doc['views']['more']['map'].should match(/moremap/)
@@ -73,15 +73,21 @@ describe "couchapp" do
     it "should create the manifest" do
       @doc['app_meta']['manifest'][0].should match(/foo\//)
     end
-    it "should push the forms" do
-      @doc['show']['docs']['example-show'].should match(/Generated CouchApp Form Template/)
+    it "should push and macro the doc shows" do
+      @doc['shows']['example-show'].should match(/Generated CouchApp Form Template/)
+    end
+    it "should push and macro the view lists" do
+      @doc['lists']['feed'].should match(/Test XML Feed/)
+    end
+    it "should include lib stuff" do
+      @doc['lib']['templates']['example'].should match(/Generated CouchApp Form Template/)
     end
     it "should allow deeper includes" do
-      @doc['show']['docs']['example-show'].should_not match(/\"helpers\"/)
+      @doc['shows']['example-show'].should_not match(/\"helpers\"/)
     end
-    it "deep requires" do
-      @doc['show']['docs']['example-show'].should_not match(/\"template\"/)
-      @doc['show']['docs']['example-show'].should match(/Resig/)
+    it "deep require macros" do
+      @doc['shows']['example-show'].should_not match(/\"template\"/)
+      @doc['shows']['example-show'].should match(/Resig/)
     end
     
     it "should push to other design docs" do
@@ -109,21 +115,23 @@ describe "couchapp" do
       `#{@run} push my-app #{TESTDB}`
       @doc = @db.get("_design/my-app")
     end
-    it "should clone the views" do
-      `rm -rf #{@fixdir}/my-app`
-      `cd #{@fixdir} && #{COUCHAPP} clone http://127.0.0.1:5984/#{TESTDB}/_design/my-app`
-      File.exist?("#{@fixdir}/my-app/views").should == true
+
+    describe "normally" do
+      before(:all) do
+        `rm -rf #{@fixdir}/my-app`
+        `cd #{@fixdir} && #{COUCHAPP} clone http://127.0.0.1:5984/#{TESTDB}/_design/my-app`
+      end
+      it "should clone the views" do
+        File.exist?("#{@fixdir}/my-app/views").should == true
+      end
+      it "should create foo/bar.txt file" do
+        File.exist?("#{@fixdir}/my-app/foo/bar.txt").should == true
+      end
+      it "should create lib/helpers/math.js file" do
+        File.exist?("#{@fixdir}/my-app/lib/helpers/math.js").should == true
+      end
     end
-    it "should create foo/bar.txt file" do
-      `rm -rf #{@fixdir}/my-app`
-      `cd #{@fixdir} && #{COUCHAPP} clone http://127.0.0.1:5984/#{TESTDB}/_design/my-app`
-      File.exist?("#{@fixdir}/my-app/foo/bar.txt").should == true
-    end
-    it "should create lib/helpers/math.js file" do
-      `rm -rf #{@fixdir}/my-app`
-      `cd #{@fixdir} && #{COUCHAPP} clone http://127.0.0.1:5984/#{TESTDB}/_design/my-app`
-      File.exist?("#{@fixdir}/my-app/lib/helpers/math.js").should == true
-    end
+
     it "should work when design doc is edited manually" do
       @doc['test.txt'] = "essai"
       @doc.save()
