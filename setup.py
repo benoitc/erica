@@ -21,7 +21,7 @@ for dir, dirs, files in os.walk('app-template'):
 
 setup(
     name = 'Couchapp',
-    version = '0.1.4',
+    version = '0.1.6',
     url = 'http://github.com/benoitc/couchapp/tree/master',
     license =  'Apache License 2',
     author = 'Benoit Chesneau',

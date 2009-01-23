@@ -319,7 +319,7 @@ class FileManager(object):
                 if app_meta:
                     couchapp_file = os.path.join(app_dir, 'couchapp.json')
                     write_json(couchapp_file, app_meta)
-            elif key in ('show', 'views'):
+            elif key in ('views'):
                 vs_dir = os.path.join(app_dir, key)
                 if not os.path.isdir(vs_dir):
                     os.makedirs(vs_dir)
@@ -331,6 +331,14 @@ class FileManager(object):
                         filename = os.path.join(vs_item_dir, '%s.js' % 
                                 func_name)
                         open(filename, 'w').write(func)
+            elif key in ('shows', 'lists'):
+                dir = os.path.join(app_dir, key)
+                if not os.path.isdir(dir):
+                    os.makedirs(dir)
+                for func_name, func in design[key].iteritems():
+                    filename = os.path.join(dir, '%s.js' % 
+                            func_name)
+                    open(filename, 'w').write(func)
             else:
                 file_dir = os.path.join(app_dir, key)
                 if isinstance(design[key], (list, tuple,)):
