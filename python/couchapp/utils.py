@@ -26,7 +26,7 @@ def in_couchapp():
         dirs = os.listdir(current_path)
         if dirs == old_dirs: 
             return False
-        if '.couchapp' in dirs: break
+        if '.couchapprc' in dirs: break
         current_path = os.path.normpath(os.path.join(current_path, '../'))
         old_dirs = dirs
     return current_path
