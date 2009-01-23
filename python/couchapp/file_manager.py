@@ -272,19 +272,17 @@ class FileManager(object):
                         except KeyError:
                             break
 
+                        # remove extension
+                        last_key, ext = os.path.splitext(fname)
+
                         # make sure key exist
                         try:
-                            if fname.endswith('.json'):
-                                last_key = fname[:-5]
-                                content = json.dumps(v[last_key])
-                            elif fname.endswith('js'):
-                                last_key = fname[:-3]
-                                content = v[last_key]
-                            else:
-                                last_key, ext = os.path.splitext(fname)
-                                content = v[last_key]
+                            content = v[last_key]
                         except KeyError:
                             break
+
+                        if fname.endswith('.json'):
+                                content = json.dumps(content)
 
                         del v[last_key]
 
@@ -409,13 +407,11 @@ class FileManager(object):
                 manifest.append(rel_path)
                 content = self._load_file(current_path)
                 if name.endswith('.json'):
-                    fields[name[:-5]] = json.loads(content)
-                elif name.endswith('.js'):
-                    fields[name[:-3]] = content
-                else:
-                    # remove extension
-                    name, ext = os.path.splitext(name) 
-                    fields[name] = content
+                    content = json.loads(content)
+                
+                # remove extension
+                name, ext = os.path.splitext(name) 
+                fields[name] = content
         return fields
     
     def push_directory(self, attach_dir, docid):
