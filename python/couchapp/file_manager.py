@@ -7,15 +7,14 @@
 # you should have received as part of this distribution.
 #
 
-from glob import glob
-from mimetypes import guess_type
+import httplib
 import os
 import re
 import shutil
+import socket
 import sys
 import time
 import urllib
-
 
 try:
     import simplejson as json
@@ -456,11 +455,29 @@ class FileManager(object):
                             del attachments[filename]
 
             for filename, value in attachments.iteritems():
-                time.sleep(0.4)
                 if verbose:
                     print "Attach %s" % filename
-                db.put_attachment(design, value, filename)
-       
+               
+                # fix issue with httplib that raises BadStatusLine
+                # error because it didn't close the connection
+                nb_try = 0
+                while True:
+                    error = False
+                    try:
+                        db.put_attachment(design, value, filename)
+                    except (socket.error, httplib.BadStatusLine):
+                        time.sleep(0.4)
+                        error = True
+
+                    nb_try = nb_try +1
+                    if not error:
+                        break
+
+                    if nb_try > 3:
+                        print >>sys.stderr, "% not uploaded"
+                        break
+                        
+
             # update signatures
             design = db[docid]
             if not 'couchapp' in design:
