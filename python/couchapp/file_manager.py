@@ -275,15 +275,20 @@ class FileManager(object):
                         except KeyError:
                             break
 
-                        if fname.endswith('.json'):
-                            last_key = fname[:-5]
-                            content = json.dumps(v[last_key])
-                        elif fname.endswith('js'):
-                            last_key = fname[:-3]
-                            content = v[last_key]
-                        else:
-                            last_key = fname
-                            content = v[last_key]
+                        # make sure key exist
+                        try:
+                            if fname.endswith('.json'):
+                                last_key = fname[:-5]
+                                content = json.dumps(v[last_key])
+                            elif fname.endswith('js'):
+                                last_key = fname[:-3]
+                                content = v[last_key]
+                            else:
+                                last_key, ext = os.path.splitext(fname)
+                                content = v[last_key]
+                        except KeyError:
+                            break
+
                         del v[last_key]
 
                         # make sure file dir have been created
@@ -411,6 +416,8 @@ class FileManager(object):
                 elif name.endswith('.js'):
                     fields[name[:-3]] = content
                 else:
+                    # remove extension
+                    name, ext = os.path.splitext(name) 
                     fields[name] = content
         return fields
     
