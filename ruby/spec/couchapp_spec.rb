@@ -71,7 +71,7 @@ describe "couchapp" do
       @doc['_attachments']['index.html']["content_type"].should == 'text/html'
     end
     it "should create the manifest" do
-      @doc['app_meta']['manifest'][0].should match(/foo\//)
+      @doc['couchapp']['manifest'][0].should match(/foo\//)
     end
     it "should push and macro the doc shows" do
       @doc['shows']['example-show'].should match(/Generated CouchApp Form Template/)
@@ -147,28 +147,28 @@ describe "couchapp" do
       File.exist?("#{@fixdir}/my-app/views/more/map.js").should == true
     end
     it "should create view even if file dir is missing in manifest" do
-      @doc['app_meta']["manifest"].delete_at(12)
+      @doc['couchapp']["manifest"].delete_at(12)
       @doc.save()
       `rm -rf #{@fixdir}/my-app`
       `cd #{@fixdir} && #{COUCHAPP} clone http://127.0.0.1:5984/#{TESTDB}/_design/my-app`
       File.exist?("#{@fixdir}/my-app/views/example/map.js").should == true
     end
     it "should work without manifest" do
-      @doc['app_meta'].delete('manifest')
+      @doc['couchapp'].delete('manifest')
       @doc.save()
       `rm -rf #{@fixdir}/my-app`
       `cd #{@fixdir} && #{COUCHAPP} clone http://127.0.0.1:5984/#{TESTDB}/_design/my-app`
       File.exist?("#{@fixdir}/my-app/views").should == true
     end
     it "should create foo/bar without manifest" do
-      @doc['app_meta'].delete('manifest')
+      @doc['couchapp'].delete('manifest')
       @doc.save()
       `rm -rf #{@fixdir}/my-app`
       `cd #{@fixdir} && #{COUCHAPP} clone http://127.0.0.1:5984/#{TESTDB}/_design/my-app`
       File.exist?("#{@fixdir}/my-app/foo/bar").should == true
     end
     it "should create lib/helpers.json without manifest" do
-      @doc['app_meta'].delete('manifest')
+      @doc['couchapp'].delete('manifest')
       @doc.save()
       `rm -rf #{@fixdir}/my-app`
       `cd #{@fixdir} && #{COUCHAPP} clone http://127.0.0.1:5984/#{TESTDB}/_design/my-app`

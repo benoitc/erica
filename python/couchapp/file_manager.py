@@ -167,7 +167,7 @@ class FileManager(object):
 
             if docid in db:
                 design = db[docid]
-                _app_meta = design.get('app_meta', {})
+                _app_meta = design.get('couchapp', {})
 
                 app_meta = {
                     'manifest': manifest,
@@ -177,18 +177,18 @@ class FileManager(object):
                 new_doc.update({
                     '_id': docid,
                     '_rev': design['_rev'],
-                    'app_meta': app_meta,
+                    'couchapp': app_meta,
                     '_attachments': design.get('_attachments', {})
                 })
             else:
                 new_doc.update({
-                    'app_meta': {
+                    'couchapp': {
                         'manifest': manifest
                     }
                 })
 
-            if 'app_meta' in doc:
-                new_doc['app_meta'].update(doc['app_meta'])
+            if 'couchapp' in doc:
+                new_doc['couchapp'].update(doc['couchapp'])
 
             db[docid] = new_doc 
 
@@ -234,7 +234,7 @@ class FileManager(object):
             print >>sys.stderr, "%s don't exist" % app_name
             return
 
-        metadata = design.get('app_meta', {})
+        metadata = design.get('couchapp', {})
         
         # get manifest
         manifest = metadata.get('manifest', {})
@@ -265,8 +265,6 @@ class FileManager(object):
                 else:
                     parts = filename.split('/')
                     fname = parts.pop()
-                    if parts and parts[0] == "couchapp":
-                        parts[0] = 'app_meta'
                     v = design
                     while 1:
                         try:
@@ -310,8 +308,8 @@ class FileManager(object):
         for key in design.iterkeys():
             if key.startswith('_'): 
                 continue
-            elif key in ('app_meta'):
-                app_meta = design['app_meta'].copy()
+            elif key in ('couchapp'):
+                app_meta = design['couchapp'].copy()
                 if 'signatures' in app_meta:
                     del app_meta['signatures']
                 if 'manifest' in app_meta:
@@ -406,10 +404,10 @@ class FileManager(object):
                 if 'signatures' in content:
                     del content['signatures']
 
-                if 'app_meta' in fields:
-                    fields['app_meta'].update(content)
+                if 'couchapp' in fields:
+                    fields['couchapp'].update(content)
                 else:
-                    fields['app_meta'] = content
+                    fields['couchapp'] = content
             elif os.path.isdir(current_path):
                 manifest.append('%s/' % rel_path)
                 fields[name] = self.dir_to_fields(app_dir, current_path,
@@ -445,7 +443,7 @@ class FileManager(object):
         # only new version attachments to update.
         for db in self.db:
             design = db[docid]
-            metadata = design.get('app_meta', {})
+            metadata = design.get('couchapp', {})
             attachments = _attachments.copy()
             if 'signatures' in metadata:
                 for filename in metadata['signatures'].iterkeys():
@@ -461,9 +459,9 @@ class FileManager(object):
        
             # update signatures
             design = db[docid]
-            if not 'app_meta' in design:
-                design['app_meta'] = {}
-            design['app_meta'].update({'signatures': _signatures})
+            if not 'couchapp' in design:
+                design['couchapp'] = {}
+            design['couchapp'].update({'signatures': _signatures})
             db[docid] = design
 
     def package_shows(self, funcs):
