@@ -192,10 +192,10 @@ class FileManager(object):
 
             db[docid] = new_doc 
 
-        self.push_directory(attach_dir, docid)
+        self.push_directory(attach_dir, docid, verbose=verbose)
 
     @classmethod
-    def clone(cls, app_uri, app_dir):
+    def clone(cls, app_uri, app_dir, verbose=False):
         server_uri, db_name, docid = parse_uri(app_uri) 
         couchdb_server = _server(server_uri)
 
@@ -205,6 +205,8 @@ class FileManager(object):
             db = couchdb_server[db_name]
  
         app_name = get_appname(docid)
+        if verbose:
+            print "Clone %s" % app_name
         if not app_dir:
             app_dir = os.path.normpath(os.path.join(os.getcwd(), app_name))
 
@@ -423,7 +425,7 @@ class FileManager(object):
                 fields[name] = content
         return fields
     
-    def push_directory(self, attach_dir, docid):
+    def push_directory(self, attach_dir, docid, verbose):
         # get attachments
         _signatures = {}
         _attachments = {}
@@ -454,7 +456,9 @@ class FileManager(object):
                             del attachments[filename]
 
             for filename, value in attachments.iteritems():
-                time.sleep(0.4) 
+                time.sleep(0.4)
+                if verbose:
+                    print "Attach %s" % filename
                 db.put_attachment(design, value, filename)
        
             # update signatures

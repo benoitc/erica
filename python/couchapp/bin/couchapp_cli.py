@@ -24,28 +24,32 @@ import couchapp
 from couchapp.utils import in_couchapp
 
 
-def generate(appname):
+def generate(appname, verbose=False):
     appdir = os.path.normpath(os.path.join(os.getcwd(), appname))
-    print "Generating a new CouchApp in %s" % appdir
+    if verbose:
+        print "Generating a new CouchApp in %s" % appdir
     couchapp.FileManager.generate_app(appdir)
 
-def init(appdir, dburl):
-    print "Init a new CouchApp in %s" % appdir
+def init(appdir, dburl, verbose=False):
+    if verbose:
+        print "Init a new CouchApp in %s" % appdir
     couchapp.FileManager.init(appdir, dburl)
 
-def push(appdir, appname, dbstring):
+def push(appdir, appname, dbstring, verbose=False):
     try:
         fm = couchapp.FileManager(dbstring, appdir)
     except ValueError, e:
         print>>sys.stderr, e
         return  
-    fm.push_app(appdir, appname,verbose=True)
+    fm.push_app(appdir, appname, verbose=verbose)
 
-def clone(app_uri, app_dir):
-    couchapp.FileManager.clone(app_uri, app_dir)
+def clone(app_uri, app_dir, verbose=False):
+    couchapp.FileManager.clone(app_uri, app_dir, verbose)
 
 def main():
     parser = OptionParser(usage='%prog [options] cmd', version="%prog " + couchapp.__VERSION__)
+    parser.add_option('-v',  action='store_true', dest='verbose',
+            help='print message to stdout')
     group = OptionGroup(parser, "init", "couchapp init [options] [appdir]")
     group.add_option("--db", action="store", help="full uri of default database")
     parser.add_option_group(group)
@@ -61,7 +65,7 @@ def main():
                     '\n\nIncorrect number of arguments, appname is'+
                     ' missing')
         appname = args[1]
-        generate(appname)
+        generate(appname, options.verbose)
     elif args[0] == 'push':
         appname = ''
         rel_path = '.'
@@ -96,7 +100,7 @@ def main():
         appdir = os.path.normpath(os.path.join(os.getcwd(), rel_path))
         if not appname: 
             appname = ''.join(appdir.split('/')[-1:])
-        push(appdir, appname, dbstring)
+        push(appdir, appname, dbstring, options.verbose)
     elif args[0] == 'clone' or args[0] == 'pull':
         if len(args) < 2:
             return parser.error('incorrect number of arguments')
@@ -104,7 +108,7 @@ def main():
             app_dir = args[2]
         else:
             app_dir = ''
-        clone(args[1], app_dir)
+        clone(args[1], app_dir, options.verbose)
     
     elif args[0] == 'init':
         dburl = options.db or ''
@@ -112,7 +116,7 @@ def main():
             appdir = args[1]
         except IndexError:
             appdir = '.'
-        init(appdir, dburl)
+        init(appdir, dburl, options.verbose)
     else:
         print "%s is unknown" % args[0]
 
