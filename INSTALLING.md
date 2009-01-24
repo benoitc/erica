@@ -21,7 +21,7 @@ Once this is done, run `couchapp generate relax` and generally pick up with the 
 
 Once you've got RubyGems, (please excuse the `sudo`, it's to install the `couchapp` script in your path) run:
 
-    git clone git@github.com:jchris/couchapp.git && cd couchapp
+    git clone git://github.com/jchris/couchapp.git && cd couchapp
     gem build couchapp.gemspec
     sudo gem install couchapp-*.gem
 
