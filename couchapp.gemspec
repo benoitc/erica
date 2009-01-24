@@ -25,15 +25,15 @@ Gem::Specification.new do |s|
     if current_version >= 3 then
       s.add_runtime_dependency(%q<json>, [">= 1.1.3"])
       s.add_runtime_dependency(%q<json_pure>, [">= 1.1.3"])
-      s.add_runtime_dependency(%q<couchrest >, [">= 0.11.0"])
+      s.add_runtime_dependency(%q<couchrest>, [">= 0.11.0"])
     else
       s.add_dependency(%q<json>, [">= 1.1.3"])
       s.add_dependency(%q<json_pure>, [">= 1.1.3"])
-      s.add_dependency(%q<couchrest >, [">= 0.11.0"])
+      s.add_dependency(%q<couchrest>, [">= 0.11.0"])
     end
   else
     s.add_dependency(%q<json>, [">= 1.1.3"])
     s.add_dependency(%q<json_pure>, [">= 1.1.3"])
-    s.add_dependency(%q<couchrest >, [">= 0.11.0"])
+    s.add_dependency(%q<couchrest>, [">= 0.11.0"])
   end
 end

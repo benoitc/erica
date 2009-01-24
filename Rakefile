@@ -45,10 +45,10 @@ spec = Gem::Specification.new do |s|
     http://json.rubyforge.org/
     >=1.1.3
 
-    couchrest 
+    couchrest
     Lean and RESTful interface to CouchDB.
     http://github.com/jchris/couchrest
-    >= 0.11.0
+    >=0.11.0
 
     "
 
