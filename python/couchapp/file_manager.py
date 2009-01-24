@@ -108,10 +108,18 @@ class FileManager(object):
         paths = ['app-template', '../../app-template']
         
         for path in paths:
-            template_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), path))
+            template_dir = os.path.normpath(os.path.join(
+                os.path.dirname(__file__), path))
             if os.path.isdir(template_dir): break
+        
+        try:
+            shutil.copytree(template_dir, app_dir)
+        except OSError, e:
+            errno, message = e
+            print >>sys.stderr, "Cant' create couchapp in %s: %s" % (
+                    app_dir, message)
+            return
 
-        shutil.copytree(template_dir, app_dir)
         cls.init(app_dir)
 
     @classmethod
