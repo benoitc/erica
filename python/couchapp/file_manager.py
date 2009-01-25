@@ -513,7 +513,7 @@ class FileManager(object):
             self.apply_lib(funcs)
 
     def apply_lib(self, funcs):
-        if not self.objects:
+        if hasattr(self, "objects"):
             self.objects = {}
         for k, v in funcs.iteritems():
             if not isinstance(v, basestring):
