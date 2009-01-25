@@ -6,6 +6,6 @@
 # This software is licensed as described in the file LICENSE, which
 # you should have received as part of this distribution.
 
-__VERSION__ = '0.1.7'
+__VERSION__ = '0.1.8'
 
 from couchapp.file_manager import FileManager
