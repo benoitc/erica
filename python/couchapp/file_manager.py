@@ -426,6 +426,12 @@ class FileManager(object):
                 if 'signatures' in content:
                     del content['signatures']
 
+                if 'manifest' in content:
+                    del content['manifest']
+
+                if 'objects' in content:
+                    del content['objects']
+
                 if 'couchapp' in fields:
                     fields['couchapp'].update(content)
                 else:
