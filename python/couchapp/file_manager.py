@@ -24,7 +24,8 @@ except ImportError:
 import httplib2
 from couchdb import Server, ResourceNotFound
 
-from couchapp.utils import parse_uri, parse_auth, get_appname, sign_file 
+from couchapp.utils import parse_uri, parse_auth, get_appname, \
+sign_file, _md5
 
 __all__ = ['DEFAULT_SERVER_URI', 'FileManager']
 
@@ -156,6 +157,7 @@ class FileManager(object):
         manifest = []
         self.doc = doc = self.dir_to_fields(app_dir, manifest=manifest)
 
+        self.objects = {}
         if 'shows' in doc:
             self.package_shows(doc['shows'])
 
@@ -178,7 +180,8 @@ class FileManager(object):
 
                 app_meta = {
                     'manifest': manifest,
-                    'signatures': _app_meta.get('signatures', {})
+                    'signatures': _app_meta.get('signatures', {}),
+                    'objects': self.objects
                 }
 
                 new_doc.update({
@@ -190,7 +193,8 @@ class FileManager(object):
             else:
                 new_doc.update({
                     'couchapp': {
-                        'manifest': manifest
+                        'manifest': manifest,
+                        'objects': self.objects
                     }
                 })
 
@@ -251,6 +255,9 @@ class FileManager(object):
         # get signatures
         signatures = metadata.get('signatures', {})
 
+        # get objects refs
+        objects = metadata.get('objects', {})
+
         conf = read_json(rc_file)
         if not 'env' in conf:
             conf['env'] = {}
@@ -291,6 +298,10 @@ class FileManager(object):
                         except KeyError:
                             break
 
+                        _ref = _md5(content).hexdigest()
+                        if objects and _ref in objects:
+                            content = objects[_ref]
+
                         if fname.endswith('.json'):
                                 content = json.dumps(content)
 
@@ -323,6 +334,8 @@ class FileManager(object):
                     del app_meta['signatures']
                 if 'manifest' in app_meta:
                     del app_meta['manifest']
+                if 'objects' in app_meta:
+                    del app_meta['objects']
                 if app_meta:
                     couchapp_file = os.path.join(app_dir, 'couchapp.json')
                     write_json(couchapp_file, app_meta)
@@ -503,7 +516,10 @@ class FileManager(object):
         for k, v in funcs.iteritems():
             if not isinstance(v, basestring):
                 continue
+            old_v = v
             funcs[k] = self.process_include(self.process_requires(v))
+            if old_v != funcs[k]:
+                self.objects[_md5(funcs[k]).hexdigest()] = old_v
 
     def process_requires(self, f_string):
         def rreq(mo):
