@@ -21,11 +21,34 @@ try:
 except ImportError:
     import json # Python 2.6
 
+
+# backport os.path.relpath if python < 2.6
+try:
+    import os.path.relpath as _relpath
+except ImportError:
+    def _relpath(path, start=os.curdir):
+        if not path:
+            raise ValueError("no path specified")
+        
+        start_list = os.path.abspath(start).split("/")
+        path_list = os.path.abspath(path).split("/")
+
+        # Work out how much of the filepath is shared by start and path.
+        i = len(os.path.commonprefix([start_list, path_list]))
+
+        rel_list = ['..'] * (len(start_list)-i) + path_list[i:]
+        if not rel_list:
+            return os.curdir
+        return os.path.join(*rel_list)
+
+
 import httplib2
 from couchdb import Server, ResourceNotFound
 
 from couchapp.utils import parse_uri, parse_auth, get_appname, \
 sign_file, _md5
+
+from couchapp.utils.css_parser import CSSParser
 
 __all__ = ['DEFAULT_SERVER_URI', 'FileManager']
 
@@ -203,7 +226,14 @@ class FileManager(object):
 
             db[docid] = new_doc 
 
+        if 'css' in doc['couchapp']:
+            # merge and compress css
+            self.merge_css(attach_dir, doc['couchapp']['css'],
+                    docid, verbose=verbose)
+
         self.push_directory(attach_dir, docid, verbose=verbose)
+
+        
 
     @classmethod
     def clone(cls, app_uri, app_dir, verbose=False):
@@ -451,6 +481,24 @@ class FileManager(object):
                 fields[name] = content
         return fields
     
+    def _put_attachment(self, db, doc, content, filename):
+        nb_try = 0
+        while True:
+            error = False
+            try:
+                db.put_attachment(doc, content, filename)
+            except (socket.error, httplib.BadStatusLine):
+                time.sleep(0.4)
+                error = True
+
+            nb_try = nb_try +1
+            if not error:
+                break
+
+            if nb_try > 3:
+                print >>sys.stderr, "%s not uploaded" % filename
+                break
+
     def push_directory(self, attach_dir, docid, verbose):
         # get attachments
         _signatures = {}
@@ -487,23 +535,8 @@ class FileManager(object):
                
                 # fix issue with httplib that raises BadStatusLine
                 # error because it didn't close the connection
-                nb_try = 0
-                while True:
-                    error = False
-                    try:
-                        db.put_attachment(design, value, filename)
-                    except (socket.error, httplib.BadStatusLine):
-                        time.sleep(0.4)
-                        error = True
-
-                    nb_try = nb_try +1
-                    if not error:
-                        break
-
-                    if nb_try > 3:
-                        print >>sys.stderr, "%s not uploaded" % filename
-                        break
-                        
+                self._put_attachment(db, design, value, filename)
+                         
             # update signatures
             design = db[docid]
             if not 'couchapp' in design:
@@ -575,5 +608,39 @@ class FileManager(object):
 
         return re_json.sub(rjson2, f_string)
 
+    def merge_css(self, attach_dir, css_conf, docid, verbose=False):
+        re_url = re.compile('url\s*\(([^\s"].*)\)')
 
+        src_fpath = ''
+        fname_dir = ''
 
+        def replace_url(mo):
+            css_url = mo.group(0)[4:].strip(")").replace("'", "").replace('"','')
+            css_path = os.path.join(os.path.dirname(src_fpath),
+                    css_url)
+
+            rel_path = _relpath(css_path, fname_dir)
+            return "url(%s)" % rel_path
+        
+        for fname, src_files in css_conf.iteritems():
+            output_css = ''
+
+            dest_path = os.path.join(attach_dir, fname)
+            fname_dir = os.path.dirname(dest_path)
+
+            for src_fname in src_files:
+                src_fpath = os.path.join(attach_dir, src_fname)
+                
+                if os.path.exists(src_fpath):
+                    content_css = str(CSSParser(self._load_file(src_fpath)))
+                    content_css = re_url.sub(replace_url, content_css) 
+                    output_css += content_css
+                    if verbose:
+                        print "merge %s in %s" % (src_fname, fname)
+
+            if not os.path.isdir(fname_dir):
+                os.makedirs(fname_dir)
+
+            write_content(dest_path, output_css) 
+            
+            
