@@ -312,12 +312,13 @@ class FileManager(object):
                         except KeyError:
                             break
 
-                        _ref = _md5(content).hexdigest()
-                        if objects and _ref in objects:
-                            content = objects[_ref]
+                        if isinstance(content, basestring):
+                            _ref = _md5(content).hexdigest()
+                            if objects and _ref in objects:
+                                content = objects[_ref]
 
                         if fname.endswith('.json'):
-                                content = json.dumps(content)
+                            content = json.dumps(content)
 
                         del v[last_key]
 
