@@ -32,7 +32,10 @@
 
 from StringIO import StringIO
 
-def jsmin(js):
+def about():
+    print "Compressing javascript with jsmin backend"
+
+def compress(js):
     ins = StringIO(js)
     outs = StringIO()
     JavascriptMinify().minify(ins, outs)

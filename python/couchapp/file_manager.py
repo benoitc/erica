@@ -231,6 +231,11 @@ class FileManager(object):
             self.merge_css(attach_dir, doc['couchapp']['css'],
                     docid, verbose=verbose)
 
+        if 'js' in doc['couchapp']:
+            # merge and compress js
+            self.merge_js(attach_dir, doc['couchapp']['js'],
+                    docid, verbose=verbose)
+
         self.push_directory(attach_dir, docid, verbose=verbose)
 
         
@@ -644,4 +649,41 @@ class FileManager(object):
 
             write_content(dest_path, output_css) 
             
-            
+    def merge_js(self, attach_dir, js_conf, docid, verbose=False):
+        if "js_compressor" in self.conf:
+            if not isinstance(self.conf["js_compressor"], basestring):
+                print >>sys.stderr, "js_compressor settings should be a string"
+                print >>sys.stderr, "back to default backend"
+                import couchapp.utils.jsmin as backend
+            else:
+                try:
+                    backend = __import__(self.conf['js_compressor'], {}, {}, [''])
+                except ImportError:
+                    import couchapp.utils.jsmin as backend
+        else:
+            import couchapp.utils.jsmin as backend
+
+        if verbose:
+            backend.about()
+
+        for fname, src_files in js_conf.iteritems():
+            output_js = ''
+
+            dest_path = os.path.join(attach_dir, fname)
+            fname_dir = os.path.dirname(dest_path)
+
+            for src_fname in src_files:
+                src_fpath = os.path.join(attach_dir, src_fname)
+                
+                if os.path.exists(src_fpath):
+                    output_js += "/* %s */\n" % src_fpath
+                    output_js +=  self._load_file(src_fpath)
+                    if verbose:
+                        print "merge %s in %s" % (src_fname, fname)
+
+            if not os.path.isdir(fname_dir):
+                os.makedirs(fname_dir)
+
+            output_js = backend.compress(output_js)
+            write_content(dest_path, output_js) 
+
