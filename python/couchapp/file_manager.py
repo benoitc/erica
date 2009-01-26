@@ -45,34 +45,13 @@ except ImportError:
 import httplib2
 from couchdb import Server, ResourceNotFound
 
-from couchapp.utils import parse_uri, parse_auth, get_appname, \
-sign_file, _md5
-
+from couchapp.utils import _md5
+from couchapp.utils import *
 from couchapp.utils.css_parser import CSSParser
 
 __all__ = ['DEFAULT_SERVER_URI', 'FileManager']
 
 DEFAULT_SERVER_URI = 'http://127.0.0.1:5984/'
-
-def write_content(filename, content):
-    f = open(filename, 'wb')
-    f.write(content)
-    f.close
-
-def write_json(filename, content):
-    write_content(filename, json.dumps(content))
-
-def read_json(filename):
-    try:
-        f = file(filename, 'r')
-    except IOError, e:
-        if e[0] == 2:
-            return {}
-        raise
-    data = json.loads(f.read())
-    f.close()
-    return data
-
 
 def _server(server_uri):
     if "@" in server_uri:

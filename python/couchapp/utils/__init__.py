@@ -18,6 +18,12 @@ except ImportError:
     import md5
     _md5 = md5.new
 
+try:
+    import simplejson as json
+except ImportError:
+    import json # Python 2.6
+
+
 
 def in_couchapp():
     current_path = os.getcwd()
@@ -88,3 +94,28 @@ def sign_file(file_path):
         f.close()
         return _md5(content).hexdigest()
     return ''
+
+def read_file(fname):
+    f = open(fname, 'r')
+    data = f.read()
+    f.close()
+    return data
+
+def write_content(filename, content):
+    f = open(filename, 'wb')
+    f.write(content)
+    f.close
+
+def write_json(filename, content):
+    write_content(filename, json.dumps(content))
+
+def read_json(filename):
+    try:
+        f = file(filename, 'r')
+    except IOError, e:
+        if e[0] == 2:
+            return {}
+        raise
+    data = json.loads(f.read())
+    f.close()
+    return data
