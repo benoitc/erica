@@ -409,12 +409,6 @@ class FileManager(object):
                     content = db.get_attachment(docid, filename)
                     write_content(file_path, content)
 
-    def _load_file(self, fname):
-        f = file(fname, 'rb')
-        data = f.read()
-        f.close
-        return data
-
     def dir_to_fields(self, app_dir, current_dir='', depth=0, manifest=[]):
         fields={}
         if not current_dir:
@@ -434,7 +428,7 @@ class FileManager(object):
                         depth=depth+1, manifest=manifest)
                 else:
                     manifest.append(rel_path)
-                    content = self._load_file(current_path)
+                    content = read_file(current_path)
                     content = json.loads(content)
                     if not isinstance(content, dict):
                         content = { "meta": content }
@@ -457,7 +451,7 @@ class FileManager(object):
                         depth=depth+1, manifest=manifest)
             else:
                 manifest.append(rel_path)
-                content = self._load_file(current_path)
+                content = read_file(current_path)
                 if name.endswith('.json'):
                     content = json.loads(content)
                 
@@ -618,7 +612,7 @@ class FileManager(object):
                 src_fpath = os.path.join(attach_dir, src_fname)
                 
                 if os.path.exists(src_fpath):
-                    content_css = str(CSSParser(self._load_file(src_fpath)))
+                    content_css = str(CSSParser(read_file(src_fpath)))
                     content_css = re_url.sub(replace_url, content_css) 
                     output_css += content_css
                     if verbose:
@@ -657,7 +651,7 @@ class FileManager(object):
                 
                 if os.path.exists(src_fpath):
                     output_js += "/* %s */\n" % src_fpath
-                    output_js +=  self._load_file(src_fpath)
+                    output_js +=  read_file(src_fpath)
                     if verbose:
                         print "merge %s in %s" % (src_fname, fname)
 

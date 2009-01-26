@@ -7,6 +7,7 @@
 # you should have received as part of this distribution.
 #
 
+import codecs
 import os
 import urlparse
 import urllib
@@ -87,6 +88,14 @@ def get_appname(docid):
     return docid.split('_design/')[1]
 
 
+
+
+def read_file(fname):
+    f = codecs.open(fname, 'rb', "utf-8")
+    data = f.read()
+    f.close()
+    return data
+
 def sign_file(file_path):
     if os.path.isfile(file_path):
         f = open(file_path, 'rb')
@@ -94,12 +103,6 @@ def sign_file(file_path):
         f.close()
         return _md5(content).hexdigest()
     return ''
-
-def read_file(fname):
-    f = open(fname, 'r')
-    data = f.read()
-    f.close()
-    return data
 
 def write_content(filename, content):
     f = open(filename, 'wb')
@@ -111,11 +114,10 @@ def write_json(filename, content):
 
 def read_json(filename):
     try:
-        f = file(filename, 'r')
+        data = read_file(filename)
     except IOError, e:
         if e[0] == 2:
             return {}
         raise
-    data = json.loads(f.read())
-    f.close()
-    return data
+    return json.loads(data)
+
