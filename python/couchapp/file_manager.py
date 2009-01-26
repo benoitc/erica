@@ -615,6 +615,7 @@ class FileManager(object):
         fname_dir = ''
 
         def replace_url(mo):
+            """ make sure urls are relative to css path """
             css_url = mo.group(0)[4:].strip(")").replace("'", "").replace('"','')
             css_path = os.path.join(os.path.dirname(src_fpath),
                     css_url)
