@@ -650,8 +650,7 @@ class FileManager(object):
 
             for src_fname in src_files:
                 src_fpath = os.path.join(attach_dir, src_fname)
-                
-                if os.path.exists(src_fpath):
+                if os.path.isfile(src_fpath):
                     output_js += "/* %s */\n" % src_fpath
                     output_js +=  read_file(src_fpath)
                     if verbose:
