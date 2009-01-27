@@ -82,13 +82,8 @@ def parse_auth(string):
 
     return username, password, server_uri
 
-
-
 def get_appname(docid):
     return docid.split('_design/')[1]
-
-
-
 
 def read_file(fname):
     f = codecs.open(fname, 'rb', "utf-8")

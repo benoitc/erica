@@ -205,12 +205,12 @@ class FileManager(object):
 
             db[docid] = new_doc 
 
-        if 'css' in doc['couchapp']:
+        if 'css' in new_doc['couchapp']:
             # merge and compress css
             self.merge_css(attach_dir, doc['couchapp']['css'],
                     docid, verbose=verbose)
 
-        if 'js' in doc['couchapp']:
+        if 'js' in new_doc['couchapp']:
             # merge and compress js
             self.merge_js(attach_dir, doc['couchapp']['js'],
                     docid, verbose=verbose)
