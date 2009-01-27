@@ -9,6 +9,7 @@
 
 import codecs
 import os
+import sys
 import urlparse
 import urllib
 
@@ -114,5 +115,9 @@ def read_json(filename):
         if e[0] == 2:
             return {}
         raise
-    return json.loads(data)
-
+    try:
+        data = json.loads(data)
+    except ValueError:
+        print >>sys.stderr, "Json is invalid, can't load %s" % filename
+        return {}
+    return data

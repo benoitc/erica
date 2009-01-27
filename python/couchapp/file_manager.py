@@ -428,8 +428,7 @@ class FileManager(object):
                         depth=depth+1, manifest=manifest)
                 else:
                     manifest.append(rel_path)
-                    content = read_file(current_path)
-                    content = json.loads(content)
+                    content = read_json(current_path)
                     if not isinstance(content, dict):
                         content = { "meta": content }
                 if 'signatures' in content:
@@ -453,7 +452,10 @@ class FileManager(object):
                 manifest.append(rel_path)
                 content = read_file(current_path)
                 if name.endswith('.json'):
-                    content = json.loads(content)
+                    try:
+                        content = json.loads(content)
+                    except ValueError:
+                        print >>sys.stderr, "Json is invalid, can't load %s" % current_path
                 
                 # remove extension
                 name, ext = os.path.splitext(name) 
