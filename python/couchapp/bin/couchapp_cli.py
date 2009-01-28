@@ -35,13 +35,15 @@ def init(appdir, dburl, verbose=False):
         print "Init a new CouchApp in %s" % appdir
     couchapp.FileManager.init(appdir, dburl)
 
-def push(appdir, appname, dbstring, verbose=False):
+def push(appdir, appname, dbstring, verbose=False, options=None):
     try:
         fm = couchapp.FileManager(dbstring, appdir)
     except ValueError, e:
         print>>sys.stderr, e
-        return  
-    fm.push_app(appdir, appname, verbose=verbose)
+        return 
+
+    fm.push_app(appdir, appname, verbose=verbose, 
+            nocss=options.css, nojs=options.js)
 
 def clone(app_uri, app_dir, verbose=False):
     couchapp.FileManager.clone(app_uri, app_dir, verbose)
@@ -50,11 +52,19 @@ def main():
     parser = OptionParser(usage='%prog [options] cmd', version="%prog " + couchapp.__VERSION__)
     parser.add_option('-v',  action='store_true', dest='verbose',
             help='print message to stdout')
-    group = OptionGroup(parser, "init", "couchapp init [options] [appdir]")
-    group.add_option("--db", action="store", help="full uri of default database")
-    parser.add_option_group(group)
+    group_init = OptionGroup(parser, "init", "couchapp init [options] [appdir]")
+    group_init.add_option("--db", action="store", help="full uri of default database")
+    parser.add_option_group(group_init)
+    group_push = OptionGroup(parser, "push", 
+            "couchapp push [options] [appdir] [appname] [dburl]")
+    group_push.add_option("--disable-css", action="store_true", 
+        dest="css", help="disable css compression")
+    group_push.add_option("--disable-js", action="store_true", 
+        dest="js", help="disable js compression")
+    parser.add_option_group(group_push)
 
     options, args = parser.parse_args()
+
 
     if len(args) < 1:
         return parser.error('incorrect number of arguments')
@@ -100,7 +110,7 @@ def main():
         appdir = os.path.normpath(os.path.join(os.getcwd(), rel_path))
         if not appname: 
             appname = ''.join(appdir.split('/')[-1:])
-        push(appdir, appname, dbstring, options.verbose)
+        push(appdir, appname, dbstring, options.verbose, options=options)
     elif args[0] == 'clone' or args[0] == 'pull':
         if len(args) < 2:
             return parser.error('incorrect number of arguments')

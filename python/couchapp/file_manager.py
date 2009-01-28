@@ -151,7 +151,7 @@ class FileManager(object):
             return
         self.conf = {}
 
-    def push_app(self, app_dir, app_name, verbose=False):
+    def push_app(self, app_dir, app_name, verbose=False, **kwargs):
         docid = '_design/%s' % app_name
 
         attach_dir = os.path.join(app_dir, '_attachments')
@@ -206,13 +206,15 @@ class FileManager(object):
             db[docid] = new_doc 
 
         if 'css' in new_doc['couchapp']:
-            # merge and compress css
-            self.merge_css(attach_dir, doc['couchapp']['css'],
+            if not kwargs.get('nocss', False):
+                # merge and compress css
+                self.merge_css(attach_dir, doc['couchapp']['css'],
                     docid, verbose=verbose)
 
         if 'js' in new_doc['couchapp']:
-            # merge and compress js
-            self.merge_js(attach_dir, doc['couchapp']['js'],
+            if not kwargs.get('nojs', False):
+                # merge and compress js
+                self.merge_js(attach_dir, doc['couchapp']['js'],
                     docid, verbose=verbose)
 
         self.push_directory(attach_dir, docid, verbose=verbose)
