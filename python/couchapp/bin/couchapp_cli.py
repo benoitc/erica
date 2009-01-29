@@ -35,7 +35,8 @@ def init(appdir, dburl, verbose=False):
         print "Init a new CouchApp in %s" % appdir
     couchapp.FileManager.init(appdir, dburl)
 
-def push(appdir, appname, dbstring, verbose=False, options=None):
+def push(appdir, appname, dbstring, verbose=False, 
+        options=None):
     try:
         fm = couchapp.FileManager(dbstring, appdir)
     except ValueError, e:
@@ -52,9 +53,13 @@ def main():
     parser = OptionParser(usage='%prog [options] cmd', version="%prog " + couchapp.__VERSION__)
     parser.add_option('-v',  action='store_true', dest='verbose',
             help='print message to stdout')
+
+    # init options
     group_init = OptionGroup(parser, "init", "couchapp init [options] [appdir]")
     group_init.add_option("--db", action="store", help="full uri of default database")
     parser.add_option_group(group_init)
+
+    # push options
     group_push = OptionGroup(parser, "push", 
             "couchapp push [options] [appdir] [appname] [dburl]")
     group_push.add_option("--disable-css", action="store_true", 
