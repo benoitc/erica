@@ -1,30 +1,53 @@
 # CouchApp: Standalone CouchDB Application Development Made Simple
 
-CouchApp is a set of helpers and a [jQuery](http://jquery.com) plugin that conspire to get you up and running on [CouchDB](http://couchdb.org) quickly and correctly. It is maintained and designed by CouchDB committers and community-members to bring clarity and order to the freedom of CouchDB's document-based approach.
+CouchApp is a set of scripts and a [jQuery](http://jquery.com) plugin designed  to bring clarity and order to the freedom of [CouchDB](http://couchdb.org)'s document-based approach.
 
-CouchApp *is by no means the only way to use CouchDB*. CouchDB's technical roots make it well suited for **very large installations**. CouchApp concentrates instead on a more personal use case: **developing and deploying standalone applications to CouchDB instances around the web.** There are apps you can build with server-side components that you can't build with just CouchApp. But by the same token, there are apps you can build on CouchApp alone that you can't build any other way.
+## Write apps using just JavaScript and HTML
+
+Render HTML documents using JavaScript templates run by CouchDB. You'll get parallelism and cacheability, **using only HTML and JS.** Building standalone CouchDB applications according to correct principles affords you options not found on other platforms.
+
+## Deploy your apps to the client
+
+CouchDB's replication means that programs running locally, can still be social. Applications control replication data-flows, so publishing messages and subscribing to other people is easy. Your users will see the benefits of the web without the hassle of requiring always-on connectivity.
 
 ## Installation
 
-    sudo gem install couchapp
+    easy_install couchapp
 
-If this gives you trouble, see the INSTALLING file for more options.
+If this gives you trouble, see the INSTALLING file for more options, including the Ruby version of `couchapp`.
 
 ## Begin Here
 
-Once you run `couchapp generate relax && cd relax`, you're ready to get started. Views are found in the `views` directory, attachments are stored in the `_attachments` directory,  forms are stored in `forms`, and the generation script drops some more files in with additional information about how you can build `_design/` docs using your text editor.
+Once you run `couchapp generate relax && cd relax`, you're ready to get started. Views are found in the `views` directory, attachments are stored in the `_attachments` directory,  forms functions are stored in `list` and `show`, and the generation script drops in additional explantory files.
 
-## Usage
 
-To upload your application to a CouchDB database, run this command from within you application directory.
+## There's more to Couch than this
 
-    couchapp push . mydb
+CouchApp *is by no means the only way to use CouchDB*. CouchDB's technical roots make it well suited for **very large installations**.  CouchDB excels at document management, archived stream processing (like logs or messaging), and other applications with voluminous data.
 
-You can expand `mydb` to be as complex as `http://login:password@my.couchapp.com:5984/mydb` if you need to.
+CouchApp concentrates instead on a more personal use case: **developing and deploying standalone applications to CouchDB instances around the web.**
+
+## It's the portability
+
+There are apps you can build with server-side components that you can't build with just CouchApp. But by the same token, there are apps you can build on CouchApp alone that you can't build any other way. The flexibility of replication means that there are yet-undiscovered ways to mix datacenter level clusters with end-user installations.
+
+# Usage
+
+To upload your application to a CouchDB database, run this command from within you application directory. In this example we assume you have a copy of CouchDB running on your local machine.
+
+## Push
+
+    couchapp push http://localhost:5984/mydb
+
+You can use this url-form to send credentials data if you need to: 
+
+`http://login:password@my.couchapp.com:5984/myapp` 
+
+## Push Helper Macros
 
 CouchApp provides some neat helpers for getting code into your view and render functions. Look in the view files created by a generated app to see the usage for the `!code` and `!json` preprocessor macros. They are basically just two different ways to get more code into your functions.
 
-### !code
+### !code for code
 
 The `!code path.to.code` macro inserts the string value found at `path.to.code` of the design document, into the current file, at the position of the macro. Here's an example:
 
@@ -36,13 +59,11 @@ The `!code path.to.code` macro inserts the string value found at `path.to.code` 
 
 When you run `couchapp push` the `!code` line will be replaced with the contents of the file found at `lib/parser/html.js`. Simple as that.
 
-#### Standard Library
-
 As we begin to see more apps built using CouchApp, we plan to include helpful functions in the standard library (as supplied by `couchapp generate`). Thank you for helping us expand this section! :)
 
-### !json
+### !json for data
 
-After all the `!code` includes have been processed (insuring that they may also use the `!json` macro), `couchapp push` does another pass through the function, running the `!json path.to.json` macro. This accumulates the data found at `path.to.json` into a single object for inclusion. After all the `!json` macros have been processed, the accumlated object is serialized to json and stored in a variable with a name corresponding to the path root. 
+After all the `!code` includes have been processed (insuring that included code may also use the `!json` macro), `couchapp push` does another pass through the function, running the `!json path.to.json` macros. This accumulates the data found in the JSON design doc at `path.to.json` into a single object for inclusion. After all the `!json` macros have been processed, the accumlated object is serialized to json and stored in variable names corresponding to their path's roots. 
 
 Here's an example. It's a lot of code to look at, but the principles are simple. Also, if you think you can explain it better than I have, please send a patch.
 
@@ -98,6 +119,25 @@ The upshot is that only the requested fields are included in the function. This 
 
 In this example, the second usage of the macro is redundant, as the first usage will include the entire `lib` field as a JSON macro.
 
+## Deployment preferences in `.couchapprc`
+
+You can set up application level helpers in the `.couchapprc` file
+
+The format is like this:
+
+    {
+      "env": { 
+        "default": {
+          "db": "http://user:pass@localhost:5984/myapp-dev"
+        },
+        "production": {
+          "db": "http:///user:pass@example.com/myapp"
+        }
+      }
+    }
+
+When you've setup `.couchapprc` you can push your app with just `couchapp push` or for non-default environments `couchapp push production`. This also has the advantage of not requiring password use on the command line. The `.couchapprc` file is not pushed with the rest of the design doc, but please be careful not to accidentally check your `.couchapprc` file into Git!
+
 ## Apps Using CouchApp
 
 There are a few apps out there already using CouchApp. Please send a pull request adding yours to the list if you're using it too.
@@ -105,6 +145,12 @@ There are a few apps out there already using CouchApp. Please send a pull reques
 * [Sofa](http://github.com/jchris/sofa)
 * [Couch-Wiki](http://github.com/janl/couch-wiki)
 * [CouchDB Twitter Client](http://github.com/jchris/couchdb-twitter-client)
+
+## Community
+
+There is a mailing list here: [http://groups.google.com/group/couchapp](http://groups.google.com/group/couchapp)
+
+Also, join us on [irc.freenode.net in the #couchapp room](irc://irc.freenode.net/couchapp).
 
 ## License
 
