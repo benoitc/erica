@@ -7,7 +7,9 @@
 # you should have received as part of this distribution.
 #
 
+import codecs
 import os
+import sys
 import urlparse
 import urllib
 
@@ -17,6 +19,12 @@ try:
 except ImportError:
     import md5
     _md5 = md5.new
+
+try:
+    import simplejson as json
+except ImportError:
+    import json # Python 2.6
+
 
 
 def in_couchapp():
@@ -75,11 +83,14 @@ def parse_auth(string):
 
     return username, password, server_uri
 
-
-
 def get_appname(docid):
     return docid.split('_design/')[1]
 
+def read_file(fname):
+    f = codecs.open(fname, 'rb', "utf-8")
+    data = f.read()
+    f.close()
+    return data
 
 def sign_file(file_path):
     if os.path.isfile(file_path):
@@ -88,3 +99,25 @@ def sign_file(file_path):
         f.close()
         return _md5(content).hexdigest()
     return ''
+
+def write_content(filename, content):
+    f = open(filename, 'wb')
+    f.write(content)
+    f.close
+
+def write_json(filename, content):
+    write_content(filename, json.dumps(content))
+
+def read_json(filename):
+    try:
+        data = read_file(filename)
+    except IOError, e:
+        if e[0] == 2:
+            return {}
+        raise
+    try:
+        data = json.loads(data)
+    except ValueError:
+        print >>sys.stderr, "Json is invalid, can't load %s" % filename
+        return {}
+    return data

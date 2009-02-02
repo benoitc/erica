@@ -21,35 +21,37 @@ try:
 except ImportError:
     import json # Python 2.6
 
+
+# backport os.path.relpath if python < 2.6
+try:
+    import os.path.relpath as _relpath
+except ImportError:
+    def _relpath(path, start=os.curdir):
+        if not path:
+            raise ValueError("no path specified")
+        
+        start_list = os.path.abspath(start).split("/")
+        path_list = os.path.abspath(path).split("/")
+
+        # Work out how much of the filepath is shared by start and path.
+        i = len(os.path.commonprefix([start_list, path_list]))
+
+        rel_list = ['..'] * (len(start_list)-i) + path_list[i:]
+        if not rel_list:
+            return os.curdir
+        return os.path.join(*rel_list)
+
+
 import httplib2
 from couchdb import Server, ResourceNotFound
 
-from couchapp.utils import parse_uri, parse_auth, get_appname, \
-sign_file, _md5
+from couchapp.utils import _md5
+from couchapp.utils import *
+from couchapp.utils.css_parser import CSSParser
 
 __all__ = ['DEFAULT_SERVER_URI', 'FileManager']
 
 DEFAULT_SERVER_URI = 'http://127.0.0.1:5984/'
-
-def write_content(filename, content):
-    f = open(filename, 'wb')
-    f.write(content)
-    f.close
-
-def write_json(filename, content):
-    write_content(filename, json.dumps(content))
-
-def read_json(filename):
-    try:
-        f = file(filename, 'r')
-    except IOError, e:
-        if e[0] == 2:
-            return {}
-        raise
-    data = json.loads(f.read())
-    f.close()
-    return data
-
 
 def _server(server_uri):
     if "@" in server_uri:
@@ -149,7 +151,7 @@ class FileManager(object):
             return
         self.conf = {}
 
-    def push_app(self, app_dir, app_name, verbose=False):
+    def push_app(self, app_dir, app_name, verbose=False, **kwargs):
         docid = '_design/%s' % app_name
 
         attach_dir = os.path.join(app_dir, '_attachments')
@@ -203,7 +205,21 @@ class FileManager(object):
 
             db[docid] = new_doc 
 
+        if 'css' in new_doc['couchapp']:
+            if not kwargs.get('nocss', False):
+                # merge and compress css
+                self.merge_css(attach_dir, doc['couchapp']['css'],
+                    docid, verbose=verbose)
+
+        if 'js' in new_doc['couchapp']:
+            if not kwargs.get('nojs', False):
+                # merge and compress js
+                self.merge_js(attach_dir, doc['couchapp']['js'],
+                    docid, verbose=verbose)
+
         self.push_directory(attach_dir, docid, verbose=verbose)
+
+        
 
     @classmethod
     def clone(cls, app_uri, app_dir, verbose=False):
@@ -298,12 +314,13 @@ class FileManager(object):
                         except KeyError:
                             break
 
-                        _ref = _md5(content).hexdigest()
-                        if objects and _ref in objects:
-                            content = objects[_ref]
+                        if isinstance(content, basestring):
+                            _ref = _md5(content).hexdigest()
+                            if objects and _ref in objects:
+                                content = objects[_ref]
 
                         if fname.endswith('.json'):
-                                content = json.dumps(content)
+                            content = json.dumps(content)
 
                         del v[last_key]
 
@@ -394,12 +411,6 @@ class FileManager(object):
                     content = db.get_attachment(docid, filename)
                     write_content(file_path, content)
 
-    def _load_file(self, fname):
-        f = file(fname, 'rb')
-        data = f.read()
-        f.close
-        return data
-
     def dir_to_fields(self, app_dir, current_dir='', depth=0, manifest=[]):
         fields={}
         if not current_dir:
@@ -419,8 +430,7 @@ class FileManager(object):
                         depth=depth+1, manifest=manifest)
                 else:
                     manifest.append(rel_path)
-                    content = self._load_file(current_path)
-                    content = json.loads(content)
+                    content = read_json(current_path)
                     if not isinstance(content, dict):
                         content = { "meta": content }
                 if 'signatures' in content:
@@ -442,15 +452,36 @@ class FileManager(object):
                         depth=depth+1, manifest=manifest)
             else:
                 manifest.append(rel_path)
-                content = self._load_file(current_path)
+                content = read_file(current_path)
                 if name.endswith('.json'):
-                    content = json.loads(content)
+                    try:
+                        content = json.loads(content)
+                    except ValueError:
+                        print >>sys.stderr, "Json is invalid, can't load %s" % current_path
                 
                 # remove extension
                 name, ext = os.path.splitext(name) 
                 fields[name] = content
         return fields
     
+    def _put_attachment(self, db, doc, content, filename):
+        nb_try = 0
+        while True:
+            error = False
+            try:
+                db.put_attachment(doc, content, filename)
+            except (socket.error, httplib.BadStatusLine):
+                time.sleep(0.4)
+                error = True
+
+            nb_try = nb_try +1
+            if not error:
+                break
+
+            if nb_try > 3:
+                print >>sys.stderr, "%s not uploaded" % filename
+                break
+
     def push_directory(self, attach_dir, docid, verbose):
         # get attachments
         _signatures = {}
@@ -487,23 +518,8 @@ class FileManager(object):
                
                 # fix issue with httplib that raises BadStatusLine
                 # error because it didn't close the connection
-                nb_try = 0
-                while True:
-                    error = False
-                    try:
-                        db.put_attachment(design, value, filename)
-                    except (socket.error, httplib.BadStatusLine):
-                        time.sleep(0.4)
-                        error = True
-
-                    nb_try = nb_try +1
-                    if not error:
-                        break
-
-                    if nb_try > 3:
-                        print >>sys.stderr, "%s not uploaded" % filename
-                        break
-                        
+                self._put_attachment(db, design, value, filename)
+                         
             # update signatures
             design = db[docid]
             if not 'couchapp' in design:
@@ -575,5 +591,76 @@ class FileManager(object):
 
         return re_json.sub(rjson2, f_string)
 
+    def merge_css(self, attach_dir, css_conf, docid, verbose=False):
+        re_url = re.compile('url\s*\(([^\s"].*)\)')
 
+        src_fpath = ''
+        fname_dir = ''
+
+        def replace_url(mo):
+            """ make sure urls are relative to css path """
+            css_url = mo.group(0)[4:].strip(")").replace("'", "").replace('"','')
+            css_path = os.path.join(os.path.dirname(src_fpath),
+                    css_url)
+
+            rel_path = _relpath(css_path, fname_dir)
+            return "url(%s)" % rel_path
+        
+        for fname, src_files in css_conf.iteritems():
+            output_css = ''
+
+            dest_path = os.path.join(attach_dir, fname)
+            fname_dir = os.path.dirname(dest_path)
+
+            for src_fname in src_files:
+                src_fpath = os.path.join(attach_dir, src_fname)
+                
+                if os.path.exists(src_fpath):
+                    content_css = str(CSSParser(read_file(src_fpath)))
+                    content_css = re_url.sub(replace_url, content_css) 
+                    output_css += content_css
+                    if verbose:
+                        print "merge %s in %s" % (src_fname, fname)
+
+            if not os.path.isdir(fname_dir):
+                os.makedirs(fname_dir)
+
+            write_content(dest_path, output_css) 
+            
+    def merge_js(self, attach_dir, js_conf, docid, verbose=False):
+        if "js_compressor" in self.conf:
+            if not isinstance(self.conf["js_compressor"], basestring):
+                print >>sys.stderr, "js_compressor settings should be a string"
+                print >>sys.stderr, "back to default backend"
+                import couchapp.utils.jsmin as backend
+            else:
+                try:
+                    backend = __import__(self.conf['js_compressor'], {}, {}, [''])
+                except ImportError:
+                    import couchapp.utils.jsmin as backend
+        else:
+            import couchapp.utils.jsmin as backend
+
+        if verbose:
+            backend.about()
+
+        for fname, src_files in js_conf.iteritems():
+            output_js = ''
+
+            dest_path = os.path.join(attach_dir, fname)
+            fname_dir = os.path.dirname(dest_path)
+
+            for src_fname in src_files:
+                src_fpath = os.path.join(attach_dir, src_fname)
+                if os.path.isfile(src_fpath):
+                    output_js += "/* %s */\n" % src_fpath
+                    output_js +=  read_file(src_fpath)
+                    if verbose:
+                        print "merge %s in %s" % (src_fname, fname)
+
+            if not os.path.isdir(fname_dir):
+                os.makedirs(fname_dir)
+
+            output_js = backend.compress(output_js)
+            write_content(dest_path, output_js) 
 

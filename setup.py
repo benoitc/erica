@@ -19,9 +19,16 @@ for dir, dirs, files in os.walk('app-template'):
     data_files.append((os.path.join('couchapp', dir), 
         [os.path.join(dir, file_) for file_ in files]))
 
+for dir, dirs, files in os.walk('python/couchapp'):
+    for i, dirname in enumerate(dirs):
+        if dirname.startswith('.'): del dirs[i]
+    
+    data_files.append((os.path.join('couchapp', dir), 
+        [os.path.join(dir, file_) for file_ in files]))
+
 setup(
     name = 'Couchapp',
-    version = '0.1.8',
+    version = '0.1.9a',
     url = 'http://github.com/benoitc/couchapp/tree/master',
     license =  'Apache License 2',
     author = 'Benoit Chesneau',
