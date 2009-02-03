@@ -28,7 +28,7 @@ for dir, dirs, files in os.walk('python/couchapp'):
 
 setup(
     name = 'Couchapp',
-    version = '0.1.9a',
+    version = '0.1.10',
     url = 'http://github.com/benoitc/couchapp/tree/master',
     license =  'Apache License 2',
     author = 'Benoit Chesneau',
@@ -62,10 +62,6 @@ setup(
         'Operating System :: OS Independent',
         'Topic :: Database',
         'Topic :: Utilities',
-    ],
-
-    setup_requires = [
-        'setuptools>=0.6c8'
     ],
 
     install_requires = ['couchdb'],
