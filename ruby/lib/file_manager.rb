@@ -48,11 +48,12 @@ module CouchApp
       design.merge!(@doc)
       design['_id'] = docid
       # design['language'] = lang if lang
+      make_manifest(design)
       @db.save(design)
       push_directory(attachdir, docid)
     end
   
-    def dir_to_fields(dir)
+  def dir_to_fields(dir)
       fields = {}
       (Dir["#{dir}/**/*.*"] - 
         Dir["#{dir}/_attachments/**/*.*"]).each do |file|
@@ -154,6 +155,11 @@ module CouchApp
     end
   
     private
+  
+    def make_manifest(design)
+      design['couchapp'] ||= {}
+      design['couchapp']["manifest"] = ["foo/"]
+    end
   
     def package_shows(funcs)
       apply_lib(funcs)
