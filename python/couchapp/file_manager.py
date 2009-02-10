@@ -452,7 +452,11 @@ class FileManager(object):
                         depth=depth+1, manifest=manifest)
             else:
                 manifest.append(rel_path)
-                content = read_file(current_path)
+                content = ''
+                try:
+                    content = read_file(current_path)
+                except UnicodeDecodeError, e:
+                    print >>sys.stderr, str(e)@
                 if name.endswith('.json'):
                     try:
                         content = json.loads(content)
