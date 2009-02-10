@@ -456,7 +456,7 @@ class FileManager(object):
                 try:
                     content = read_file(current_path)
                 except UnicodeDecodeError, e:
-                    print >>sys.stderr, str(e)@
+                    print >>sys.stderr, str(e)
                 if name.endswith('.json'):
                     try:
                         content = json.loads(content)
