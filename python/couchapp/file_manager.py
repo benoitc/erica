@@ -547,7 +547,7 @@ class FileManager(object):
             old_v = v
             funcs[k] = self.process_include(self.process_requires(v))
             if old_v != funcs[k]:
-                self.objects[_md5(funcs[k]).hexdigest()] = old_v
+                self.objects[_md5(funcs[k].encode('utf-8')).hexdigest()] = old_v
 
     def process_requires(self, f_string):
         def rreq(mo):
