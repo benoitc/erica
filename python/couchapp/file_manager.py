@@ -157,7 +157,8 @@ class FileManager(object):
         attach_dir = os.path.join(app_dir, '_attachments')
 
         manifest = []
-        self.doc = doc = self.dir_to_fields(app_dir, manifest=manifest)
+        self.doc = doc = self.dir_to_fields(app_dir, manifest=manifest,
+                verbose=verbose)
 
         self.objects = {}
         if 'shows' in doc:
@@ -411,7 +412,8 @@ class FileManager(object):
                     content = db.get_attachment(docid, filename)
                     write_content(file_path, content)
 
-    def dir_to_fields(self, app_dir, current_dir='', depth=0, manifest=[]):
+    def dir_to_fields(self, app_dir, current_dir='', depth=0,
+            manifest=[], verbose=False):
         fields={}
         if not current_dir:
             current_dir = app_dir
@@ -449,8 +451,12 @@ class FileManager(object):
             elif os.path.isdir(current_path):
                 manifest.append('%s/' % rel_path)
                 fields[name] = self.dir_to_fields(app_dir, current_path,
-                        depth=depth+1, manifest=manifest)
+                        depth=depth+1, manifest=manifest,
+                        verbose=verbose)
             else:
+                if verbose:
+                    print >>sys.stderr, "push %s" % rel_path
+
                 manifest.append(rel_path)
                 content = ''
                 try:
