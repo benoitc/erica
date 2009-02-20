@@ -66,7 +66,7 @@ setup(
     ],
 
     setup_requires = [
-        'setuptools>=0.6c8',
+        'setuptools>=0.6c7',
     ],
 
     install_requires = [
