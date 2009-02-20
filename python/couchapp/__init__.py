@@ -6,6 +6,9 @@
 # This software is licensed as described in the file LICENSE, which
 # you should have received as part of this distribution.
 
-__VERSION__ = '0.1.10'
+try:
+    __version__ = __import__('pkg_resources').get_distribution('Couchapp').version
+except:
+    __version__ = '?'
 
 from couchapp.file_manager import FileManager

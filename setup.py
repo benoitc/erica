@@ -28,7 +28,7 @@ for dir, dirs, files in os.walk('python/couchapp'):
 
 setup(
     name = 'Couchapp',
-    version = '0.1.10',
+    version = '0.1.11',
     url = 'http://github.com/benoitc/couchapp/tree/master',
     license =  'Apache License 2',
     author = 'Benoit Chesneau',
@@ -39,7 +39,8 @@ setup(
     correctly. It brings clarity and order to the freedom of CouchDB's
     document-based approach.""",
     keywords = 'couchdb couchapp',
-    platforms = 'any',
+    platforms = ['any'],
+
     zip_safe = False,
     
     packages=find_packages('python'),
@@ -64,6 +65,13 @@ setup(
         'Topic :: Utilities',
     ],
 
-    install_requires = ['couchdb'],
+    setup_requires = [
+        'setuptools>=0.6c8',
+    ],
+
+    install_requires = [
+        'couchdb>=0.5',
+        'simplejson>=2.0',
+    ],
 )
 

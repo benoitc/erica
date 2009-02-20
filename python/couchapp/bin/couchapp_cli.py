@@ -50,7 +50,7 @@ def clone(app_uri, app_dir, verbose=False):
     couchapp.FileManager.clone(app_uri, app_dir, verbose)
 
 def main():
-    parser = OptionParser(usage='%prog [options] cmd', version="%prog " + couchapp.__VERSION__)
+    parser = OptionParser(usage='%prog [options] cmd', version="%prog " + couchapp.__version__)
     parser.add_option('-v',  action='store_true', dest='verbose',
             help='print message to stdout')
 
