@@ -21,9 +21,9 @@ except ImportError:
     _md5 = md5.new
 
 try:
-    import simplejson as json
+    import json 
 except ImportError:
-    import json # Python 2.6
+    import simplejson as json 
 
 
 

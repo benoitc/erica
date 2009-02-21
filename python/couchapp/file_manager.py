@@ -16,11 +16,11 @@ import sys
 import time
 import urllib
 
+# python 2.6
 try:
-    import simplejson as json
+    import json 
 except ImportError:
-    import json # Python 2.6
-
+    import simplejson as json 
 
 # backport os.path.relpath if python < 2.6
 try:
@@ -172,7 +172,7 @@ class FileManager(object):
 
 
         for db in self.db:
-            if verbose:
+            if verbose >= 1:
                 print "Pushing CouchApp in %s to design doc:\n%s/_design/%s" % (app_dir,
                     db.resource.uri, app_name)
                 couchapp = doc.get('couchapp', False)
@@ -241,7 +241,7 @@ class FileManager(object):
             db = couchdb_server[db_name]
  
         app_name = get_appname(docid)
-        if verbose:
+        if verbose >= 1:
             print "Clone %s" % app_name
         if not app_dir:
             app_dir = os.path.normpath(os.path.join(os.getcwd(), app_name))
@@ -462,7 +462,7 @@ class FileManager(object):
                         depth=depth+1, manifest=manifest,
                         verbose=verbose)
             else:
-                if verbose:
+                if verbose >= 2:
                     print >>sys.stderr, "push %s" % rel_path
 
                 manifest.append(rel_path)
@@ -475,7 +475,8 @@ class FileManager(object):
                     try:
                         content = json.loads(content)
                     except ValueError:
-                        print >>sys.stderr, "Json is invalid, can't load %s" % current_path
+                        if verbose >= 2:
+                            print >>sys.stderr, "Json is invalid, can't load %s" % current_path
                 
                 # remove extension
                 name, ext = os.path.splitext(name) 
@@ -497,7 +498,8 @@ class FileManager(object):
                 break
 
             if nb_try > 3:
-                print >>sys.stderr, "%s not uploaded" % filename
+                if verbose >= 2:
+                    print >>sys.stderr, "%s not uploaded" % filename
                 break
 
     def push_directory(self, attach_dir, docid, verbose):
@@ -531,7 +533,7 @@ class FileManager(object):
                             del attachments[filename]
 
             for filename, value in attachments.iteritems():
-                if verbose:
+                if verbose >= 2:
                     print "Attach %s" % filename
                
                 # fix issue with httplib that raises BadStatusLine
@@ -637,7 +639,7 @@ class FileManager(object):
                     content_css = str(CSSParser(read_file(src_fpath)))
                     content_css = re_url.sub(replace_url, content_css) 
                     output_css += content_css
-                    if verbose:
+                    if verbose >= 2:
                         print "merge %s in %s" % (src_fname, fname)
 
             if not os.path.isdir(fname_dir):
@@ -676,7 +678,7 @@ class FileManager(object):
                 if os.path.isfile(src_fpath):
                     output_js += "/* %s */\n" % src_fpath
                     output_js +=  read_file(src_fpath)
-                    if verbose:
+                    if verbose >= 2:
                         print "merge %s in %s" % (src_fname, fname)
 
             if not os.path.isdir(fname_dir):
