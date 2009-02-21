@@ -175,10 +175,12 @@ class FileManager(object):
             if verbose:
                 print "Pushing CouchApp in %s to design doc:\n%s/_design/%s" % (app_dir,
                     db.resource.uri, app_name)
-                index = doc.get('index', False)
-                if index:
-                  index_url = self.make_index_url(db.resource.uri, app_name, index)
-                  print "Visit your CouchApp here:\n%s" % index_url
+                couchapp = doc.get('couchapp', False)
+                if couchapp:
+                  index = couchapp.get('index', False)
+                  if index:
+                    index_url = self.make_index_url(db.resource.uri, app_name, index)
+                    print "Visit your CouchApp here:\n%s" % index_url
 
             new_doc = doc.copy()
 
