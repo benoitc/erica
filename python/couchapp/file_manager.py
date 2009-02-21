@@ -173,12 +173,18 @@ class FileManager(object):
 
         for db in self.db:
             if verbose:
-                print "Pushing CouchApp in %s to %s/_design/%s" % (app_dir,
+                print "Pushing CouchApp in %s to design doc:\n%s/_design/%s" % (app_dir,
                     db.resource.uri, app_name)
+                index = doc.get('index', False)
+                if index:
+                  index_url = self.make_index_url(db.resource.uri, app_name, index)
+                  print "Visit your CouchApp here:\n%s" % index_url
+
             new_doc = doc.copy()
 
             if docid in db:
                 design = db[docid]
+
                 _app_meta = design.get('couchapp', {})
 
                 app_meta = {
@@ -637,6 +643,9 @@ class FileManager(object):
 
             write_content(dest_path, output_css) 
             
+    def make_index_url(self, uri, app_name, index):
+      return "%s/%s/%s/%s" % (uri, index[0], app_name, index[1])
+
     def merge_js(self, attach_dir, js_conf, docid, verbose=False):
         if "js_compressor" in self.conf:
             if not isinstance(self.conf["js_compressor"], basestring):
