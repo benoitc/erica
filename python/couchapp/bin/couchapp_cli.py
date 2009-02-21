@@ -26,12 +26,12 @@ from couchapp.utils import in_couchapp
 
 def generate(appname, verbose=False):
     appdir = os.path.normpath(os.path.join(os.getcwd(), appname))
-    if verbose:
+    if verbose >= 1:
         print "Generating a new CouchApp in %s" % appdir
     couchapp.FileManager.generate_app(appdir)
 
 def init(appdir, dburl, verbose=False):
-    if verbose:
+    if verbose >= 1:
         print "Init a new CouchApp in %s" % appdir
     couchapp.FileManager.init(appdir, dburl)
 
@@ -51,9 +51,9 @@ def clone(app_uri, app_dir, verbose=False):
 
 def main():
     parser = OptionParser(usage='%prog [options] cmd', version="%prog " + couchapp.__version__)
-    parser.add_option('-v',  action='store_true', dest='verbose',
-            help='print message to stdout')
-
+    parser.add_option('-v', dest='verbose', default=1, help='print message to stdout')
+    parser.add_option('-q', dest='verbose', action='store_const', const=0, help="don't print any message")
+    
     # init options
     group_init = OptionGroup(parser, "init", "couchapp init [options] [appdir]")
     group_init.add_option("--db", action="store", help="full uri of default database")
