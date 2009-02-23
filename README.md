@@ -41,9 +41,11 @@ To upload your application to a CouchDB database, run this command from within y
 
     couchapp push http://localhost:5984/mydb
 
-You can use this url-form to send credentials data if you need to: 
+You can use this URL-form to send credentials data if you need to: 
 
 `http://login:password@my.couchapp.com:5984/myapp` 
+
+At the bottom of this readme there is information about the `.couchapprc` file. You want to read this and use it. It will make you happy because you won't need to specify the database URL to push.
 
 ### Push Helper Macros
 
