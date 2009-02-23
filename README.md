@@ -14,9 +14,9 @@ CouchDB's replication means that programs running locally, can still be social. 
 
 ## Installation
 
-    easy_install couchapp
+    sudo easy_install couchapp
 
-If this gives you trouble, see the INSTALLING file for more options, including the Ruby version of `couchapp`.
+If this gives you trouble, see the INSTALLING file for more options.
 
 ### Begin Here
 
