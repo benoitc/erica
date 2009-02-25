@@ -123,6 +123,20 @@ The upshot is that only the requested fields are included in the function. This 
 
 In this example, the second usage of the macro is redundant, as the first usage will include the entire `lib` field as a JSON macro.
 
+#### Sharing Code From Attachments into Views, Lists, and Shows
+
+!json and !code now work agains _attachments/ .
+
+    // !json _attachments/file.ext 
+
+will create the variable _attachments['file.ext'].
+
+    // !code _attachments/file.ext 
+
+will include content of the file.
+
+For anything but _attachments, the include should use ".", so this change don't break the current behaviour. Duplicate property name (two files with same name but different extension) now print an error in verbose level = 2.
+
 ### Deployment preferences in `.couchapprc`
 
 You can set up application level helpers in the `.couchapprc` file
