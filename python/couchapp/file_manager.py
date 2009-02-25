@@ -162,13 +162,13 @@ class FileManager(object):
 
         self.objects = {}
         if 'shows' in doc:
-            self.package_shows(doc['shows'])
+            self.package_shows(doc['shows'], app_dir, verbose=verbose)
 
         if 'lists' in doc:
-            self.package_shows(doc['lists'])
+            self.package_shows(doc['lists'], app_dir, verbose=verbose)
 
         if 'views' in doc:
-            self.package_views(doc["views"])
+            self.package_views(doc["views"], app_dir, verbose=verbose)
 
 
         for db in self.db:
@@ -479,8 +479,15 @@ class FileManager(object):
                             print >>sys.stderr, "Json is invalid, can't load %s" % current_path
                 
                 # remove extension
-                name, ext = os.path.splitext(name) 
-                fields[name] = content
+                name, ext = os.path.splitext(name)
+                if 'name' in fields:
+                    if verbose >= 2:
+                        print >>sys.stderr, "%(name)s is already in properties. Can't add (%(name)s.%(ext)s)" % {
+                        "name": name,
+                        "ext": ext
+                        }
+                else:
+                    fields[name] = content
         return fields
     
     def _put_attachment(self, db, doc, content, filename):
@@ -547,26 +554,39 @@ class FileManager(object):
             design['couchapp'].update({'signatures': _signatures})
             db[docid] = design
 
-    def package_shows(self, funcs):
-        self.apply_lib(funcs)
+    def package_shows(self, funcs, app_dir, verbose=False):
+        self.apply_lib(funcs, app_dir, verbose=verbose)
 
-    def package_views(self, views):
+    def package_views(self, views, app_dir, verbose=False):
         for view, funcs in views.iteritems():
-            self.apply_lib(funcs)
+            self.apply_lib(funcs, app_dir, verbose=verbose)
 
-    def apply_lib(self, funcs):
+    def apply_lib(self, funcs, app_dir, verbose=False):
         if not hasattr(self, "objects"):
             self.objects = {}
         for k, v in funcs.iteritems():
             if not isinstance(v, basestring):
                 continue
             old_v = v
-            funcs[k] = self.process_include(self.process_requires(v))
+            funcs[k] = self.process_include(self.process_requires(v, app_dir, verbose=verbose), 
+                                app_dir, verbose=verbose)
             if old_v != funcs[k]:
                 self.objects[_md5(funcs[k].encode('utf-8')).hexdigest()] = old_v
 
-    def process_requires(self, f_string):
+    def process_requires(self, f_string, app_dir, verbose=False):
         def rreq(mo):
+            if mo.group(2).startswith('_attachments'): 
+                # someone want to include from attachments
+                # for now just read the file and return it
+                path = os.path.join(app_dir, mo.group(2).strip(' '))
+                try:
+                    library = read_file(path)
+                except IOError, e:
+                    if verbose>=2:
+                        print >>sys.stderr, e
+                    return f_string
+                return library
+            
             fields = mo.group(2).split('.')
             library = self.doc
             for field in fields:
@@ -577,23 +597,47 @@ class FileManager(object):
         re_code = re.compile('(\/\/|#)\ ?!code (.*)')
         return re_code.sub(rreq, f_string)
 
-    def process_include(self, f_string):
+    def process_include(self, f_string, app_dir, verbose=False):
         included = {}
         varstrings = []
 
         def rjson(mo):
-            fields = mo.group(2).split('.')
-            library = self.doc
-            count = len(fields)
-            include_to = included
-            for i, field in enumerate(fields):
-                if not field in library: break
-                library = library[field]
-                if i+1 < count:
-                    include_to[field] = include_to.get(field, {})
-                    include_to = include_to[field]
-                else:
-                    include_to[field] = library
+            if mo.group(2).startswith('_attachments'): 
+                # someone  want to include from attachments
+                path = os.path.join(app_dir, mo.group(2).strip(' '))
+                try:
+                    library = read_file(path)
+                except IOError, e:
+                    if verbose>=2:
+                        print >>sys.stderr, e
+                    return f_string
+                if mo.group(2).endswith('.json'):
+                    try:
+                        library = json.loads(library)
+                    except ValueError:
+                        return f_string
+                fields = mo.group(2).split('/')
+                count = len(fields)
+                include_to = included
+                for i, field in enumerate(fields):
+                    if i+1 < count:
+                        include_to[field] = {}
+                        include_to = include_to[field]
+                    else:
+                        include_to[field] = library
+            else:	
+                fields = mo.group(2).split('.')
+                library = self.doc
+                count = len(fields)
+                include_to = included
+                for i, field in enumerate(fields):
+                    if not field in library: break
+                    library = library[field]
+                    if i+1 < count:
+                        include_to[field] = include_to.get(field, {})
+                        include_to = include_to[field]
+                    else:
+                        include_to[field] = library
 
             return f_string
 
