@@ -32,7 +32,7 @@ def generate(appname, verbose=False):
 
 def init(appdir, dburl, verbose=False):
     if verbose >= 1:
-        print "Init a new CouchApp in %s" % appdir
+        print "Initializing a new CouchApp in %s" % appdir
     couchapp.FileManager.init(appdir, dburl)
 
 def push(appdir, appname, dbstring, verbose=False, 
@@ -54,19 +54,28 @@ def main():
     parser.add_option('-v', dest='verbose', default=1, help='print message to stdout')
     parser.add_option('-q', dest='verbose', action='store_const', const=0, help="don't print any message")
     
-    # init options
-    group_init = OptionGroup(parser, "init", "couchapp init [options] [appdir]")
-    group_init.add_option("--db", action="store", help="full uri of default database")
-    parser.add_option_group(group_init)
-
+    # generate options
+    parser.add_option_group(OptionGroup(parser, "Generate a new CouchApp! (start here)",
+            "couchapp generate <appname> [appdir]"))
+            
     # push options
-    group_push = OptionGroup(parser, "push", 
+    group_push = OptionGroup(parser, "Pushes a CouchApp to CouchDB", 
             "couchapp push [options] [appdir] [appname] [dburl]")
     group_push.add_option("--disable-css", action="store_true", 
         dest="css", help="disable css compression")
     group_push.add_option("--disable-js", action="store_true", 
         dest="js", help="disable js compression")
     parser.add_option_group(group_push)
+    
+    # clone options
+    parser.add_option_group(OptionGroup(parser, 
+        "Clones/Pulls a CouchApp from a url (like http://host/db/_design/CA_name)",
+        "couchapp clone/pull <dburl> [dir]"))
+            
+    # init options
+    group_init = OptionGroup(parser, "Initialize CouchApp .couchapprc", "couchapp init [options] <appdir>")
+    group_init.add_option("--db", action="store", help="full url of default database")
+    parser.add_option_group(group_init)
 
     options, args = parser.parse_args()
 
@@ -85,12 +94,15 @@ def main():
         appname = ''
         rel_path = '.'
         dbstring = ''
+        # generate [dir] [appname] [url] case
         if len(args) == 4:
             if in_couchapp():
-                return parser.error('incorrect number of arguments')
+                return parser.error('Incorrect number of arguments, you\'re in an app.')
             rel_path = args[1]
             appname = args[2]
             dbstring = args[3]
+            
+        # generate [dir/appname] [url] case
         elif len(args) == 3:
             rel_path = in_couchapp()
             if rel_path:
@@ -100,6 +112,8 @@ def main():
             else:
                 rel_path = args[1]
                 dbstring = args[2]
+        
+        # generate [dir/url] case
         elif len(args) == 2:
             rel_path = in_couchapp()
             if rel_path:
@@ -107,22 +121,30 @@ def main():
                     dbstring = args[1]
             else:
                 rel_path = args[1]
+                
+        # just generate
         elif len(args) == 1:
             rel_path = in_couchapp()
             if not rel_path:
                 rel_path = '.'
 
         appdir = os.path.normpath(os.path.join(os.getcwd(), rel_path))
+        # Derive appname from the directory name (/home/foo/sofa => sofa)
         if not appname: 
             appname = ''.join(appdir.split('/')[-1:])
+        # PUSH IT!
         push(appdir, appname, dbstring, options.verbose, options=options)
+      
     elif args[0] == 'clone' or args[0] == 'pull':
         if len(args) < 2:
-            return parser.error('incorrect number of arguments')
+            return parser.error('Incorrect number of arguments (at least two)')
+        # clone/pull <url> [dir] case
         if len(args) == 3:
             app_dir = args[2]
+        # clone/pull <url>
         else:
             app_dir = ''
+        # CLONE IT!
         clone(args[1], app_dir, options.verbose)
     
     elif args[0] == 'init':
@@ -133,7 +155,7 @@ def main():
             appdir = '.'
         init(appdir, dburl, options.verbose)
     else:
-        print "%s is unknown" % args[0]
+        print "%s is an unknown command, sorry." % args[0]
 
 if __name__ == '__main__':
     main()

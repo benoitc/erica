@@ -108,6 +108,7 @@ class FileManager(object):
 
     @classmethod
     def generate_app(cls, app_dir):
+        """Generates a CouchApp in app_dir"""
         paths = ['app-template', '../../app-template']
         
         for path in paths:
@@ -119,7 +120,7 @@ class FileManager(object):
             shutil.copytree(template_dir, app_dir)
         except OSError, e:
             errno, message = e
-            print >>sys.stderr, "Cant' create couchapp in %s: %s" % (
+            print >>sys.stderr, "Can't create a CouchApp in %s: %s" % (
                     app_dir, message)
             return
 
@@ -127,8 +128,9 @@ class FileManager(object):
 
     @classmethod
     def init(cls, app_dir, db_url=''):
+        """Initializes the .couchapprc, usually called after generate"""
         if not os.path.isdir(app_dir):
-            print>>sys.stderr, "%s don't exist" % app_dir
+            print>>sys.stderr, "%s directory doesn't exist." % app_dir
             return
         rc_file = '%s/.couchapprc' % app_dir
         if not os.path.isfile(rc_file):
@@ -142,9 +144,10 @@ class FileManager(object):
 
             write_json(rc_file, conf)
         else:
-            print>>sys.stderr, "couchapp already initialized"
+            print>>sys.stderr, "CouchApp already initialized in %s." % app_dir
 
     def load_metadata(self, app_dir):
+        """Reads the .couchapprc to get configuration data"""
         rc_file = os.path.join(app_dir, '.couchapprc')
         if os.path.isfile(rc_file):
             self.conf = read_json(rc_file)
@@ -152,6 +155,7 @@ class FileManager(object):
         self.conf = {}
 
     def push_app(self, app_dir, app_name, verbose=False, **kwargs):
+        """Pushes the app specified to the CouchDB instance"""
         docid = '_design/%s' % app_name
 
         attach_dir = os.path.join(app_dir, '_attachments')
@@ -232,6 +236,7 @@ class FileManager(object):
 
     @classmethod
     def clone(cls, app_uri, app_dir, verbose=False):
+        """Clone a CouchApp from app_uri into app_dir"""
         server_uri, db_name, docid = parse_uri(app_uri) 
         couchdb_server = _server(server_uri)
 
@@ -242,7 +247,7 @@ class FileManager(object):
  
         app_name = get_appname(docid)
         if verbose >= 1:
-            print "Clone %s" % app_name
+            print "Cloning %s to %s..." % (app_name, app_dir)
         if not app_dir:
             app_dir = os.path.normpath(os.path.join(os.getcwd(), app_name))
 
@@ -476,7 +481,7 @@ class FileManager(object):
                         content = json.loads(content)
                     except ValueError:
                         if verbose >= 2:
-                            print >>sys.stderr, "Json is invalid, can't load %s" % current_path
+                            print >>sys.stderr, "Json invalid in %s" % current_path
                 
                 # remove extension
                 name, ext = os.path.splitext(name) 
@@ -499,7 +504,7 @@ class FileManager(object):
 
             if nb_try > 3:
                 if verbose >= 2:
-                    print >>sys.stderr, "%s not uploaded" % filename
+                    print >>sys.stderr, "%s file not uploaded, sorry." % filename
                 break
 
     def push_directory(self, attach_dir, docid, verbose):
@@ -534,7 +539,7 @@ class FileManager(object):
 
             for filename, value in attachments.iteritems():
                 if verbose >= 2:
-                    print "Attach %s" % filename
+                    print "Attaching %s" % filename
                
                 # fix issue with httplib that raises BadStatusLine
                 # error because it didn't close the connection
@@ -640,7 +645,7 @@ class FileManager(object):
                     content_css = re_url.sub(replace_url, content_css) 
                     output_css += content_css
                     if verbose >= 2:
-                        print "merge %s in %s" % (src_fname, fname)
+                        print "Merging %s in %s" % (src_fname, fname)
 
             if not os.path.isdir(fname_dir):
                 os.makedirs(fname_dir)
@@ -653,8 +658,8 @@ class FileManager(object):
     def merge_js(self, attach_dir, js_conf, docid, verbose=False):
         if "js_compressor" in self.conf:
             if not isinstance(self.conf["js_compressor"], basestring):
-                print >>sys.stderr, "js_compressor settings should be a string"
-                print >>sys.stderr, "back to default backend"
+                print >>sys.stderr, "Warning: js_compressor settings should be a string"
+                print >>sys.stderr, "         Selecting default backend (jsmin)"
                 import couchapp.utils.jsmin as backend
             else:
                 try:
@@ -679,7 +684,7 @@ class FileManager(object):
                     output_js += "/* %s */\n" % src_fpath
                     output_js +=  read_file(src_fpath)
                     if verbose >= 2:
-                        print "merge %s in %s" % (src_fname, fname)
+                        print "merging %s in %s" % (src_fname, fname)
 
             if not os.path.isdir(fname_dir):
                 os.makedirs(fname_dir)
