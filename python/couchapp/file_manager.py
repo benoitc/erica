@@ -590,15 +590,21 @@ class FileManager(object):
             # just read the file and return it
             path = os.path.join(app_dir, mo.group(2).strip(' '))
             library = ''
-            for filename in glob.iglob(path):
+            filenum = 0
+            for filename in glob.iglob(path):            
                 if verbose>=2:
                     print "process code macro: %s" % filename
                 try:
                     library += read_file(filename)
                 except IOError, e:
-                    if verbose:
-                        print >>sys.stderr, e
-                    continue
+                    print >>sys.stderr, e
+                    sys.exit(-1)
+                filenum += 1
+                
+            if not filenum:
+                print >>sys.stderr, "Processing code: No file matching '%s'" % mo.group(2)
+                sys.exit(-1)
+                
             return library
 
         re_code = re.compile('(\/\/|#)\ ?!code (.*)')
@@ -612,31 +618,31 @@ class FileManager(object):
             if mo.group(2).startswith('_attachments'): 
                 # someone  want to include from attachments
                 path = os.path.join(app_dir, mo.group(2).strip(' '))
+                filenum = 0
                 for filename in glob.iglob(path):
                     library = ''
                     try:
-                        library = read_file(filename)
-                    except IOError, e:
-                        if verbose>=2:
-                            print >>sys.stderr, e
-                        continue
-                    if library:
                         if filename.endswith('.json'):
-                            try:
-                                library = json.loads(library)
-                            except ValueError:
-                                pass
-                        
-                        current_file = filename.split(app_dir)[1]
-                        fields = current_file.split('/')
-                        count = len(fields)
-                        include_to = included
-                        for i, field in enumerate(fields):
-                            if i+1 < count:
-                                include_to[field] = {}
-                                include_to = include_to[field]
-                            else:
-                                include_to[field] = library
+                            library = read_json(filename)
+                        else:
+                            library = read_file(filename)
+                    except IOError, e:
+                        print >>sys.stderr, e
+                        sys.exit(1)
+                    filenum += 1
+                    current_file = filename.split(app_dir)[1]
+                    fields = current_file.split('/')
+                    count = len(fields)
+                    include_to = included
+                    for i, field in enumerate(fields):
+                        if i+1 < count:
+                            include_to[field] = {}
+                            include_to = include_to[field]
+                        else:
+                            include_to[field] = library
+                if not filenum:
+                    print >>sys.stderr, "Processing code: No file matching '%s'" % mo.group(2)
+                    sys.exit(-1)
             else:	
                 fields = mo.group(2).split('.')
                 library = self.doc
