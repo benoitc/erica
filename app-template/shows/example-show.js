@@ -1,5 +1,5 @@
 function(doc, req) {
-  // !code lib.helpers.template
+  // !code lib/helpers/template.js
   // !json lib.templates
   
   respondWith(req, {

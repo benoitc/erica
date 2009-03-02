@@ -1,6 +1,6 @@
 // an example map function, emits the doc id 
 // and the list of keys it contains
-// !code lib.helpers.math
+// !code lib/helpers/math.js
 
 function(doc) {
   var k, keys = []
