@@ -589,12 +589,16 @@ class FileManager(object):
         def rreq(mo):
             # just read the file and return it
             path = os.path.join(app_dir, mo.group(2).strip(' '))
-            try:
-                library = read_file(path)
-            except IOError, e:
+            library = ''
+            for filename in glob.iglob(path):
                 if verbose>=2:
-                    print >>sys.stderr, e
-                return f_string
+                    print "process code macro: %s" % filename
+                try:
+                    library += read_file(filename)
+                except IOError, e:
+                    if verbose:
+                        print >>sys.stderr, e
+                    continue
             return library
 
         re_code = re.compile('(\/\/|#)\ ?!code (.*)')
