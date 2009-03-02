@@ -7,6 +7,7 @@
 # you should have received as part of this distribution.
 #
 
+import glob
 import httplib
 import os
 import re
@@ -591,7 +592,9 @@ class FileManager(object):
             try:
                 library = read_file(path)
             except IOError, e:
-                raise ValueError("Can't find file: %s" % mo.group(2))
+                if verbose>=2:
+                    print >>sys.stderr, e
+                return f_string
             return library
 
         re_code = re.compile('(\/\/|#)\ ?!code (.*)')
