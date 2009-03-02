@@ -110,12 +110,18 @@ class FileManager(object):
     @classmethod
     def generate_app(cls, app_dir):
         """Generates a CouchApp in app_dir"""
-        paths = ['app-template', '../../app-template']
+        template_paths = ['app-template', '../../app-template']
+        vendor_paths = ['vendor', '../../vendor']
         
-        for path in paths:
+        for path in template_paths:
             template_dir = os.path.normpath(os.path.join(
                 os.path.dirname(__file__), path))
             if os.path.isdir(template_dir): break
+            
+        for path in vendor_paths:
+            vendor_dir = os.path.normpath(os.path.join(
+                os.path.dirname(__file__), path))
+            if os.path.isdir(vendor_dir): break
         
         try:
             shutil.copytree(template_dir, app_dir)
@@ -124,6 +130,16 @@ class FileManager(object):
             print >>sys.stderr, "Can't create a CouchApp in %s: %s" % (
                     app_dir, message)
             return
+            
+               
+        if vendor_dir:
+            vendor_path = os.path.join(app_dir, 'vendor')
+            try:
+                shutil.copytree(vendor_dir, vendor_path)
+            except OSError, e:
+                errno, message = e
+                print >>sys.stderr, "Can't create a CouchApp, bad vendor dir: %s" % message
+                return
 
         cls.init(app_dir)
 
@@ -231,8 +247,9 @@ class FileManager(object):
                 self.merge_js(attach_dir, doc['couchapp']['js'],
                     docid, verbose=verbose)
 
+                    
         self.push_directory(attach_dir, docid, verbose=verbose)
-
+        self.vendor_attachments(app_dir, docid, verbose=verbose)
         
 
     @classmethod
@@ -303,6 +320,8 @@ class FileManager(object):
         # create files from manifest
         if manifest:
             for filename in manifest:
+                if verbose >=2:
+                    print "clone property: %s" % filename
                 file_path = os.path.join(app_dir, filename)
                 if filename.endswith('/'): 
                     if not os.path.isdir(file_path):
@@ -383,6 +402,8 @@ class FileManager(object):
                         filename = os.path.join(vs_item_dir, '%s.js' % 
                                 func_name)
                         open(filename, 'w').write(func)
+                        if verbose >=2:
+                            print "clone view not in manifest: %s" % filename
             elif key in ('shows', 'lists'):
                 dir = os.path.join(app_dir, key)
                 if not os.path.isdir(dir):
@@ -391,8 +412,12 @@ class FileManager(object):
                     filename = os.path.join(dir, '%s.js' % 
                             func_name)
                     open(filename, 'w').write(func)
+                    if verbose >=2:
+                        print "clone show or list not in manifest: %s" % filename
             else:
                 file_dir = os.path.join(app_dir, key)
+                if verbose >=2:
+                    print "clone property not in manifest: %s" % key
                 if isinstance(design[key], (list, tuple,)):
                     write_json(file_dir + ".json", design[key])
                 elif isinstance(design[key], dict):
@@ -403,7 +428,7 @@ class FileManager(object):
                         if isinstance(value, basestring):
                             write_content(field_path, value)
                         else:
-                            write_json(field_path + '.json', value)
+                            write_json(field_path + '.json', value)        
                 else:
                     value = design[key]
                     if not isinstance(value, basestring):
@@ -417,7 +442,13 @@ class FileManager(object):
             if not os.path.isdir(attach_dir):
                 os.makedirs(attach_dir)
             for filename in design['_attachments'].iterkeys():
-                file_path = os.path.join(attach_dir, filename)
+                if filename.startswith('vendor'):
+                    attach_parts = filename.split('/')
+                    vendor_attach_dir = os.path.join(app_dir, attach_parts.pop(0),
+                            attach_parts.pop(0), '_attachments')
+                    file_path = os.path.join(vendor_attach_dir, '/'.join(attach_parts))
+                else:
+                    file_path = os.path.join(attach_dir, filename)
                 current_dir = os.path.dirname(file_path)
                 if not os.path.isdir(current_dir):
                     os.makedirs(current_dir)
@@ -425,6 +456,8 @@ class FileManager(object):
                 if signatures.get(filename) != sign_file(file_path):
                     content = db.get_attachment(docid, filename)
                     write_content(file_path, content)
+                    if verbose>=2:
+                        print "clone attachment: %s" % filename
 
     def dir_to_fields(self, app_dir, current_dir='', depth=0,
             manifest=[], verbose=False):
@@ -436,7 +469,8 @@ class FileManager(object):
             rel_path = current_path.split("%s/" % app_dir)[1]
             if name.startswith('.'):
                 continue
-            elif depth == 0 and name.startswith('_'):
+            elif name.startswith('_'):
+                # files starting with "_" are always "special"
                 continue
             elif depth == 0 and name in ('couchapp', 'couchapp.json'):
                 # we are in app_meta
@@ -469,9 +503,7 @@ class FileManager(object):
                         verbose=verbose)
             else:
                 if verbose >= 2:
-                    print >>sys.stderr, "push %s" % rel_path
-
-                manifest.append(rel_path)
+                    print >>sys.stderr, "push %s" % rel_path                
                 content = ''
                 try:
                     content = read_file(current_path)
@@ -486,13 +518,14 @@ class FileManager(object):
                 
                 # remove extension
                 name, ext = os.path.splitext(name)
-                if 'name' in fields:
+                if name in fields:
                     if verbose >= 2:
-                        print >>sys.stderr, "%(name)s is already in properties. Can't add (%(name)s.%(ext)s)" % {
+                        print >>sys.stderr, "%(name)s is already in properties. Can't add (%(name)s%(ext)s)" % {
                         "name": name,
                         "ext": ext
                         }
                 else:
+                    manifest.append(rel_path)
                     fields[name] = content
         return fields
     
@@ -514,11 +547,25 @@ class FileManager(object):
                 if verbose >= 2:
                     print >>sys.stderr, "%s file not uploaded, sorry." % filename
                 break
-
-    def push_directory(self, attach_dir, docid, verbose):
+                
+    def vendor_attachments(self, app_dir, docid, verbose):
+        vendor_dir = os.path.join(app_dir, 'vendor')
+        if not os.path.isdir(vendor_dir):
+            return
+            
+        for name in os.listdir(vendor_dir):
+            current_path = os.path.join(vendor_dir, name)
+            if os.path.isdir(current_path):
+                attach_dir = os.path.join(current_path, '_attachments')
+                if os.path.isdir(attach_dir):
+                    self.push_directory(attach_dir, docid, verbose, 
+                                    vendor=name)
+                    
+    def push_directory(self, attach_dir, docid, verbose=False, vendor=None):
         # get attachments
         _signatures = {}
         _attachments = {}
+        all_signatures = {}
         for root, dirs, files in os.walk(attach_dir):
             if files:
                 for filename in files:
@@ -526,7 +573,9 @@ class FileManager(object):
                         continue
                     else:
                         file_path = os.path.join(root, filename) 
-                        name = file_path.split('%s/' % attach_dir)[1] 
+                        name = file_path.split('%s/' % attach_dir)[1]
+                        if vendor is not None:
+                            name = os.path.join('vendor/%s' % vendor, name)
                         signature = sign_file(file_path)
                         _signatures[name] = signature
                         _attachments[name] = open(file_path, 'rb')
@@ -538,12 +587,24 @@ class FileManager(object):
             metadata = design.get('couchapp', {})
             attachments = _attachments.copy()
             if 'signatures' in metadata:
+                all_signatures = metadata['signatures'].copy()
                 for filename in metadata['signatures'].iterkeys():
-                    if filename not in _signatures:
-                        db.delete_attachment(design, filename)
+                    if vendor is not None:
+                        if filename.startswith('vendor/%s' % vendor):
+                            del all_signatures[filename]
+                            if filename not in _signatures:
+                                db.delete_attachment(design, filename)
+                            elif _signatures[filename] == metadata['signatures'][filename]:
+                                del attachments[filename]
+                            
                     else:
-                        if _signatures[filename] == metadata['signatures'][filename]:
-                            del attachments[filename]
+                        if not filename.startswith('vendor'):
+                            del all_signatures[filename]
+                            if filename not in _signatures:
+                                db.delete_attachment(design, filename)
+                            else:
+                                if _signatures[filename] == metadata['signatures'][filename]:
+                                    del attachments[filename]
 
             for filename, value in attachments.iteritems():
                 if verbose >= 2:
@@ -557,7 +618,10 @@ class FileManager(object):
             design = db[docid]
             if not 'couchapp' in design:
                 design['couchapp'] = {}
-            design['couchapp'].update({'signatures': _signatures})
+
+            all_signatures.update(_signatures)
+                
+            design['couchapp'].update({'signatures': all_signatures})
             db[docid] = design
 
     def package_shows(self, funcs, app_dir, verbose=False):
