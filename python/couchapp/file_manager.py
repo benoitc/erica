@@ -612,26 +612,31 @@ class FileManager(object):
             if mo.group(2).startswith('_attachments'): 
                 # someone  want to include from attachments
                 path = os.path.join(app_dir, mo.group(2).strip(' '))
-                try:
-                    library = read_file(path)
-                except IOError, e:
-                    if verbose>=2:
-                        print >>sys.stderr, e
-                    return f_string
-                if mo.group(2).endswith('.json'):
+                for filename in glob.iglob(path):
+                    library = ''
                     try:
-                        library = json.loads(library)
-                    except ValueError:
-                        return f_string
-                fields = mo.group(2).split('/')
-                count = len(fields)
-                include_to = included
-                for i, field in enumerate(fields):
-                    if i+1 < count:
-                        include_to[field] = {}
-                        include_to = include_to[field]
-                    else:
-                        include_to[field] = library
+                        library = read_file(filename)
+                    except IOError, e:
+                        if verbose>=2:
+                            print >>sys.stderr, e
+                        continue
+                    if library:
+                        if filename.endswith('.json'):
+                            try:
+                                library = json.loads(library)
+                            except ValueError:
+                                pass
+                        
+                        current_file = filename.split(app_dir)[1]
+                        fields = current_file.split('/')
+                        count = len(fields)
+                        include_to = included
+                        for i, field in enumerate(fields):
+                            if i+1 < count:
+                                include_to[field] = {}
+                                include_to = include_to[field]
+                            else:
+                                include_to[field] = library
             else:	
                 fields = mo.group(2).split('.')
                 library = self.doc
