@@ -561,10 +561,11 @@ class FileManager(object):
 
     def package_shows(self, funcs, app_dir, verbose=False):
         self.apply_lib(funcs, app_dir, verbose=verbose)
-
+              
     def package_views(self, views, app_dir, verbose=False):
         for view, funcs in views.iteritems():
             self.apply_lib(funcs, app_dir, verbose=verbose)
+
 
     def apply_lib(self, funcs, app_dir, verbose=False):
         if not hasattr(self, "objects"):
@@ -573,8 +574,12 @@ class FileManager(object):
             if not isinstance(v, basestring):
                 continue
             old_v = v
-            funcs[k] = self.process_include(self.process_requires(v, app_dir, verbose=verbose), 
+            try:
+              funcs[k] = self.process_include(self.process_requires(v, app_dir, verbose=verbose), 
                                 app_dir, verbose=verbose)
+            except ValueError, e:
+              print >>sys.stderr, "Error running !code or !json on function \"%s\": %s" % (k, e)
+              sys.exit(-1)
             if old_v != funcs[k]:
                 self.objects[_md5(funcs[k].encode('utf-8')).hexdigest()] = old_v
 
@@ -595,7 +600,8 @@ class FileManager(object):
             fields = mo.group(2).split('.')
             library = self.doc
             for field in fields:
-                if not field in library: break
+                if not field in library:
+                  raise ValueError("Can't find file: %s" % mo.group(2))
                 library = library[field]
             return library
 
