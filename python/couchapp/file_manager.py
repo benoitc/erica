@@ -575,40 +575,29 @@ class FileManager(object):
                 continue
             old_v = v
             try:
-              funcs[k] = self.process_include(self.process_requires(v, app_dir, verbose=verbose), 
-                                app_dir, verbose=verbose)
+              funcs[k] = self.run_json_macros(
+                              self.run_code_macros(v, app_dir, verbose=verbose), 
+                              app_dir, verbose=verbose)
             except ValueError, e:
               print >>sys.stderr, "Error running !code or !json on function \"%s\": %s" % (k, e)
               sys.exit(-1)
             if old_v != funcs[k]:
                 self.objects[_md5(funcs[k].encode('utf-8')).hexdigest()] = old_v
 
-    def process_requires(self, f_string, app_dir, verbose=False):
+    def run_code_macros(self, f_string, app_dir, verbose=False):
         def rreq(mo):
-            if mo.group(2).startswith('_attachments'): 
-                # someone want to include from attachments
-                # for now just read the file and return it
-                path = os.path.join(app_dir, mo.group(2).strip(' '))
-                try:
-                    library = read_file(path)
-                except IOError, e:
-                    if verbose>=2:
-                        print >>sys.stderr, e
-                    return f_string
-                return library
-            
-            fields = mo.group(2).split('.')
-            library = self.doc
-            for field in fields:
-                if not field in library:
-                  raise ValueError("Can't find file: %s" % mo.group(2))
-                library = library[field]
+            # just read the file and return it
+            path = os.path.join(app_dir, mo.group(2).strip(' '))
+            try:
+                library = read_file(path)
+            except IOError, e:
+                raise ValueError("Can't find file: %s" % mo.group(2))
             return library
 
         re_code = re.compile('(\/\/|#)\ ?!code (.*)')
         return re_code.sub(rreq, f_string)
 
-    def process_include(self, f_string, app_dir, verbose=False):
+    def run_json_macros(self, f_string, app_dir, verbose=False):
         included = {}
         varstrings = []
 

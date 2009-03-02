@@ -53,21 +53,23 @@ CouchApp provides some neat helpers for getting code into your view and render f
 
 ### !code for code
 
-The `!code path.to.code` macro inserts the string value found at `path.to.code` of the design document, into the current file, at the position of the macro. Here's an example:
+The `!code path/to/code.js` macro inserts the content of the named file, into the current file, at the position of the macro. Here's an example:
 
     function(doc) {
-      // !code lib.parser.html
+      // !code lib/parsers/parse_html.js
       var parsed = new parseHTML(doc.html);
       emit(doc.key, parsed);
     }
 
-When you run `couchapp push` the `!code` line will be replaced with the contents of the file found at `lib/parser/html.js`. Simple as that.
+When you run `couchapp push` the `!code` line will be replaced with the contents of the file found at `lib/parsers/parse_html.js`. Simple as that.
 
 As we begin to see more apps built using CouchApp, we plan to include helpful functions in the standard library (as supplied by `couchapp generate`). Thank you for helping us expand this section! :)
 
 ### !json for data
 
 After all the `!code` includes have been processed (insuring that included code may also use the `!json` macro), `couchapp push` does another pass through the function, running the `!json path.to.json` macros. This accumulates the data found in the JSON design doc at `path.to.json` into a single object for inclusion. After all the `!json` macros have been processed, the accumlated object is serialized to json and stored in variable names corresponding to their path's roots. 
+
+The JSON paths use JavaScript style dot notation. Address the nodes as though you are running inside a `with(designDoc){ ... }` block. See the examples below.
 
 Here's an example. It's a lot of code to look at, but the principles are simple. Also, if you think you can explain it better than I have, please send a patch.
 
