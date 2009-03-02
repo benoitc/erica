@@ -65,6 +65,19 @@ def _server(server_uri):
         couchdb_server = Server(server_uri)
     return couchdb_server
 
+def get_userconf():
+    """ return user conf """
+    
+    # this should work on windows too
+    homedir = os.path.expanduser('~')
+    user_conffile = os.path.join(homedir, ".couchapprc")
+    if os.path.isfile(user_conffile):
+        try:
+            return read_json(user_conffile)
+        except:
+            pass
+    return {}
+
 class FileManager(object):
     
     def __init__(self, dbstring, app_dir='.'):
@@ -106,6 +119,10 @@ class FileManager(object):
                 _db = couchdb_server[db_name]
             db.append(_db)
         self.db = db
+        
+        self.conf = get_userconf()
+        
+    
 
     @classmethod
     def generate_app(cls, app_dir):
@@ -142,6 +159,8 @@ class FileManager(object):
                 return
 
         cls.init(app_dir)
+        
+    
 
     @classmethod
     def init(cls, app_dir, db_url=''):
@@ -149,9 +168,19 @@ class FileManager(object):
         if not os.path.isdir(app_dir):
             print>>sys.stderr, "%s directory doesn't exist." % app_dir
             return
+        
+        userconf = get_userconf()
+        if 'default' in userconf:
+            conf = {
+                "env": {
+                    "default": userconf['env']['default']
+                }
+            }
+        else:
+            conf = {}
+            
         rc_file = '%s/.couchapprc' % app_dir
         if not os.path.isfile(rc_file):
-            conf = {}
             if db_url:
                 conf.update({ "env": { 
                     "default": {
@@ -166,10 +195,10 @@ class FileManager(object):
     def load_metadata(self, app_dir):
         """Reads the .couchapprc to get configuration data"""
         rc_file = os.path.join(app_dir, '.couchapprc')
+        conf = get_userconf()
         if os.path.isfile(rc_file):
-            self.conf = read_json(rc_file)
-            return
-        self.conf = {}
+            conf.update(read_json(rc_file))
+        self.conf = conf
 
     def push_app(self, app_dir, app_name, verbose=False, **kwargs):
         """Pushes the app specified to the CouchDB instance"""
