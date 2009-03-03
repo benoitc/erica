@@ -103,7 +103,7 @@ def _vendor_handlers():
     vendor_handlers = VENDOR_HANDLERS
     if "vendor_handlers" in user_conf:
         try:
-            vendor_handler.update(VENDOR_HANDLERS)
+            vendor_handler.update(user_conf['vendor_handlers'])
         except ValueError:
             pass
     return vendor_handlers
