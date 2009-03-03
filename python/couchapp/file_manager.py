@@ -41,6 +41,17 @@ except ImportError:
         if not rel_list:
             return os.curdir
         return os.path.join(*rel_list)
+        
+try:#python 2.6, use subprocess
+    from subprocess import *
+    def _popen3(cmd, mode='t', bufsize=0):
+        p = Popen(cmd, shell=True, bufsize=bufsize,
+            stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
+        return (p.stdin, p.stdout, p.stderr)
+except ImportError:
+    def _popen3(cmd, mode='t', bufsize=0):
+        return os.popen3(cmd, mode, bufsize)
+        
 
 
 import httplib2
@@ -53,6 +64,14 @@ from couchapp.utils.css_parser import CSSParser
 __all__ = ['DEFAULT_SERVER_URI', 'FileManager']
 
 DEFAULT_SERVER_URI = 'http://127.0.0.1:5984/'
+
+# should be changes to jchris repo.
+COUCHAPP_VENDOR_URL = 'git://github.com/benoitc/couchapp.git'
+
+external_dir = os.path.join(os.path.dirname(__file__), '_external')
+VENDOR_HANDLERS = (
+    ('git://', os.path.join(external_dir, 'git.sh')),
+)
 
 def _server(server_uri):
     if "@" in server_uri:
@@ -111,7 +130,7 @@ class FileManager(object):
             server_uri, db_name, docid = parse_uri(s)
  
             couchdb_server = _server(server_uri)
-
+            
             # create dbs if it don't exist
             try:
                 _db = couchdb_server.create(db_name)
@@ -123,7 +142,6 @@ class FileManager(object):
         self.conf = get_userconf()
         
     
-
     @classmethod
     def generate_app(cls, app_dir):
         """Generates a CouchApp in app_dir"""
@@ -147,8 +165,7 @@ class FileManager(object):
             print >>sys.stderr, "Can't create a CouchApp in %s: %s" % (
                     app_dir, message)
             return
-            
-               
+                          
         if vendor_dir:
             vendor_path = os.path.join(app_dir, 'vendor')
             try:
@@ -159,9 +176,7 @@ class FileManager(object):
                 return
 
         cls.init(app_dir)
-        
     
-
     @classmethod
     def init(cls, app_dir, db_url=''):
         """Initializes the .couchapprc, usually called after generate"""
@@ -803,7 +818,37 @@ class FileManager(object):
             write_content(dest_path, output_css) 
             
     def make_index_url(self, uri, app_name, index):
-      return "%s/%s/%s/%s" % (uri, index[0], app_name, index[1])
+        return "%s/%s/%s/%s" % (uri, index[0], app_name, index[1])
+    
+    @classmethod
+    def vendor_update(cls, app_dir, verbose=False):
+        vendor_dir = os.path.join(app_dir, "vendor")
+        for name in os.listdir(vendor_dir):
+            current_path = os.path.join(vendor_dir, name)
+            if os.path.isdir(current_path):
+                mfile = os.path.join(current_path, 'metadata.json')
+                metadata = read_json(mfile)
+                if not metadata and name == 'couchapp':
+                    update_url = COUCHAPP_VENDOR_URL
+                elif metadata:
+                    update_url = metadata['update_url']
+                
+                if update_url:
+                    # for now we manage only internal handlers
+                    for handler in VENDOR_HANDLERS:
+                        if update_url.startswith(handler[0]):
+                            cmd = "%s update %s %s" % (handler[1], update_url, 
+                                                    current_path)
+                                                    
+                            
+                            (child_stdin, child_stdout, child_stderr) = _popen3(cmd)
+                            if verbose >=2:
+                                print child_stdout.read()
+                                err = child_stderr.read()
+                                if err:
+                                    print >>sys.stderr, err
+                            break
+                        
 
     def merge_js(self, attach_dir, js_conf, docid, verbose=False):
         if "js_compressor" in self.conf:

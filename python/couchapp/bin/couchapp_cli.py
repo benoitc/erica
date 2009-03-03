@@ -47,7 +47,10 @@ def push(appdir, appname, dbstring, verbose=False,
             nocss=options.css, nojs=options.js)
 
 def clone(app_uri, app_dir, verbose=False):
-    couchapp.FileManager.clone(app_uri, app_dir, verbose)
+    couchapp.FileManager.clone(app_uri, app_dir, verbose=verbose)
+    
+def vendor_update(app_dir, verbose=False):
+    couchapp.FileManager.vendor_update(app_dir, verbose=verbose)
 
 def main():
     parser = OptionParser(usage='%prog [options] cmd', version="%prog " + couchapp.__version__)
@@ -154,6 +157,21 @@ def main():
         except IndexError:
             appdir = '.'
         init(appdir, dburl, options.verbose)
+    elif args[0] == 'vendor':
+        if len(args) < 2:
+            return parser.error('Incorrect number of arguments (at least two)')
+        try:
+            appdir = args[2]
+        except IndexError:
+            appdir = '.'
+            
+        action = args[1]
+        if action == 'update':
+            vendor_update(appdir, options.verbose)
+        else:
+            print >>sys.stderr, "%s is an unknown vendor action, sorry." % action
+            
+        
     else:
         print "%s is an unknown command, sorry." % args[0]
 
