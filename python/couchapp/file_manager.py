@@ -823,6 +823,8 @@ class FileManager(object):
     @classmethod
     def vendor_update(cls, app_dir, verbose=False):
         vendor_dir = os.path.join(app_dir, "vendor")
+        if not os.path.isdir(vendor_dir):
+            return
         for name in os.listdir(vendor_dir):
             current_path = os.path.join(vendor_dir, name)
             if os.path.isdir(current_path):
@@ -837,8 +839,8 @@ class FileManager(object):
                     # for now we manage only internal handlers
                     for handler in VENDOR_HANDLERS:
                         if update_url.startswith(handler[0]):
-                            cmd = "%s update %s %s" % (handler[1], update_url, 
-                                                    current_path)
+                            cmd = "%s update %s %s %s" % (handler[1], update_url, 
+                                                    current_path, vendor_dir)
                                                     
                             
                             (child_stdin, child_stdout, child_stderr) = _popen3(cmd)
@@ -849,7 +851,40 @@ class FileManager(object):
                                     print >>sys.stderr, err
                             break
                         
-
+    @classmethod
+    def vendor_install(cls, app_dir, url, verbose=False):
+        vendor_dir = os.path.join(app_dir, "vendor")
+        if not os.path.isdir(vendor_dir):
+            os.makedirs(vendor_dir)
+            
+        installed_apps = []
+        for name in os.listdir(vendor_dir):
+            current_path = os.path.join(vendor_dir, name)
+            if os.path.isdir(current_path):
+                installed_apps.append(name)
+                
+            
+        for handler in VENDOR_HANDLERS:
+            if url.startswith(handler[0]):
+                cmd = "%s install %s %s" % (handler[1], url, vendor_dir)
+                (child_stdin, child_stdout, child_stderr) = _popen3(cmd)
+                err = child_stderr.read()
+                if verbose >=2:
+                    print child_stdout.read()
+                if err:
+                    print >>sys.stderr, err
+                break
+                
+        for name in os.listdir(vendor_dir):
+            current_path = os.path.join(vendor_dir, name)
+            if os.path.isdir(current_path):
+                if name not in installed_apps:
+                    mfile = os.path.join(current_path, 'metadata.json')
+                    write_json(mfile, {
+                        "update_url": url
+                    })
+                    return
+                
     def merge_js(self, attach_dir, js_conf, docid, verbose=False):
         if "js_compressor" in self.conf:
             if not isinstance(self.conf["js_compressor"], basestring):

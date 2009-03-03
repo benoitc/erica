@@ -51,6 +51,9 @@ def clone(app_uri, app_dir, verbose=False):
     
 def vendor_update(app_dir, verbose=False):
     couchapp.FileManager.vendor_update(app_dir, verbose=verbose)
+    
+def vendor_install(app_dir, url, verbose=False):
+    couchapp.FileManager.vendor_install(app_dir, url, verbose=verbose)
 
 def main():
     parser = OptionParser(usage='%prog [options] cmd', version="%prog " + couchapp.__version__)
@@ -160,14 +163,24 @@ def main():
     elif args[0] == 'vendor':
         if len(args) < 2:
             return parser.error('Incorrect number of arguments (at least two)')
-        try:
-            appdir = args[2]
-        except IndexError:
-            appdir = '.'
+       
             
         action = args[1]
         if action == 'update':
+            try:
+                appdir = args[2]
+            except IndexError:
+                appdir = '.'
             vendor_update(appdir, options.verbose)
+        elif action == 'install':
+            if len(args) < 3:
+                return parser.error('Incorrect number of arguments')
+                
+            try:
+                appdir = args[3]
+            except IndexError:
+                appdir = '.'
+            vendor_install(appdir, args[2], options.verbose)
         else:
             print >>sys.stderr, "%s is an unknown vendor action, sorry." % action
             
