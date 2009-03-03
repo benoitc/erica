@@ -97,6 +97,16 @@ def get_userconf():
         except:
             pass
     return {}
+    
+def _vendor_handlers():
+    user_conf = get_userconf()
+    vendor_handlers = VENDOR_HANDLERS
+    if "vendor_handlers" in user_conf:
+        try:
+            vendor_handler.update(VENDOR_HANDLERS)
+        except ValueError:
+            pass
+    return vendor_handlers
 
 class FileManager(object):
     
@@ -826,6 +836,9 @@ class FileManager(object):
         vendor_dir = os.path.join(app_dir, "vendor")
         if not os.path.isdir(vendor_dir):
             return
+
+        vendor_handlers = _vendor_handlers()
+ 
         for name in os.listdir(vendor_dir):
             current_path = os.path.join(vendor_dir, name)
             if os.path.isdir(current_path):
@@ -842,7 +855,7 @@ class FileManager(object):
                 
                 if update_url and scm:
                     # for now we manage only internal handlers
-                    handler = VENDOR_HANDLERS[scm]
+                    handler = vendor_handler[scm]
                     cmd = "%s update %s %s %s" % (handler, update_url, 
                                             current_path, vendor_dir)
                     (child_stdin, child_stdout, child_stderr) = _popen3(cmd)
@@ -861,6 +874,8 @@ class FileManager(object):
         if not os.path.isdir(vendor_dir):
             os.makedirs(vendor_dir)
             
+        vendor_handlers = _vendor_handlers()
+        
         # get list of installed applications
         installed_apps = []
         for name in os.listdir(vendor_dir):
@@ -869,7 +884,7 @@ class FileManager(object):
                 installed_apps.append(name)
                 
             
-        handler = VENDOR_HANDLERS[scm]
+        handler = vendor_handlers[scm]
         cmd = "%s install %s %s" % (handler, url, vendor_dir)
         (child_stdin, child_stdout, child_stderr) = _popen3(cmd)
         err = child_stderr.read()
