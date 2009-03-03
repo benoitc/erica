@@ -857,6 +857,7 @@ class FileManager(object):
         if not os.path.isdir(vendor_dir):
             os.makedirs(vendor_dir)
             
+        # get list of installed applications
         installed_apps = []
         for name in os.listdir(vendor_dir):
             current_path = os.path.join(vendor_dir, name)
@@ -875,6 +876,7 @@ class FileManager(object):
                     print >>sys.stderr, err
                 break
                 
+        # detect new vendor application and add url so we could update later
         for name in os.listdir(vendor_dir):
             current_path = os.path.join(vendor_dir, name)
             if os.path.isdir(current_path):
