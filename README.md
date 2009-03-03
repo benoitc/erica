@@ -162,6 +162,31 @@ When you've setup `.couchapprc` you can push your app with just `couchapp push` 
 
 Clone downloads apps from other databases around the internet, all you have to do is point to the design doc url. Usage instructions will be here soon.
 
+## Vendor
+
+handle vendor update and install from a git repository. Each vendor app 
+should be in a vendor folder :
+
+    vendor/appname
+
+To update a vendor folder in your couchapp:
+
+    couchapp vendor update [app dir]
+
+Or from within the app dir:
+    
+    couchapp vendor update
+
+To install a vendor plugin:
+
+    couchapp vendor install git://somerepo [app dir]
+
+Example:
+
+    couchapp vendor install git://github.com/jchris/couchapp.git
+
+CouchApp's JavaScript library is a vendor (the one right above this line) and it is installed by default in new generators.
+
 # Community
 
 There is a mailing list here: [http://groups.google.com/group/couchapp](http://groups.google.com/group/couchapp)
