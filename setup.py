@@ -45,7 +45,7 @@ def process_distribution(self, *args, **kwargs):
                 os.chmod(os.path.join(dir, file_), 0755)  
             
     except:
-        print >>sys.stderr, "Chmoding failed. Try to 'chmod -R +x /pathto/couchapp/_external'"
+        print >>sys.stderr, "Chmoding failed. Try to 'chmod -R +x %s'" % external_path
 easy_install.process_distribution = process_distribution        
  
 setup(
