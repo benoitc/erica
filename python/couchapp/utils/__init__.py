@@ -102,7 +102,7 @@ def sign_file(file_path):
 
 def write_content(filename, content):
     f = open(filename, 'wb')
-    f.write(content)
+    f.write(content.encode('utf-8'))
     f.close
 
 def write_json(filename, content):
