@@ -9,6 +9,7 @@ import ez_setup
 ez_setup.use_setuptools()
 
 from setuptools import setup, find_packages
+from setuptools.command.easy_install import easy_install
 
 import os
 import sys
@@ -26,10 +27,27 @@ for dir, dirs, files in os.walk('vendor'):
 for dir, dirs, files in os.walk('python/couchapp'):
     for i, dirname in enumerate(dirs):
         if dirname.startswith('.'): del dirs[i]
+        
+    data_files.append((dir, [os.path.join(dir, file_) for file_ in files]))
     
-    data_files.append((os.path.join('couchapp', dir), 
-        [os.path.join(dir, file_) for file_ in files]))
-
+easy_install.real_process_distribution = easy_install.process_distribution
+def process_distribution(self, *args, **kwargs):
+    """ overide process_distribution to add permissions"""
+    easy_install.real_process_distribution(self, *args, **kwargs)
+    import pkg_resources
+    try:
+        pkg_resources.require('couchapp')
+        external_path = pkg_resources.resource_filename("couchapp", "_external")
+        for dir, dirs, files in os.walk(external_path):
+            for i, dirname in enumerate(dirs):
+                if dirname.startswith('.'): del dirs[i]
+            for file_ in files:
+                os.chmod(os.path.join(dir, file_), 0755)  
+            
+    except:
+        print >>sys.stderr, "Chmoding failed. Try to 'chmod -R +x /pathto/couchapp/_external'"
+easy_install.process_distribution = process_distribution        
+ 
 setup(
     name = 'Couchapp',
     version = '0.1.13',
@@ -77,5 +95,6 @@ setup(
         'couchdb>=0.5',
         'simplejson',
     ],
+    
 )
 
