@@ -52,8 +52,9 @@ def clone(app_uri, app_dir, verbose=False):
 def vendor_update(app_dir, verbose=False):
     couchapp.FileManager.vendor_update(app_dir, verbose=verbose)
     
-def vendor_install(app_dir, url, verbose=False):
-    couchapp.FileManager.vendor_install(app_dir, url, verbose=verbose)
+def vendor_install(app_dir, url, scm='git', verbose=False):
+    couchapp.FileManager.vendor_install(app_dir, url, scm=scm, 
+                                    verbose=verbose)
 
 def main():
     parser = OptionParser(usage='%prog [options] cmd', version="%prog " + couchapp.__version__)
@@ -82,7 +83,12 @@ def main():
     group_init = OptionGroup(parser, "Initialize CouchApp .couchapprc", "couchapp init [options] <appdir>")
     group_init.add_option("--db", action="store", help="full url of default database")
     parser.add_option_group(group_init)
-
+    
+    group_vendor = OptionGroup(parser, "Install a vendor", "couchapp vendor install vendor_url [option][appdir]")
+    group_vendor.add_option("--scm", action="store", default='git', 
+                                help="scm used to install the vendor, by default git")
+    parser.add_option_group(group_vendor)
+    
     options, args = parser.parse_args()
 
 
@@ -180,7 +186,7 @@ def main():
                 appdir = args[3]
             except IndexError:
                 appdir = '.'
-            vendor_install(appdir, args[2], options.verbose)
+            vendor_install(appdir, args[2], options.scm, options.verbose)
         else:
             print >>sys.stderr, "%s is an unknown vendor action, sorry." % action
             

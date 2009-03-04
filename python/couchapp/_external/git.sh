@@ -3,12 +3,12 @@
 GIT=`which git` 
 tempfile=`mktemp /tmp/couchappXXXXXXX`
 
+
 rm $tempfile
 
-
-echo $2
 # get vendor files
 $GIT clone --depth=1 $2 $tempfile
+
 
 # delete existing files
 if [ $1 = "update" ]; then
@@ -17,12 +17,21 @@ if [ $1 = "update" ]; then
     fi
 
     if [ -r $tempfile/vendor ]; then
-        cp -vr $tempfile/vendor/* $4
+        for f in $(find $tempfile/vendor -type d); do
+            if [ $f != "$tempfile/vendor" ]; then
+                cp -vr $f $4
+            fi
+        done
+        
     fi
 else
     if [ -r $tempfile/vendor ]; then
-        cp -vr $tempfile/vendor/* $3
+        for f in $(find $tempfile/vendor -type d); do
+            if [ $f != "$tempfile/vendor" ]; then
+                echo "$2" > $f/.new
+                cp -vr $f $3
+                
+            fi
+        done
     fi
 fi
-
-

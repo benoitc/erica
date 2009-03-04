@@ -67,11 +67,12 @@ DEFAULT_SERVER_URI = 'http://127.0.0.1:5984/'
 
 # should be changes to jchris repo.
 COUCHAPP_VENDOR_URL = 'git://github.com/benoitc/couchapp.git'
+COUCHAPP_VENDOR_SCM = 'git'
 
 external_dir = os.path.join(os.path.dirname(__file__), '_external')
-VENDOR_HANDLERS = (
-    ('git://', os.path.join(external_dir, 'git.sh')),
-)
+VENDOR_HANDLERS = {
+    'git': os.path.join(external_dir, 'git.sh')
+}
 
 def _server(server_uri):
     if "@" in server_uri:
@@ -96,6 +97,16 @@ def get_userconf():
         except:
             pass
     return {}
+    
+def _vendor_handlers():
+    user_conf = get_userconf()
+    vendor_handlers = VENDOR_HANDLERS
+    if "vendor_handlers" in user_conf:
+        try:
+            vendor_handler.update(user_conf['vendor_handlers'])
+        except ValueError:
+            pass
+    return vendor_handlers
 
 class FileManager(object):
     
@@ -825,6 +836,9 @@ class FileManager(object):
         vendor_dir = os.path.join(app_dir, "vendor")
         if not os.path.isdir(vendor_dir):
             return
+
+        vendor_handlers = _vendor_handlers()
+ 
         for name in os.listdir(vendor_dir):
             current_path = os.path.join(vendor_dir, name)
             if os.path.isdir(current_path):
@@ -832,31 +846,36 @@ class FileManager(object):
                 metadata = read_json(mfile)
                 if not metadata and name == 'couchapp':
                     update_url = COUCHAPP_VENDOR_URL
+                    scm = COUCHAPP_VENDOR_SCM
                 elif metadata:
                     update_url = metadata['update_url']
+                    scm = metadata['scm']
+                    if not scm in VENDOR_HANDLERS:
+                        scm = False
                 
-                if update_url:
+                if update_url and scm:
                     # for now we manage only internal handlers
-                    for handler in VENDOR_HANDLERS:
-                        if update_url.startswith(handler[0]):
-                            cmd = "%s update %s %s %s" % (handler[1], update_url, 
-                                                    current_path, vendor_dir)
-                                                    
-                            
-                            (child_stdin, child_stdout, child_stderr) = _popen3(cmd)
-                            if verbose >=2:
-                                print child_stdout.read()
-                                err = child_stderr.read()
-                                if err:
-                                    print >>sys.stderr, err
-                            break
+                    handler = vendor_handlers[scm]
+                    cmd = "%s update %s %s %s" % (handler, update_url, 
+                                            current_path, vendor_dir)
+                    (child_stdin, child_stdout, child_stderr) = _popen3(cmd)
+                    if verbose >=2:
+                        print child_stdout.read()
+                        err = child_stderr.read()
+                        if err:
+                            print >>sys.stderr, err
                         
     @classmethod
-    def vendor_install(cls, app_dir, url, verbose=False):
+    def vendor_install(cls, app_dir, url, scm="git", verbose=False):   
+        if not scm in VENDOR_HANDLERS:
+            print >>sys.stderr, "%s scm isn't supported yet." % scm
+            sys.exit(-1)
         vendor_dir = os.path.join(app_dir, "vendor")
         if not os.path.isdir(vendor_dir):
             os.makedirs(vendor_dir)
             
+        vendor_handlers = _vendor_handlers()
+        
         # get list of installed applications
         installed_apps = []
         for name in os.listdir(vendor_dir):
@@ -865,27 +884,30 @@ class FileManager(object):
                 installed_apps.append(name)
                 
             
-        for handler in VENDOR_HANDLERS:
-            if url.startswith(handler[0]):
-                cmd = "%s install %s %s" % (handler[1], url, vendor_dir)
-                (child_stdin, child_stdout, child_stderr) = _popen3(cmd)
-                err = child_stderr.read()
-                if verbose >=2:
-                    print child_stdout.read()
-                if err:
-                    print >>sys.stderr, err
-                break
+        handler = vendor_handlers[scm]
+        cmd = "%s install %s %s" % (handler, url, vendor_dir)
+        (child_stdin, child_stdout, child_stderr) = _popen3(cmd)
+        err = child_stderr.read()
+        if verbose >=2:
+            print child_stdout.read()
+        if err:
+            print >>sys.stderr, err
                 
         # detect new vendor application and add url so we could update later
         for name in os.listdir(vendor_dir):
             current_path = os.path.join(vendor_dir, name)
-            if os.path.isdir(current_path):
-                if name not in installed_apps:
-                    mfile = os.path.join(current_path, 'metadata.json')
-                    write_json(mfile, {
-                        "update_url": url
-                    })
-                    return
+            if os.path.isdir(current_path) and name not in installed_apps:
+                new_file = os.path.join(current_path, '.new')
+                if os.path.isfile(new_file):
+                    new_url = read_file(new_file).strip()
+                    if new_url == url:
+                        mfile = os.path.join(current_path, 'metadata.json')
+                        write_json(mfile, {
+                            "scm": scm,
+                            "update_url": url
+                        })
+                        os.unlink(new_file)
+                        return
                 
     def merge_js(self, attach_dir, js_conf, docid, verbose=False):
         if "js_compressor" in self.conf:
