@@ -35,6 +35,7 @@ def process_distribution(self, *args, **kwargs):
     """ overide process_distribution to add permissions"""
     easy_install.real_process_distribution(self, *args, **kwargs)
     import pkg_resources
+    external_path = '/pathto/couchapp/_external'
     try:
         pkg_resources.require('couchapp')
         external_path = pkg_resources.resource_filename("couchapp", "_external")

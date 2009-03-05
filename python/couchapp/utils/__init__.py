@@ -26,7 +26,6 @@ except ImportError:
     import simplejson as json 
 
 
-
 def in_couchapp():
     current_path = os.getcwd()
     old_dirs = []
@@ -86,6 +85,15 @@ def parse_auth(string):
 def get_appname(docid):
     return docid.split('_design/')[1]
 
+
+def to_bytestring(s):
+    if not isinstance(s, basestring):
+        return s
+    if isinstance(s, unicode):
+        return s.encode('utf-8')
+    else:
+        return s
+
 def read_file(fname):
     f = codecs.open(fname, 'rb', "utf-8")
     data = f.read()
@@ -100,10 +108,10 @@ def sign_file(file_path):
         return _md5(content).hexdigest()
     return ''
 
-def write_content(filename, content):
-    f = open(filename, 'wb')
-    f.write(content)
-    f.close
+def write_content(fname, content):
+    f = open(fname, 'wb')
+    f.write(to_bytestring(content))
+    f.close()
 
 def write_json(filename, content):
     write_content(filename, json.dumps(content))
