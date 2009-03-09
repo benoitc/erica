@@ -829,7 +829,7 @@ class FileManager(object):
             write_content(dest_path, output_css) 
             
     def make_index_url(self, uri, app_name, index):
-        return "%s/%s/%s/%s" % (uri, index[0], app_name, index[1])
+        return "%s/%s/%s/%s" % (uri, '_design', app_name, index)
     
     @classmethod
     def vendor_update(cls, app_dir, verbose=False):
