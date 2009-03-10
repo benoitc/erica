@@ -120,12 +120,14 @@ def write_json(filename, content):
 def read_json(filename, use_environment=False):
     try:
         data = read_file(filename)
-        if use_environment:
-            data = string.Template(data).substitute(os.environ)
     except IOError, e:
         if e[0] == 2:
             return {}
         raise
+
+    if use_environment:
+        data = string.Template(data).substitute(os.environ)
+
     try:
         data = json.loads(data)
     except ValueError:
