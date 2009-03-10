@@ -65,8 +65,7 @@ __all__ = ['DEFAULT_SERVER_URI', 'FileManager']
 
 DEFAULT_SERVER_URI = 'http://127.0.0.1:5984/'
 
-# should be changes to jchris repo.
-COUCHAPP_VENDOR_URL = 'git://github.com/benoitc/couchapp.git'
+COUCHAPP_VENDOR_URL = 'git://github.com/jchris/couchapp.git'
 COUCHAPP_VENDOR_SCM = 'git'
 
 external_dir = os.path.join(os.path.dirname(__file__), '_external')
