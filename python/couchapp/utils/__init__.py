@@ -9,6 +9,7 @@
 
 import codecs
 import os
+import string
 import sys
 import urlparse
 import urllib
@@ -116,9 +117,11 @@ def write_content(fname, content):
 def write_json(filename, content):
     write_content(filename, json.dumps(content))
 
-def read_json(filename):
+def read_json(filename, use_environment=False):
     try:
         data = read_file(filename)
+        if use_environment:
+            data = string.Template(data).substitute(os.environ)
     except IOError, e:
         if e[0] == 2:
             return {}

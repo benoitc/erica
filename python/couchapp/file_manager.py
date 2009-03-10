@@ -223,7 +223,7 @@ class FileManager(object):
         rc_file = os.path.join(app_dir, '.couchapprc')
         conf = get_userconf()
         if os.path.isfile(rc_file):
-            conf.update(read_json(rc_file))
+            conf.update(read_json(rc_file, use_environment=True))
         self.conf = conf
 
     def push_app(self, app_dir, app_name, verbose=False, **kwargs):
