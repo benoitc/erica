@@ -254,9 +254,11 @@ class FileManager(object):
                 couchapp = doc.get('couchapp', False)
                 if couchapp:
                   index = couchapp.get('index', False)
-                  if index:
-                    index_url = self.make_index_url(db.resource.uri, app_name, index)
-                    print "Visit your CouchApp here:\n%s" % index_url
+                else:
+                  index = False
+                index_url = self.make_index_url(db.resource.uri, app_name, attach_dir, index)
+                if index_url:
+                  print "Visit your CouchApp here:\n%s" % index_url
 
             new_doc = doc.copy()
 
@@ -828,8 +830,15 @@ class FileManager(object):
 
             write_content(dest_path, output_css) 
             
-    def make_index_url(self, uri, app_name, index):
-        return "%s/%s/%s/%s" % (uri, '_design', app_name, index)
+    def make_index_url(self, uri, app_name, attach_dir, index):
+        if index:
+          return "%s/%s/%s/%s" % (uri, '_design', app_name, index)
+        else:
+          index_fpath = os.path.join(attach_dir, 'index.html')
+          if os.path.isfile(index_fpath):
+            return "%s/%s/%s/%s" % (uri, '_design', app_name, 'index.html')
+          else:
+            return False
     
     @classmethod
     def vendor_update(cls, app_dir, verbose=False):
