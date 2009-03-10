@@ -864,6 +864,8 @@ class FileManager(object):
                 if update_url and scm:
                     # for now we manage only internal handlers
                     handler = vendor_handlers[scm]
+                    if verbose >= 1:
+                        print "Updating %s from %s" % (current_path, update_url)
                     cmd = "%s update %s %s %s" % (handler, update_url, 
                                             current_path, vendor_dir)
                     (child_stdin, child_stdout, child_stderr) = _popen3(cmd)
