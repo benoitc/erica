@@ -164,20 +164,19 @@ Clone downloads apps from other databases around the internet, all you have to d
 
 ## Vendor
 
-handle vendor update and install from a git repository. Each vendor app 
-should be in a vendor folder :
+Handle vendor update and install from a git repository. Each vendor app should be in a vendor folder:
 
     vendor/appname
 
 To update a vendor folder in your couchapp:
 
-    couchapp vendor update [app dir]
+    couchapp vendor update <app dir>
 
 Or from within the app dir:
     
     couchapp vendor update
 
-To install a vendor plugin:
+To install a vendor app:
 
     couchapp vendor install git://somerepo [app dir]
 

@@ -35,6 +35,7 @@ def process_distribution(self, *args, **kwargs):
     """ overide process_distribution to add permissions"""
     easy_install.real_process_distribution(self, *args, **kwargs)
     import pkg_resources
+    external_path = '/pathto/couchapp/_external'
     try:
         pkg_resources.require('couchapp')
         external_path = pkg_resources.resource_filename("couchapp", "_external")
@@ -50,7 +51,7 @@ easy_install.process_distribution = process_distribution
  
 setup(
     name = 'Couchapp',
-    version = '0.1.13',
+    version = '0.1.14',
     url = 'http://github.com/benoitc/couchapp/tree/master',
     license =  'Apache License 2',
     author = 'Benoit Chesneau',
