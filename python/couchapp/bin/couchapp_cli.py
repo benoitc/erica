@@ -22,6 +22,7 @@ from optparse import OptionParser, OptionGroup
 
 import couchapp
 from couchapp.utils import in_couchapp
+from couchapp.vendor import Vendor
 
 
 def generate(appname, verbose=False):
@@ -43,18 +44,18 @@ def push(appdir, appname, dbstring, verbose=False,
         print>>sys.stderr, e
         return 
 
-    fm.push_app(appdir, appname, verbose=verbose, 
-            nocss=options.css, nojs=options.js)
+    fm.push_app(appdir, appname, verbose=verbose)
 
 def clone(app_uri, app_dir, verbose=False):
     couchapp.FileManager.clone(app_uri, app_dir, verbose=verbose)
     
 def vendor_update(app_dir, verbose=False):
-    couchapp.FileManager.vendor_update(app_dir, verbose=verbose)
+    vendor = Vendor(app_dir)
+    vendor.update(verbose=verbose)
     
 def vendor_install(app_dir, url, scm='git', verbose=False):
-    couchapp.FileManager.vendor_install(app_dir, url, scm=scm, 
-                                    verbose=verbose)
+    vendor = Vendor(app_dir)
+    vendor.install(url, scm=scm, verbose=verbose)
 
 def main():
     parser = OptionParser(usage='%prog [options] cmd', version="%prog " + couchapp.__version__)
@@ -68,10 +69,6 @@ def main():
     # push options
     group_push = OptionGroup(parser, "Pushes a CouchApp to CouchDB", 
             "couchapp push [options] [appdir] [appname] [dburl]")
-    group_push.add_option("--disable-css", action="store_true", 
-        dest="css", help="disable css compression")
-    group_push.add_option("--disable-js", action="store_true", 
-        dest="js", help="disable js compression")
     parser.add_option_group(group_push)
     
     # clone options
@@ -180,17 +177,14 @@ def main():
             vendor_update(appdir, options.verbose)
         elif action == 'install':
             if len(args) < 3:
-                return parser.error('Incorrect number of arguments')
-                
+                return parser.error('Incorrect number of arguments')                
             try:
                 appdir = args[3]
             except IndexError:
                 appdir = '.'
             vendor_install(appdir, args[2], options.scm, options.verbose)
         else:
-            print >>sys.stderr, "%s is an unknown vendor action, sorry." % action
-            
-        
+            print >>sys.stderr, "%s is an unknown vendor action, sorry." % action      
     else:
         print "%s is an unknown command, sorry." % args[0]
 
