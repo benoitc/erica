@@ -57,7 +57,7 @@ except ImportError:
 import httplib2
 from couchdb import Server, ResourceNotFound
 
-from couchapp.utils import _md5
+from couchapp.utils import _md5, to_bytestring
 from couchapp.utils import *
 from couchapp.utils.css_parser import CSSParser
 
@@ -243,6 +243,11 @@ class FileManager(object):
         if 'lists' in doc:
             self.package_shows(doc['lists'], app_dir, verbose=verbose)
 
+        if 'validate_doc_update' in doc:
+            tmp_dict = dict(validate_doc_update=doc["validate_doc_update"])
+            self.package_shows(tmp_dict, app_dir, verbose=verbose)
+            doc.update(tmp_dict)
+
         if 'views' in doc:
             self.package_views(doc["views"], app_dir, verbose=verbose)
 
@@ -404,7 +409,7 @@ class FileManager(object):
                             break
 
                         if isinstance(content, basestring):
-                            _ref = _md5(content).hexdigest()
+                            _ref = _md5(to_bytestring(content)).hexdigest()
                             if objects and _ref in objects:
                                 content = objects[_ref]
 
@@ -702,7 +707,7 @@ class FileManager(object):
               print >>sys.stderr, "Error running !code or !json on function \"%s\": %s" % (k, e)
               sys.exit(-1)
             if old_v != funcs[k]:
-                self.objects[_md5(funcs[k].encode('utf-8')).hexdigest()] = old_v
+                self.objects[_md5(to_bytestring(funcs[k])).hexdigest()] = old_v
 
     def run_code_macros(self, f_string, app_dir, verbose=False):
         def rreq(mo):
