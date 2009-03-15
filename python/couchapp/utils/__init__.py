@@ -9,6 +9,7 @@
 
 import codecs
 import os
+import string
 import sys
 import urlparse
 import urllib
@@ -24,7 +25,6 @@ try:
     import json 
 except ImportError:
     import simplejson as json 
-
 
 
 def in_couchapp():
@@ -86,6 +86,15 @@ def parse_auth(string):
 def get_appname(docid):
     return docid.split('_design/')[1]
 
+
+def to_bytestring(s):
+    if not isinstance(s, basestring):
+        return s
+    if isinstance(s, unicode):
+        return s.encode('utf-8')
+    else:
+        return s
+
 def read_file(fname):
     f = codecs.open(fname, 'rb', "utf-8")
     data = f.read()
@@ -100,21 +109,25 @@ def sign_file(file_path):
         return _md5(content).hexdigest()
     return ''
 
-def write_content(filename, content):
-    f = open(filename, 'wb')
-    f.write(content)
-    f.close
+def write_content(fname, content):
+    f = open(fname, 'wb')
+    f.write(to_bytestring(content))
+    f.close()
 
 def write_json(filename, content):
     write_content(filename, json.dumps(content))
 
-def read_json(filename):
+def read_json(filename, use_environment=False):
     try:
         data = read_file(filename)
     except IOError, e:
         if e[0] == 2:
             return {}
         raise
+
+    if use_environment:
+        data = string.Template(data).substitute(os.environ)
+
     try:
         data = json.loads(data)
     except ValueError:

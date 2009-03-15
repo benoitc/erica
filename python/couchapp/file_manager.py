@@ -57,7 +57,7 @@ except ImportError:
 import httplib2
 from couchdb import Server, ResourceNotFound
 
-from couchapp.utils import _md5
+from couchapp.utils import _md5, to_bytestring
 from couchapp.utils import *
 from couchapp.utils.css_parser import CSSParser
 
@@ -65,8 +65,7 @@ __all__ = ['DEFAULT_SERVER_URI', 'FileManager']
 
 DEFAULT_SERVER_URI = 'http://127.0.0.1:5984/'
 
-# should be changes to jchris repo.
-COUCHAPP_VENDOR_URL = 'git://github.com/benoitc/couchapp.git'
+COUCHAPP_VENDOR_URL = 'git://github.com/jchris/couchapp.git'
 COUCHAPP_VENDOR_SCM = 'git'
 
 external_dir = os.path.join(os.path.dirname(__file__), '_external')
@@ -223,7 +222,7 @@ class FileManager(object):
         rc_file = os.path.join(app_dir, '.couchapprc')
         conf = get_userconf()
         if os.path.isfile(rc_file):
-            conf.update(read_json(rc_file))
+            conf.update(read_json(rc_file, use_environment=True))
         self.conf = conf
 
     def push_app(self, app_dir, app_name, verbose=False, **kwargs):
@@ -254,9 +253,11 @@ class FileManager(object):
                 couchapp = doc.get('couchapp', False)
                 if couchapp:
                   index = couchapp.get('index', False)
-                  if index:
-                    index_url = self.make_index_url(db.resource.uri, app_name, index)
-                    print "Visit your CouchApp here:\n%s" % index_url
+                else:
+                  index = False
+                index_url = self.make_index_url(db.resource.uri, app_name, attach_dir, index)
+                if index_url:
+                  print "Visit your CouchApp here:\n%s" % index_url
 
             new_doc = doc.copy()
 
@@ -404,7 +405,7 @@ class FileManager(object):
                             break
 
                         if isinstance(content, basestring):
-                            _ref = _md5(content).hexdigest()
+                            _ref = _md5(to_bytestring(content)).hexdigest()
                             if objects and _ref in objects:
                                 content = objects[_ref]
 
@@ -702,7 +703,7 @@ class FileManager(object):
               print >>sys.stderr, "Error running !code or !json on function \"%s\": %s" % (k, e)
               sys.exit(-1)
             if old_v != funcs[k]:
-                self.objects[_md5(funcs[k].encode('utf-8')).hexdigest()] = old_v
+                self.objects[_md5(to_bytestring(funcs[k])).hexdigest()] = old_v
 
     def run_code_macros(self, f_string, app_dir, verbose=False):
         def rreq(mo):
@@ -828,8 +829,15 @@ class FileManager(object):
 
             write_content(dest_path, output_css) 
             
-    def make_index_url(self, uri, app_name, index):
-        return "%s/%s/%s/%s" % (uri, index[0], app_name, index[1])
+    def make_index_url(self, uri, app_name, attach_dir, index):
+        if index:
+          return "%s/%s/%s/%s" % (uri, '_design', app_name, index)
+        else:
+          index_fpath = os.path.join(attach_dir, 'index.html')
+          if os.path.isfile(index_fpath):
+            return "%s/%s/%s/%s" % (uri, '_design', app_name, 'index.html')
+          else:
+            return False
     
     @classmethod
     def vendor_update(cls, app_dir, verbose=False):
@@ -856,6 +864,8 @@ class FileManager(object):
                 if update_url and scm:
                     # for now we manage only internal handlers
                     handler = vendor_handlers[scm]
+                    if verbose >= 1:
+                        print "Updating %s from %s" % (current_path, update_url)
                     cmd = "%s update %s %s %s" % (handler, update_url, 
                                             current_path, vendor_dir)
                     (child_stdin, child_stdout, child_stderr) = _popen3(cmd)
