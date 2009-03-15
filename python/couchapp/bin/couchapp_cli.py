@@ -59,7 +59,7 @@ def vendor_install(app_dir, url, scm='git', verbose=False):
 
 def main():
     parser = OptionParser(usage='%prog [options] cmd', version="%prog " + couchapp.__version__)
-    parser.add_option('-v', dest='verbose', default=1, help='print message to stdout')
+    parser.add_option('-v', dest='verbose', default=1, const=2, help='print message to stdout')
     parser.add_option('-q', dest='verbose', action='store_const', const=0, help="don't print any message")
     
     # generate options
@@ -105,6 +105,8 @@ def main():
         dbstring = ''
         # generate [dir] [appname] [url] case
         if len(args) == 4:
+            # we test if we are in a couchapp here
+            # in case it's true, abort
             if in_couchapp():
                 return parser.error('Incorrect number of arguments, you\'re in an app.')
             rel_path = args[1]
