@@ -152,8 +152,9 @@
       };
       
       app({
-        showPath : function(form, docid) {
-          return '/'+[dbname, '_show', dname, form, docid].join('/')
+        showPath : function(funcname, docid) {
+          // I wish this was shared with path.js...
+          return '/'+[dbname, '_design', dname, '_show', funcname, docid].join('/')
         },
         attemptLogin : function(win, fail) {
           // depends on nasty hack in blog validation function
