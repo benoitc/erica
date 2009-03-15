@@ -857,6 +857,7 @@ class FileManager(object):
             if os.path.isdir(current_path):
                 mfile = os.path.join(current_path, 'metadata.json')
                 metadata = read_json(mfile)
+                update_url = False
                 if not metadata and name == 'couchapp':
                     update_url = COUCHAPP_VENDOR_URL
                     scm = COUCHAPP_VENDOR_SCM
