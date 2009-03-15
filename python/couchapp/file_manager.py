@@ -35,6 +35,11 @@ __all__ = ['DEFAULT_SERVER_URI', 'FileManager']
 
 DEFAULT_SERVER_URI = 'http://127.0.0.1:5984/'
 
+DEFAULT_LOCATIONS = {
+    "template": ['app-template', '../../app-template'],
+    "vendor": ['vendor', '../../vendor']
+}
+
 
 def _server(server_uri):
     if "@" in server_uri:
@@ -47,7 +52,66 @@ def _server(server_uri):
         couchdb_server = Server(server_uri)
     return couchdb_server
 
-
+class Couchapp(object):
+        
+    def __init__(self, app_dir=".", generate=False, verbose=False):
+        self.app_dir = ""
+        if generate:
+            self.generate(verbose=verbose)
+            
+    def initialize(self, default_conf=None, verbose=False):
+        if not os.path.isdir(self.app_dir):
+            print>>sys.stderr, "%s directory doesn't exist." % self.app_dir
+            return
+        
+        default_conf = default_conf or {}
+        
+        rc_file = '%s/.couchapprc' % self.app_dir
+        if not os.path.isfile(rc_file):
+            write_json(rc_file, default_conf)
+        elif verbose:
+            print>>sys.stderr, "CouchApp already initialized in %s." % app_dir
+            
+            
+    def generate(self, verbose=False):
+        """ Generates a CouchApp in app_dir """
+        
+        locations = {}
+        for location, paths in DEFAULT_LOCATIONS.items():
+            found = False
+            location_dir = ""
+            for path in paths:
+                location_dir = os.path.normpath(os.path.join(
+                    os.path.dirname(__file__), path))
+                if os.path.isdir(location_dir):
+                    found = True
+                    break
+            if found:
+                if location == "template":
+                    dest_dir = self.app_dir
+                else:
+                    dest_dir = os.path.join(self.app_dir, 'vendor')
+                
+                try:
+                    shutil.copytree(location_dir, dest_dir)
+                except OSError, e:
+                    errno, message = e
+                    print >>sys.stderr, "Can't create a CouchApp in %s: %s" % (
+                                app_dir, message)
+                    return
+        self.initialize(verbose=verbose)
+        
+    def clone(self, design_doc, verbose=None):
+        app_name = get_appname(design_doc['_id'])
+        if verbose >= 1:
+            print "Cloning %s to %s..." % (app_name, self.app_dir)
+        
+        
+        if not self.app_dir:
+            app_dir = os.path.normpath(os.path.join(os.getcwd(), app_name))
+        
+        
+        
 class FileManager(object):
     
     def __init__(self, dbstring, app_dir='.'):
