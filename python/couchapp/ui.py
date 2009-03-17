@@ -9,6 +9,7 @@
 import copy
 import httplib
 import os
+from StringIO import StringIO
 import socket
 import sys
 import time
@@ -245,25 +246,50 @@ class ui(object):
         """Clone a CouchApp from app_uri into app_dir"""
         server_uri, db_name, docid = parse_uri(app_uri) 
         couchdb_server = _server(server_uri)
-
+        app_name = get_appname(docid)
+        
         try:
             db = couchdb_server.create(db_name)
         except: # db already exist
             db = couchdb_server[db_name]
  
-        app_name = get_appname(docid)
+        rc_file = os.path.join(self.app_dir, '.couchapprc')
+        if os.path.isfile(rc_file):
+            print >> sys.stderr, "an app already exist here: %s" % self.app_dir
         
         try:
-            design_doc = db['docid']
+            design_doc = db[docid]
         except:
             if verbose >= 1:
-                print >>sys.stderr('cant get couchapp "%s"' % app_name)
+                print >>sys.stderr, 'cant get couchapp "%s"' % app_name
+                sys.exit(1)
         
-        ret = self.couchapp.clone(design_doc, verbose=verbose)
-        if ret['ok'] and verbose>=1:
+        # fetch content andut them as fie handles
+        attachments = {}
+        if '_attachments' in design_doc:
+            for filename in design_doc['_attachments'].iterkeys():
+                content = StringIO(db.get_attachment(docid, filename))
+                attachments[filename] = content
+                
+        design_doc['_attachments'] = attachments
+        
+        if verbose >= 1:
             print "Cloning %s to %s..." % (app_name, self.app_dir)
+        ret = self.app.clone(design_doc, verbose=verbose)
+     
+        if not ret['ok']:
+            print >>sys.stderr, ret['error']
+            sys.exit(1)
             
-            
+        conf = {}
+        conf['env'] = {
+            'origin': {
+                'db': db.resource.uri
+            }
+        }
+        write_json(rc_file, conf)
+        
+
     def make_index_url(self, uri, app_name, attach_dir, index):
         if index:
           return "%s/%s/%s/%s" % (uri, '_design', app_name, index)
