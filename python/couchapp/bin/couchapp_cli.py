@@ -48,16 +48,16 @@ def push(appdir, appname, dbstring, verbose=False,
         print>>sys.stderr, e
         return
         
-def clone(app_uri, app_dir, verbose=False):
+def clone(app_uri, appdir, verbose=False):
     cmd = ui(appdir)
-    cmd.clone(app_uri, verbose=verbose)
+    cmd.clone_app(app_uri, verbose=verbose)
     
-def vendor_update(app_dir, verbose=False):
-    vendor = Vendor(app_dir)
+def vendor_update(appdir, verbose=False):
+    vendor = Vendor(appdir)
     vendor.update(verbose=verbose)
     
-def vendor_install(app_dir, url, scm='git', verbose=False):
-    vendor = Vendor(app_dir)
+def vendor_install(appdir, url, scm='git', verbose=False):
+    vendor = Vendor(appdir)
     vendor.install(url, scm=scm, verbose=verbose)
 
 def main():

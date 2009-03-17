@@ -7,7 +7,7 @@
 # you should have received as part of this distribution.
 #
 
-
+import copy
 import os
 import re
 import shutil
@@ -123,14 +123,6 @@ class Couchapp(object):
         """
         
         app_name = get_appname(design_doc['_id'])
-        if verbose >= 1:
-            print "Cloning %s to %s..." % (app_name, self.app_dir)
-        
-        rc_file = os.path.join(app_dir, '.couchapprc')
-        
-        if os.path.isfile(rc_file):
-            return error("an app already exist here: %s" % self.app_dir, 
-                        verbose)
 
         if not os.path.isdir(self.app_dir):
             os.makedirs(self.app_dir)
@@ -146,13 +138,6 @@ class Couchapp(object):
         # get objects refs
         objects = design_doc.get('objects', {})
 
-        conf = {}
-        conf['env'] = {
-            'origin': {
-                'db': db.resource.uri
-            }
-        }
-        write_json(rc_file, conf) 
 
         # create files from manifest
         if manifest:
@@ -213,11 +198,11 @@ class Couchapp(object):
         
         # second pass for missing key or in case
         # manifest isn't in app
-        for key in design.iterkeys():
+        for key in design_doc.iterkeys():
             if key.startswith('_'): 
                 continue
             elif key in ('couchapp'):
-                app_meta = design['couchapp'].copy()
+                app_meta = copy.deepcopy(design_doc['couchapp'])
                 if 'signatures' in app_meta:
                     del app_meta['signatures']
                 if 'manifest' in app_meta:
@@ -225,13 +210,13 @@ class Couchapp(object):
                 if 'objects' in app_meta:
                     del app_meta['objects']
                 if app_meta:
-                    couchapp_file = os.path.join(app_dir, 'couchapp.json')
+                    couchapp_file = os.path.join(self.app_dir, 'couchapp.json')
                     write_json(couchapp_file, app_meta)
             elif key in ('views'):
-                vs_dir = os.path.join(app_dir, key)
+                vs_dir = os.path.join(self.app_dir, key)
                 if not os.path.isdir(vs_dir):
                     os.makedirs(vs_dir)
-                for vsname, vs_item in design[key].iteritems():
+                for vsname, vs_item in design_doc[key].iteritems():
                     vs_item_dir = os.path.join(vs_dir, vsname)
                     if not os.path.isdir(vs_item_dir):
                         os.makedirs(vs_item_dir)
@@ -242,43 +227,44 @@ class Couchapp(object):
                         if verbose >=2:
                             print "clone view not in manifest: %s" % filename
             elif key in ('shows', 'lists'):
-                dir = os.path.join(app_dir, key)
+                dir = os.path.join(self.app_dir, key)
                 if not os.path.isdir(dir):
                     os.makedirs(dir)
-                for func_name, func in design[key].iteritems():
+                for func_name, func in design_doc[key].iteritems():
                     filename = os.path.join(dir, '%s.js' % 
                             func_name)
                     open(filename, 'w').write(func)
                     if verbose >=2:
                         print "clone show or list not in manifest: %s" % filename
             else:
-                file_dir = os.path.join(app_dir, key)
+                file_dir = os.path.join(self.app_dir, key)
                 if verbose >=2:
                     print "clone property not in manifest: %s" % key
-                if isinstance(design[key], (list, tuple,)):
+                if isinstance(design_doc[key], (list, tuple,)):
                     write_json(file_dir + ".json", design[key])
-                elif isinstance(design[key], dict):
+                elif isinstance(design_doc[key], dict):
                     if not os.path.isdir(file_dir):
                         os.makedirs(file_dir)
-                    for field, value in design[key].iteritems():
+                    for field, value in design_doc[key].iteritems():
                         field_path = os.path.join(file_dir, field)
                         if isinstance(value, basestring):
                             write_content(field_path, value)
                         else:
                             write_json(field_path + '.json', value)        
                 else:
-                    value = design[key]
+                    value = design_doc[key]
                     if not isinstance(value, basestring):
                         value = str(value)
                     write_content(file_dir, value)
    
 
         # get attachments
-        if '_attachments' in design:
+        if '_attachments' in design_doc:
             attach_dir = os.path.join(self.app_dir, '_attachments')
             if not os.path.isdir(attach_dir):
                 os.makedirs(attach_dir)
-            for filename in design['_attachments'].iterkeys():
+                
+            for filename in design_doc['_attachments'].iterkeys():
                 if filename.startswith('vendor'):
                     attach_parts = filename.split('/')
                     vendor_attach_dir = os.path.join(self.app_dir, attach_parts.pop(0),
@@ -291,7 +277,7 @@ class Couchapp(object):
                     os.makedirs(current_dir)
         
                 if signatures.get(filename) != sign_file(file_path):
-                    content = db.get_attachment(docid, filename)
+                    content = design_doc['_attachments'][filename].read()
                     write_content(file_path, content)
                     if verbose>=2:
                         print "clone attachment: %s" % filename
