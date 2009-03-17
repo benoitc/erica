@@ -27,7 +27,6 @@ from couchapp.utils import *
 __all__ = ['Couchapp']
 
 
-
 DEFAULT_LOCATIONS = (
     ("template", ['app-template', '../../app-template']),
     ("vendor", ['vendor', '../../vendor'])
@@ -329,7 +328,7 @@ class Couchapp(object):
         design_doc = {}
         objects = {}
         docid = design_doc['_id'] = '_design/%s' % app_name
-        attach_dir = os.path.join(app_dir, '_attachments')
+        attach_dir = os.path.join(self.app_dir, '_attachments')
         
         # what we do before retrieving design_doc from app_dir        
         if pre_callback and callable(pre_callback):
@@ -337,20 +336,20 @@ class Couchapp(object):
                     verbose=verbose)
         
         # get fields
-        design_doc = self.dir_to_fields(self.app_dir, manifest=manifest,
-                verbose=verbose)
+        design_doc.update(self.dir_to_fields(self.app_dir, manifest=manifest,
+                verbose=verbose))
         
         if not 'couuchapp' in design_doc:
             design_doc['couchapp'] = {}
             
         if 'shows' in design_doc:
-            package_shows(design_doc['shows'], self.app_dir, objects, verbose=verbose)
+            package_shows(design_doc, design_doc['shows'], self.app_dir, objects, verbose=verbose)
 
-        if 'lists' in doc:
-            package_shows(design_doc['lists'], self.app_dir, objects, verbose=verbose)
+        if 'lists' in design_doc:
+            package_shows(design_doc, design_doc['lists'], self.app_dir, objects, verbose=verbose)
 
-        if 'views' in doc:
-            package_views(design_doc["views"], self.app_dir, objects, verbose=verbose)
+        if 'views' in design_doc:
+            package_views(design_doc, design_doc["views"], self.app_dir, objects, verbose=verbose)
             
         couchapp = design_doc.get('couchapp', False)
         design_doc.update({
@@ -453,7 +452,7 @@ class Couchapp(object):
                     self.push_directory(design_doc, attach_dir, docid, verbose, 
                                     vendor=name)
                     
-    def push_directory(self, design_doc, attach_dir, docid, verbose=False, vendor=None):
+    def attachments(self, doc, attach_dir, docid, verbose=False, vendor=None):
         # get attachments
         _signatures = {}
         _attachments = {}
@@ -468,17 +467,15 @@ class Couchapp(object):
                         name = file_path.split('%s/' % attach_dir)[1]
                         if vendor is not None:
                             name = os.path.join('vendor/%s' % vendor, name)
-                        signature = sign_file(file_path)
-                        _signatures[name] = signature
+                        _signatures[name] = sign_file(file_path)
                         _attachments[name] = open(file_path, 'rb')
         
-           
         for prop in ('couchapp', '_attachments'):
-            if not prop in design_doc:
-                design_doc[prop] = {}
+            if not prop in doc:
+                doc[prop] = {}
             
-        if not 'signatures' in design_doc['couchapp']:
-            design_doc['couchapp']['signatures'] = {}
+        if not 'signatures' in doc['couchapp']:
+            doc['couchapp']['signatures'] = {}
             
-        design_doc['_attachments'].update(_attachments)
-        design_doc['couchapp']['signatures'].update(_signatures)
+        doc['_attachments'].update(_attachments)
+        doc['couchapp']['signatures'].update(_signatures)

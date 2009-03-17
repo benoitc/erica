@@ -10,31 +10,36 @@ import glob
 import os
 import re
 import sys
+# python 2.6
+try:
+    import json 
+except ImportError:
+    import simplejson as json
 
-def package_shows(funcs, app_dir, objects, verbose=False):
-   apply_lib(funcs, app_dir, verbose=verbose)
+from couchapp.utils import _md5, read_file, read_json, to_bytestring
+
+def package_shows(doc, funcs, app_dir, objs, verbose=False):
+   apply_lib(doc, funcs, app_dir, objs, verbose=verbose)
          
-def package_views(views, app_dir, objects, verbose=False):
+def package_views(doc, views, app_dir, objs, verbose=False):
    for view, funcs in views.iteritems():
-       apply_lib(funcs, app_dir, objects, verbose=verbose)
+       apply_lib(doc, funcs, app_dir, objs, verbose=verbose)
 
-def apply_lib(funcs, app_dir, objects=None, verbose=False):
-   objects = objects or {}
-   
-   for k, v in funcs.iteritems():
-       if not isinstance(v, basestring):
-           continue
-       old_v = v
-       try:
-           funcs[k] = run_json_macros(
-                        run_code_macros(v, app_dir, verbose=verbose), 
-                        app_dir, verbose=verbose)
-       except ValueError, e:
-           print >>sys.stderr, "Error running !code or !json on function \"%s\": %s" % (k, e)
-           sys.exit(-1)
-                
-       if old_v != funcs[k]:
-           objects[_md5(to_bytestring(funcs[k])).hexdigest()] = old_v
+def apply_lib(doc, funcs, app_dir, objs, verbose=False):
+    for k, v in funcs.iteritems():
+        if not isinstance(v, basestring):
+            continue
+        old_v = v
+        try:
+            funcs[k] = run_json_macros(doc, 
+                run_code_macros(v, app_dir, verbose=verbose), 
+                app_dir, verbose=verbose)
+        except ValueError, e:
+            print >>sys.stderr, "Error running !code or !json on function \"%s\": %s" % (k, e)
+            sys.exit(-1)
+        if old_v != funcs[k]:
+            objs[_md5(to_bytestring(funcs[k])).hexdigest()] = old_v
+           
 
 def run_code_macros(f_string, app_dir, verbose=False):
    def rreq(mo):

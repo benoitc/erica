@@ -6,6 +6,7 @@
 # you should have received as part of this distribution.
 #`
 
+import copy
 import httplib
 import os
 import socket
@@ -132,27 +133,31 @@ class ui(object):
     def push_app(self, dbstring, app_name, verbose=False, **kwargs):
         """Pushes the app specified to the CouchDB instance
         
+        :attr dbstring: string, db url or db environment name.
+        :attr app_name: name of app to push. 
+        :attr verbose: boolean, default is False
         """
-        design_doc = self.couchapp.to_designdoc(app_name)
-        docid = design_doc['_id']
-        new_doc = design_doc.copy()
+        design_doc = self.app.to_designdoc(app_name)
         
-        couchapp = design_doc.get('couchapp', {}).copy()
+        docid = design_doc['_id']
+        attach_dir = os.path.join(self.app_dir, '_attachments')
+        new_doc = copy.deepcopy(design_doc)
+        
+        couchapp = design_doc.get('couchapp', {})
         if couchapp:
             index = couchapp.get('index', False)
         else:
             index = False
             new_doc['couchapp'] = {}
-              
+        
         # we process attachments later
         del new_doc['_attachments']
-        for key in ('manifest', 'objects'):
-            if key in new_doc['couchapp']:
-                del new_doc['couchapp'][key]
+        if 'signatures' in new_doc['couchapp']:
+            del new_doc['couchapp']['signatures']
 
         for db in self.get_db(dbstring):
             if verbose >= 1:
-                print "Pushing CouchApp in %s to design doc:\n%s/%s" % (app_dir,
+                print "Pushing CouchApp in %s to design doc:\n%s/%s" % (self.app_dir,
                     db.resource.uri, docid)
             
             index_url = self.make_index_url(db.resource.uri, app_name, attach_dir, index)
@@ -170,7 +175,8 @@ class ui(object):
                     '_attachments': design.get('_attachments', {})
                 })
             
-            db[docid] = new_doc 
+            db[docid] = new_doc
+            print design_doc['couchapp']['signatures']
             self.send_attachments(db, design_doc, verbose=verbose)
 
     def _put_attachment(self, db, doc, content, filename, verbose=False):
@@ -196,13 +202,14 @@ class ui(object):
                 break
                 
     def send_attachments(self, db, design_doc, verbose=False):
-        
         # init vars
         all_signatures = {}                  
         if not 'couchapp' in design_doc:
             design['couchapp'] = {}
+        
         _signatures = design_doc['couchapp'].get('signatures', {})
         _attachments = design_doc.get('_attachments', {})
+        docid = design_doc['_id']
         
         # detect attachments to be removed and keep
         # only new version attachments to update.
@@ -216,11 +223,10 @@ class ui(object):
                     db.delete_attachment(design, filename)
                 elif _signatures[filename] == metadata['signatures'][filename]:
                     del attachments[filename]
-
         for filename, value in attachments.iteritems():
             if verbose >= 2:
                 print "Attaching %s" % filename
-           
+            
             # fix issue with httplib that raises BadStatusLine
             # error because it didn't close the connection
             self._put_attachment(db, design, value, filename, verbose=verbose)
