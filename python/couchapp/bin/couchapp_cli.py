@@ -20,7 +20,7 @@ import sys
 from optparse import OptionParser, OptionGroup
 
 
-import couchapp
+from couchapp import ui
 from couchapp.utils import in_couchapp
 from couchapp.vendor import Vendor
 
@@ -29,7 +29,9 @@ def generate(appname, verbose=False):
     appdir = os.path.normpath(os.path.join(os.getcwd(), appname))
     if verbose >= 1:
         print "Generating a new CouchApp in %s" % appdir
-    couchapp.FileManager.generate_app(appdir)
+        
+    cmd = ui(appdir)
+    cmd.generate_app()
 
 def init(appdir, dburl, verbose=False):
     if verbose >= 1:
@@ -38,16 +40,17 @@ def init(appdir, dburl, verbose=False):
 
 def push(appdir, appname, dbstring, verbose=False, 
         options=None):
+
+    cmd = ui(appdir)
     try:
-        fm = couchapp.FileManager(dbstring, appdir)
+        cmd.push_app(dbstring, appname, verbose=verbose)
     except ValueError, e:
         print>>sys.stderr, e
-        return 
-
-    fm.push_app(appdir, appname, verbose=verbose)
-
+        return
+        
 def clone(app_uri, app_dir, verbose=False):
-    couchapp.FileManager.clone(app_uri, app_dir, verbose=verbose)
+    cmd = ui(appdir)
+    cmd.clone(app_uri, verbose=verbose)
     
 def vendor_update(app_dir, verbose=False):
     vendor = Vendor(app_dir)
