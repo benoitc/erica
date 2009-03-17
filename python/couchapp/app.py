@@ -20,9 +20,6 @@ except ImportError:
     import simplejson as json 
 
 
-
-
-from couchapp.ui import get_userconf, get_config
 from couchapp.macros import package_views, package_shows
 from couchapp.utils import _md5, to_bytestring
 from couchapp.utils import *
@@ -31,16 +28,16 @@ __all__ = ['Couchapp']
 
 
 
-DEFAULT_LOCATIONS = {
-    "template": ['app-template', '../../app-template'],
-    "vendor": ['vendor', '../../vendor']
-}
+DEFAULT_LOCATIONS = (
+    ("template", ['app-template', '../../app-template']),
+    ("vendor", ['vendor', '../../vendor'])
+)
 
 
 class Couchapp(object):
     """ Couchapp object. used to clone/init/create a couchapp """
         
-    def __init__(self, app_dir=".", generate=False, verbose=False):
+    def __init__(self, app_dir, generate=False, verbose=False):
         """
         Constructor for Couchapp object.
         
@@ -49,7 +46,7 @@ class Couchapp(object):
         :attr verbose: boolean, default False
         
         """
-        self.app_dir = ""
+        self.app_dir = app_dir
         if generate:
             self.generate(verbose=verbose)
             
@@ -87,7 +84,7 @@ class Couchapp(object):
         """
         
         locations = {}
-        for location, paths in DEFAULT_LOCATIONS.items():
+        for location, paths in DEFAULT_LOCATIONS:
             found = False
             location_dir = ""
             for path in paths:
@@ -102,15 +99,16 @@ class Couchapp(object):
                 else:
                     dest_dir = os.path.join(self.app_dir, 'vendor')
                 
+                print "%s -> %s" % (location_dir, dest_dir)
                 try:
                     shutil.copytree(location_dir, dest_dir)
                 except OSError, e:
                     errno, message = e
                     return error("Can't create a CouchApp in %s: %s" % (
-                                app_dir, message), verbose)
+                                self.app_dir, message), verbose)
             else:
                 return error("Can't create a CouchApp in %s: default template not found." % (
-                            app_dir), verbose)
+                            self.app_dir), verbose)
                             
         return self.initialize(verbose=verbose)
         
@@ -335,7 +333,7 @@ class Couchapp(object):
         
         # what we do before retrieving design_doc from app_dir        
         if pre_callback and callable(pre_callback):
-            pre_callback(self.app_dir, app_name, design_doc, ,
+            pre_callback(self.app_dir, app_name, design_doc,
                     verbose=verbose)
         
         # get fields

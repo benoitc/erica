@@ -66,17 +66,17 @@ def get_config(app_dir=None):
 
 class ui(object):
     
-    def __init__(self, dbstring, app_dir='.'):
+    def __init__(self, app_dir):
         self.app_dir = app_dir
         self.app = Couchapp(app_dir=app_dir)
 
         # load conf
-        self.conf = get_conf(app_dir)
+        self.conf = get_config(app_dir)
        
 
-    def generate_app(self):
+    def generate_app(self, verbose=False):
         """Generates a CouchApp in app_dir"""
-        ret = self.app.generate()
+        ret = self.app.generate(verbose=verbose)
         if not ret['ok']:
             print >>sys.stderr, ret['error']
     
@@ -169,7 +169,7 @@ class ui(object):
                     '_rev': design['_rev'],
                     '_attachments': design.get('_attachments', {})
                 })
-            else:
+            
             db[docid] = new_doc 
             self.send_attachments(db, design_doc, verbose=verbose)
 

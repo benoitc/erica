@@ -19,8 +19,8 @@ import os
 import sys
 from optparse import OptionParser, OptionGroup
 
-
-from couchapp import ui
+import couchapp
+from couchapp.ui import ui
 from couchapp.utils import in_couchapp
 from couchapp.vendor import Vendor
 
@@ -62,7 +62,7 @@ def vendor_install(app_dir, url, scm='git', verbose=False):
 
 def main():
     parser = OptionParser(usage='%prog [options] cmd', version="%prog " + couchapp.__version__)
-    parser.add_option('-v', dest='verbose', default=1, const=2, help='print message to stdout')
+    parser.add_option('-v', dest='verbose', default=1,  action='store_const', const=2, help='print message to stdout')
     parser.add_option('-q', dest='verbose', action='store_const', const=0, help="don't print any message")
     
     # generate options

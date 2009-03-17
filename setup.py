@@ -94,7 +94,7 @@ setup(
     ],
 
     install_requires = [
-        'couchdb>=0.5',
+        'couchdb',
         'simplejson',
     ],
     

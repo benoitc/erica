@@ -7,7 +7,9 @@
 # you should have received as part of this distribution.
 #
 import glob
+import os
 import re
+import sys
 
 def package_shows(funcs, app_dir, objects, verbose=False):
    apply_lib(funcs, app_dir, verbose=verbose)
@@ -29,7 +31,7 @@ def apply_lib(funcs, app_dir, objects=None, verbose=False):
                         app_dir, verbose=verbose)
        except ValueError, e:
            print >>sys.stderr, "Error running !code or !json on function \"%s\": %s" % (k, e)
-                sys.exit(-1)
+           sys.exit(-1)
                 
        if old_v != funcs[k]:
            objects[_md5(to_bytestring(funcs[k])).hexdigest()] = old_v
