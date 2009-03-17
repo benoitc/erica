@@ -21,7 +21,7 @@ except ImportError:
 
 __all__ = ['_md5', '_popen3', 'in_couchapp', 'parse_uri', 'parse_auth',
         'get_appname', 'to_bytestring', 'read_file', 'sign_file', 
-        'write_content', 'write_json', 'read_json']
+        'write_content', 'write_json', 'read_json', 'ok', 'error']
 
 # compatibility with python 2.4
 try:
