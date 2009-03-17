@@ -130,13 +130,13 @@ class Couchapp(object):
         metadata = design_doc.get('couchapp', {})
         
         # get manifest
-        manifest = design_doc.get('manifest', {})
+        manifest = metadata.get('manifest', {})
 
         # get signatures
-        signatures = design_doc.get('signatures', {})
+        signatures = metadata.get('signatures', {})
 
         # get objects refs
-        objects = design_doc.get('objects', {})
+        objects = metadata.get('objects', {})
 
 
         # create files from manifest
@@ -144,7 +144,7 @@ class Couchapp(object):
             for filename in manifest:
                 if verbose >=2:
                     print "clone property: %s" % filename
-                file_path = os.path.join(app_dir, filename)
+                file_path = os.path.join(self.app_dir, filename)
                 if filename.endswith('/'): 
                     if not os.path.isdir(file_path):
                         os.makedirs(file_path)
@@ -153,7 +153,7 @@ class Couchapp(object):
                 else:
                     parts = filename.split('/')
                     fname = parts.pop()
-                    v = design
+                    v = design_doc
                     while 1:
                         try:
                             for key in parts:
@@ -188,7 +188,7 @@ class Couchapp(object):
                         write_content(file_path, content)
 
                         # remove the key from design doc
-                        temp = design
+                        temp = design_doc
                         for key2 in parts:
                             if key2 == key:
                                 if not temp[key2]:
