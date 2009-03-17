@@ -17,7 +17,7 @@ if [ $1 = "update" ]; then
     fi
 
     if [ -r $tempfile/vendor ]; then
-        for f in $(find $tempfile/vendor -type d); do
+        for f in $(find $tempfile/vendor -type d -depth 1); do
             if [ $f != "$tempfile/vendor" ]; then
                 cp -vr $f $4
             fi
@@ -26,10 +26,11 @@ if [ $1 = "update" ]; then
     fi
 else
     if [ -r $tempfile/vendor ]; then
-        for f in $(find $tempfile/vendor -type d); do
+        ls $tempfile/vendor
+        for f in $(find $tempfile/vendor -type d -depth 1); do
             if [ $f != "$tempfile/vendor" ]; then
                 echo "$2" > $f/.new
-                cp -vr $f $3
+                cp -rv $f $3
                 
             fi
         done

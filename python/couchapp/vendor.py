@@ -58,7 +58,7 @@ class Vendor(object):
         
         vendors = []
         for name in os.listdir(self.vendor_dir):
-            current_path = os.path.join(vendor_dir, name)
+            current_path = os.path.join(self.vendor_dir, name)
             if os.path.isdir(current_path):
                 vendors.append(name)
         return vendors
