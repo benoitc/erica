@@ -41,8 +41,14 @@ except ImportError:
     def _popen3(cmd, mode='t', bufsize=0):
         return os.popen3(cmd, mode, bufsize)
         
-
-
+def error(message, verbose=False):
+    if verbose:
+        print >>sys.stderr, message
+    return { 'ok': False, 'error': message }
+    
+def ok():
+    return { 'ok': True }
+    
 def in_couchapp():
     """ return path of couchapp if we are somewhere in a couchapp. """
     current_path = os.getcwd()
