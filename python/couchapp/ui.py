@@ -174,6 +174,9 @@ class ui(object):
             self.send_attachments(db, design_doc, verbose=verbose)
 
     def _put_attachment(self, db, doc, content, filename, verbose=False):
+        if hasattr(content, 'read'):
+            content = content.read()
+        
         nb_try = 0
         while True:
             error = False
