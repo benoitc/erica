@@ -5,11 +5,14 @@
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
-import ez_setup
-ez_setup.use_setuptools()
-
-from setuptools import setup, find_packages
-from setuptools.command.easy_install import easy_install
+try:
+    from setuptools import setup, find_packages
+     from setuptools.command.easy_install import easy_install
+except ImportError:
+    from ez_setup import use_setuptools
+    use_setuptools()
+    from setuptools import setup, find_packages
+    from setuptools.command.easy_install import easy_install
 
 import os
 import sys

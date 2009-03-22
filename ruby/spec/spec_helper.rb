@@ -15,5 +15,4 @@ def reset_test_db!
   db = cr.database(TESTDB)
   db.delete! rescue nil
   db = cr.create_db(TESTDB) rescue nil
-  db
 end
