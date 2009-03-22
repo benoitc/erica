@@ -11,7 +11,7 @@ import os
 import sys
 
 from couchapp.ui import get_userconf, external_dir
-from couchapp.utils import read_json, write_json, read_file, _popen3
+from couchapp.utils import *
 
 __all__ = ['VENDOR_HANDLERS', 'Vendor', 'external_vendor_dir']
 
