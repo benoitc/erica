@@ -242,6 +242,11 @@ class FileManager(object):
         if 'lists' in doc:
             self.package_shows(doc['lists'], app_dir, verbose=verbose)
 
+        if 'validate_doc_update' in doc:
+            tmp_dict = dict(validate_doc_update=doc["validate_doc_update"])
+            self.package_shows(tmp_dict, app_dir, verbose=verbose)
+            doc.update(tmp_dict)
+
         if 'views' in doc:
             self.package_views(doc["views"], app_dir, verbose=verbose)
 
@@ -852,6 +857,7 @@ class FileManager(object):
             if os.path.isdir(current_path):
                 mfile = os.path.join(current_path, 'metadata.json')
                 metadata = read_json(mfile)
+                update_url = False
                 if not metadata and name == 'couchapp':
                     update_url = COUCHAPP_VENDOR_URL
                     scm = COUCHAPP_VENDOR_SCM
