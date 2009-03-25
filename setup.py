@@ -7,7 +7,7 @@
 # you should have received as part of this distribution.
 try:
     from setuptools import setup, find_packages
-     from setuptools.command.easy_install import easy_install
+    from setuptools.command.easy_install import easy_install
 except ImportError:
     from ez_setup import use_setuptools
     use_setuptools()
