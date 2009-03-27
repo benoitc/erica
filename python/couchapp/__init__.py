@@ -11,4 +11,4 @@ try:
 except:
     __version__ = '?'
 
-from couchapp.app import Couchapp
+from couchapp.file_manager import FileManager

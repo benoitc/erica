@@ -5,14 +5,11 @@
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
-try:
-    from setuptools import setup, find_packages
-    from setuptools.command.easy_install import easy_install
-except ImportError:
-    from ez_setup import use_setuptools
-    use_setuptools()
-    from setuptools import setup, find_packages
-    from setuptools.command.easy_install import easy_install
+import ez_setup
+ez_setup.use_setuptools()
+
+from setuptools import setup, find_packages
+from setuptools.command.easy_install import easy_install
 
 import os
 import sys
@@ -54,7 +51,7 @@ easy_install.process_distribution = process_distribution
  
 setup(
     name = 'Couchapp',
-    version = '0.3',
+    version = '0.2',
     url = 'http://github.com/benoitc/couchapp/tree/master',
     license =  'Apache License 2',
     author = 'Benoit Chesneau',
@@ -96,7 +93,7 @@ setup(
     ],
 
     install_requires = [
-        'couchdb',
+        'couchdb>=0.5',
         'simplejson',
     ],
     

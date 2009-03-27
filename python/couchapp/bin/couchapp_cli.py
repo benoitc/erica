@@ -19,19 +19,16 @@ import os
 import sys
 from optparse import OptionParser, OptionGroup
 
+
 import couchapp
-from couchapp.ui import ui
 from couchapp.utils import in_couchapp
-from couchapp.vendor import Vendor
 
 
 def generate(appname, verbose=False):
     appdir = os.path.normpath(os.path.join(os.getcwd(), appname))
     if verbose >= 1:
         print "Generating a new CouchApp in %s" % appdir
-        
-    cmd = ui(appdir)
-    cmd.generate_app()
+    couchapp.FileManager.generate_app(appdir)
 
 def init(appdir, dburl, verbose=False):
     if verbose >= 1:
@@ -40,29 +37,28 @@ def init(appdir, dburl, verbose=False):
 
 def push(appdir, appname, dbstring, verbose=False, 
         options=None):
-
-    cmd = ui(appdir)
     try:
-        cmd.push_app(dbstring, appname, verbose=verbose)
+        fm = couchapp.FileManager(dbstring, appdir)
     except ValueError, e:
         print>>sys.stderr, e
-        return
-        
-def clone(app_uri, appdir, verbose=False):
-    cmd = ui(appdir)
-    cmd.clone_app(app_uri, verbose=verbose)
+        return 
+
+    fm.push_app(appdir, appname, verbose=verbose, 
+            nocss=options.css, nojs=options.js)
+
+def clone(app_uri, app_dir, verbose=False):
+    couchapp.FileManager.clone(app_uri, app_dir, verbose=verbose)
     
-def vendor_update(appdir, verbose=False):
-    vendor = Vendor(appdir)
-    vendor.update(verbose=verbose)
+def vendor_update(app_dir, verbose=False):
+    couchapp.FileManager.vendor_update(app_dir, verbose=verbose)
     
-def vendor_install(appdir, url, scm='git', verbose=False):
-    vendor = Vendor(appdir)
-    vendor.install(url, scm=scm, verbose=verbose)
+def vendor_install(app_dir, url, scm='git', verbose=False):
+    couchapp.FileManager.vendor_install(app_dir, url, scm=scm, 
+                                    verbose=verbose)
 
 def main():
     parser = OptionParser(usage='%prog [options] cmd', version="%prog " + couchapp.__version__)
-    parser.add_option('-v', dest='verbose', default=1,  action='store_const', const=2, help='print message to stdout')
+    parser.add_option('-v', dest='verbose', default=1, help='print message to stdout')
     parser.add_option('-q', dest='verbose', action='store_const', const=0, help="don't print any message")
     
     # generate options
@@ -72,6 +68,10 @@ def main():
     # push options
     group_push = OptionGroup(parser, "Pushes a CouchApp to CouchDB", 
             "couchapp push [options] [appdir] [appname] [dburl]")
+    group_push.add_option("--disable-css", action="store_true", 
+        dest="css", help="disable css compression")
+    group_push.add_option("--disable-js", action="store_true", 
+        dest="js", help="disable js compression")
     parser.add_option_group(group_push)
     
     # clone options
@@ -108,8 +108,6 @@ def main():
         dbstring = ''
         # generate [dir] [appname] [url] case
         if len(args) == 4:
-            # we test if we are in a couchapp here
-            # in case it's true, abort
             if in_couchapp():
                 return parser.error('Incorrect number of arguments, you\'re in an app.')
             rel_path = args[1]
@@ -182,14 +180,17 @@ def main():
             vendor_update(appdir, options.verbose)
         elif action == 'install':
             if len(args) < 3:
-                return parser.error('Incorrect number of arguments')                
+                return parser.error('Incorrect number of arguments')
+                
             try:
                 appdir = args[3]
             except IndexError:
                 appdir = '.'
             vendor_install(appdir, args[2], options.scm, options.verbose)
         else:
-            print >>sys.stderr, "%s is an unknown vendor action, sorry." % action      
+            print >>sys.stderr, "%s is an unknown vendor action, sorry." % action
+            
+        
     else:
         print "%s is an unknown command, sorry." % args[0]
 
