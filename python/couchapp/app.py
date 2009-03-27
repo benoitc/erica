@@ -97,8 +97,6 @@ class Couchapp(object):
                     dest_dir = self.app_dir
                 else:
                     dest_dir = os.path.join(self.app_dir, 'vendor')
-                
-                print "%s -> %s" % (location_dir, dest_dir)
                 try:
                     shutil.copytree(location_dir, dest_dir)
                 except OSError, e:
