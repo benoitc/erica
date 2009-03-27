@@ -185,6 +185,7 @@
         },
         db : db,
         design : design,
+        view : design.view,
         docForm : docForm,
         prettyDate : prettyDate
       });
