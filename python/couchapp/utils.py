@@ -36,6 +36,7 @@ try:#python 2.6, use subprocess
     def _popen3(cmd, mode='t', bufsize=0):
         p = Popen(cmd, shell=True, bufsize=bufsize,
             stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
+        p.wait()
         return (p.stdin, p.stdout, p.stderr)
 except ImportError:
     def _popen3(cmd, mode='t', bufsize=0):
