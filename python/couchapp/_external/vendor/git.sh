@@ -15,7 +15,7 @@ if [ $1 = "update" ]; then
     if [ -r $3 ]; then
         rm -rvf $3
     fi
- 
+
     if [ -r $tempfile/vendor ]; then
         for f in $(find $tempfile/vendor -type d -depth 1); do
             if [ $f != "$tempfile/vendor" ]; then
