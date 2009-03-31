@@ -72,7 +72,7 @@ class Couchapp(object):
         else:
             message = "CouchApp already initialized in %s." % app_dir
             return error(message, verbose)
-        return ok()
+        return is_ok()
             
     def generate(self, verbose=False):
         """ Generates a CouchApp in app_dir 
@@ -121,6 +121,8 @@ class Couchapp(object):
         """
         
         app_name = get_appname(design_doc['_id'])
+
+        self.app_dir = os.path.join(self.app_dir, app_name)
 
         if not os.path.isdir(self.app_dir):
             os.makedirs(self.app_dir)

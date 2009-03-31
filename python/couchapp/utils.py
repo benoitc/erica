@@ -21,7 +21,7 @@ except ImportError:
 
 __all__ = ['_md5', '_popen3', 'in_couchapp', 'parse_uri', 'parse_auth',
         'get_appname', 'to_bytestring', 'read_file', 'sign_file', 
-        'write_content', 'write_json', 'read_json', 'ok', 'error']
+        'write_content', 'write_json', 'read_json', 'is_ok', 'error']
 
 # compatibility with python 2.4
 try:
@@ -47,7 +47,7 @@ def error(message, verbose=False):
         print >>sys.stderr, message
     return { 'ok': False, 'error': message }
     
-def ok():
+def is_ok():
     return { 'ok': True }
     
 def in_couchapp():

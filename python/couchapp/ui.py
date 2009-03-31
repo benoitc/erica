@@ -70,7 +70,7 @@ class ui(object):
     
     def __init__(self, app_dir):
         self.app_dir = app_dir
-        self.app = Couchapp(app_dir=app_dir)
+        self.app = Couchapp(app_dir=self.app_dir)
 
         # load conf
         self.conf = get_config(app_dir)
