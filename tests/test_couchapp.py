@@ -118,6 +118,20 @@ class CouchappTestCase(unittest.TestCase):
         
         self.assert_(os.path.isfile(os.path.join(app_dir, '_attachments/index.html')))
         self.assert_(os.path.isfile(os.path.join(app_dir, 'views/example/map.js')))
+
+    def testClone2(self):
+        ret = self.app.generate()
+        design_doc = self.app.to_designdoc("couchapp_test")
+
+        os.chdir(self.tempdir)
+        app_dir = ''
+        app = Couchapp(app_dir)
+
+        ret = app.clone(design_doc)
+        self.assert_(ret['ok'] == True)
+        
+        self.assert_(os.path.isfile('couchapp_test/_attachments/index.html'))
+        self.assert_(os.path.isfile('couchapp_test/views/example/map.js'))
         
 if __name__ == '__main__':
     unittest.main()
