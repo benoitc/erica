@@ -122,7 +122,8 @@ class Couchapp(object):
         
         app_name = get_appname(design_doc['_id'])
 
-        self.app_dir = os.path.join(self.app_dir, app_name)
+        if not self.app_dir or self.app_dir == ".":
+            self.app_dir = os.path.join(self.app_dir, app_name)
 
         if not os.path.isdir(self.app_dir):
             os.makedirs(self.app_dir)
