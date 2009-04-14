@@ -436,7 +436,7 @@ class Couchapp(object):
             if os.path.isdir(current_path):
                 attach_dir = os.path.join(current_path, '_attachments')
                 if os.path.isdir(attach_dir):
-                    self.push_directory(design_doc, attach_dir, docid, verbose, 
+                    self.attachments(design_doc, attach_dir, docid, verbose, 
                                     vendor=name)
                     
     def attachments(self, doc, attach_dir, docid, verbose=False, vendor=None):

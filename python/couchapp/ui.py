@@ -177,7 +177,6 @@ class ui(object):
                 })
             
             db[docid] = new_doc
-            print design_doc['couchapp']['signatures']
             self.send_attachments(db, design_doc, verbose=verbose)
 
     def _put_attachment(self, db, doc, content, filename, verbose=False):
