@@ -81,6 +81,7 @@ class ui(object):
         ret = self.app.generate(verbose=verbose)
         if not ret['ok']:
             print >>sys.stderr, ret['error']
+        self.init_app()
     
     def init_app(self, db_url=''):
         """ Initializes the .couchapprc, usually called after generate
@@ -91,7 +92,7 @@ class ui(object):
         if db_url:
             conf = { "env": { "default": { "db": db_url } } }
         
-        ret = self.couchapp.initialize(default_conf=conf)
+        ret = self.app.initialize(default_conf=conf)
         if not ret['ok']:
             print >>sys.stderr, ret['error']
             

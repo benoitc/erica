@@ -70,7 +70,7 @@ class Couchapp(object):
         if not os.path.isfile(rc_file):
             write_json(rc_file, default_conf)
         else:
-            message = "CouchApp already initialized in %s." % app_dir
+            message = "CouchApp already initialized in %s." % self.app_dir
             return error(message, verbose)
         return is_ok()
             

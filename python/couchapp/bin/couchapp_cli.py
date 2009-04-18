@@ -36,7 +36,8 @@ def generate(appname, verbose=False):
 def init(appdir, dburl, verbose=False):
     if verbose >= 1:
         print "Initializing a new CouchApp in %s" % appdir
-    couchapp.FileManager.init(appdir, dburl)
+    cmd = ui(appdir)
+    cmd.init_app(dburl)
 
 def push(appdir, appname, dbstring, verbose=False, 
         options=None):
