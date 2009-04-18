@@ -228,9 +228,10 @@ class ui(object):
             if verbose >= 2:
                 print "Attaching %s" % filename
             
+            f = open(value, 'rb')
             # fix issue with httplib that raises BadStatusLine
             # error because it didn't close the connection
-            self._put_attachment(db, design, value, filename, verbose=verbose)
+            self._put_attachment(db, design, f, filename, verbose=verbose)
                      
         # update signatures
         design = db[docid]

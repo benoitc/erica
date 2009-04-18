@@ -455,7 +455,7 @@ class Couchapp(object):
                         if vendor is not None:
                             name = os.path.join('vendor/%s' % vendor, name)
                         _signatures[name] = sign_file(file_path)
-                        _attachments[name] = open(file_path, 'rb')
+                        _attachments[name] = file_path
         
         for prop in ('couchapp', '_attachments'):
             if not prop in doc:
