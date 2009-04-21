@@ -335,7 +335,7 @@ class Couchapp(object):
         if 'lists' in design_doc:
             package_shows(design_doc, design_doc['lists'], self.app_dir, objects, verbose=verbose)
 
-        if 'validate_doc_update' in doc:
+        if 'validate_doc_update' in design_doc:
             tmp_dict = dict(validate_doc_update=design_doc["validate_doc_update"])
             package_shows(design_doc, tmp_dict, self.app_dir, objects, verbose=verbose)
             design_doc.update(tmp_dict)
