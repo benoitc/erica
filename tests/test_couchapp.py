@@ -92,8 +92,7 @@ class CouchappTestCase(unittest.TestCase):
         self.assert_('index.html' in design_doc['_attachments'])
         self.assert_('style/main.css' in design_doc['_attachments'])
         
-        self.assert_(hasattr(design_doc['_attachments']['style/main.css'], 'read'))
-        content = design_doc['_attachments']['style/main.css'].read()
+        content = open(design_doc['_attachments']['style/main.css'], 'rb').read()
         self.assert_(content == "/* add styles here */")
         
     def testSignatures(self):
