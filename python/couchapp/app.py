@@ -326,7 +326,7 @@ class Couchapp(object):
         design_doc.update(self.dir_to_fields(self.app_dir, manifest=manifest,
                 verbose=verbose))
         
-        if not 'couuchapp' in design_doc:
+        if not 'couchapp' in design_doc:
             design_doc['couchapp'] = {}
             
         if 'shows' in design_doc:
