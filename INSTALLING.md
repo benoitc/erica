@@ -10,6 +10,13 @@ If `sudo easy_install couchapp` doesn't work for you, you can install from sourc
 
 You may need to satisfy some dependencies. We hope this will happen automatically but... you never know.
 
+
+## Simplejson Dependency
+
+If you are on stock Mac OS X 10.5 Leopard, your version of setuptools is out of date. If your installation of couchapp fails with "error: Could not find required distribution simplejson", try running
+
+    sudo easy_install -U couchapp
+
 ## Questions and Comments
 
 If you can improve this documentation, please send pull requests using Github or hit the [CouchApp mailing list](http://groups.google.com/group/couchapp). 
