@@ -53,15 +53,14 @@ def is_ok():
 def in_couchapp():
     """ return path of couchapp if we are somewhere in a couchapp. """
     current_path = os.getcwd()
-    old_dirs = []
+    parent = ''
     while 1:
-        dirs = os.listdir(current_path)
-        if dirs == old_dirs: 
-            return False
-        if '.couchapprc' in dirs: break
-        current_path = os.path.normpath(os.path.join(current_path, '../'))
-        old_dirs = dirs
-    return current_path
+        if os.path.exists(os.path.join(current_path, '.couchapprc')): 
+            return current_path
+        parent = os.path.normpath(os.path.join(current_path, '../'))
+        if parent == current_path:
+            return None
+        current_path = parent
 
 def parse_uri(string):
     parts = urlparse.urlsplit(urllib.unquote(string))
