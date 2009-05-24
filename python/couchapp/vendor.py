@@ -15,7 +15,7 @@ from couchapp.utils import *
 
 __all__ = ['VENDOR_HANDLERS', 'Vendor', 'external_vendor_dir']
 
-COUCHAPP_VENDOR_URL = 'git://github.com/jchris/couchapp.git'
+COUCHAPP_VENDOR_URL = 'git://github.com/couchapp/couchapp.git'
 COUCHAPP_VENDOR_SCM = 'git'
 
 external_vendor_dir = os.path.join(external_dir, 'vendor')

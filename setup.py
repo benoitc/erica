@@ -55,7 +55,8 @@ easy_install.process_distribution = process_distribution
 setup(
     name = 'Couchapp',
     version = '0.3',
-    url = 'http://github.com/benoitc/couchapp/tree/master',
+    url = 'http://github.com/couchapp/couchapp/tree/master',
+    homepage = 'http://wiki.github.com/couchapp/couchapp',
     license =  'Apache License 2',
     author = 'Benoit Chesneau',
     author_email = 'benoitc@e-engura.org',
