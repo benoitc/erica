@@ -7,6 +7,7 @@
 # you should have received as part of this distribution.
 #
 import glob
+from hashlib import md5
 import os
 import re
 import sys
@@ -16,7 +17,7 @@ try:
 except ImportError:
     import simplejson as json
 
-from couchapp.utils import _md5, read_file, read_json, to_bytestring
+from couchapp.utils import read_file, read_json, to_bytestring
 
 def package_shows(doc, funcs, app_dir, objs, verbose=False):
    apply_lib(doc, funcs, app_dir, objs, verbose=verbose)
@@ -38,7 +39,7 @@ def apply_lib(doc, funcs, app_dir, objs, verbose=False):
             print >>sys.stderr, "Error running !code or !json on function \"%s\": %s" % (k, e)
             sys.exit(-1)
         if old_v != funcs[k]:
-            objs[_md5(to_bytestring(funcs[k])).hexdigest()] = old_v
+            objs[md5(to_bytestring(funcs[k])).hexdigest()] = old_v
            
 
 def run_code_macros(f_string, app_dir, verbose=False):

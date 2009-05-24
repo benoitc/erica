@@ -8,6 +8,7 @@
 #
 
 import copy
+from hashlib import md5
 import os
 import re
 import shutil
@@ -21,7 +22,7 @@ except ImportError:
 
 
 from couchapp.macros import package_views, package_shows
-from couchapp.utils import _md5, to_bytestring
+from couchapp.utils import to_bytestring
 from couchapp.utils import *
 
 __all__ = ['Couchapp']
@@ -172,7 +173,7 @@ class Couchapp(object):
                             break
 
                         if isinstance(content, basestring):
-                            _ref = _md5(to_bytestring(content)).hexdigest()
+                            _ref = md5(to_bytestring(content)).hexdigest()
                             if objects and _ref in objects:
                                 content = objects[_ref]
 

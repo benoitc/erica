@@ -19,16 +19,11 @@ try:
 except ImportError:
     import simplejson as json
 
-__all__ = ['_md5', '_popen3', 'in_couchapp', 'parse_uri', 'parse_auth',
+__all__ = ['_popen3', 'in_couchapp', 'parse_uri', 'parse_auth',
         'get_appname', 'to_bytestring', 'read_file', 'sign_file', 
         'write_content', 'write_json', 'read_json', 'is_ok', 'error']
 
-# compatibility with python 2.4
-try:
-    from hashlib import md5 as _md5
-except ImportError:
-    import md5
-    _md5 = md5.new
+from hashlib import md5
 
 
 try:#python 2.6, use subprocess
@@ -139,7 +134,7 @@ def sign_file(file_path):
         f = open(file_path, 'rb')
         content = f.read()
         f.close()
-        return _md5(content).hexdigest()
+        return md5(content).hexdigest()
     return ''
 
 def write_content(fname, content):
