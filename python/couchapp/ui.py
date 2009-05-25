@@ -28,7 +28,7 @@ from couchapp.errors import AppError
 from couchapp.utils import *
 
 class NullHandler(logging.Handler):
-    """ null handler """
+    """ null log handler """
     def emit(self, record):
         pass
 
