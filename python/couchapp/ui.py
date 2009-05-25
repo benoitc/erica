@@ -17,8 +17,8 @@ import sys
 import time
 import urllib
 
-import httplib2
-from couchdb import Server, ResourceNotFound
+from couchapp.contrib import httplib2
+from couchapp.contrib.couchdb import Server, ResourceNotFound
 try:
     import json 
 except ImportError:
