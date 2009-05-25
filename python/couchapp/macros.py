@@ -17,57 +17,53 @@ try:
 except ImportError:
     import simplejson as json
 
+from couchapp.errors import MacroError
 from couchapp.utils import to_bytestring
 
-def package_shows(doc, funcs, ui, objs, verbose=False):
-   apply_lib(doc, funcs, ui, objs, verbose=verbose)
+def package_shows(doc, funcs, app_dir, objs, ui):
+   apply_lib(doc, funcs, app_dir, objs, ui)
          
-def package_views(doc, views, ui, objs, verbose=False):
+def package_views(doc, views, app_dir, objs, ui):
    for view, funcs in views.iteritems():
-       apply_lib(doc, funcs, ui, objs, verbose=verbose)
+       apply_lib(doc, funcs, app_dir, objs, ui)
 
-def apply_lib(doc, funcs, ui, objs, verbose=False):
+def apply_lib(doc, funcs, app_dir, objs, ui):
     for k, v in funcs.iteritems():
         if not isinstance(v, basestring):
             continue
         old_v = v
         try:
             funcs[k] = run_json_macros(doc, 
-                run_code_macros(v, ui, verbose=verbose), 
-                ui, verbose=verbose)
+                run_code_macros(v, app_dir, ui), app_dir, ui)
         except ValueError, e:
-            print >>sys.stderr, "Error running !code or !json on function \"%s\": %s" % (k, e)
-            sys.exit(-1)
+            raise MacroError("Error running !code or !json on function \"%s\": %s" % (k, e))
         if old_v != funcs[k]:
             objs[md5(to_bytestring(funcs[k])).hexdigest()] = old_v
            
 
-def run_code_macros(f_string, ui, verbose=False):
+def run_code_macros(f_string, app_dir, ui):
    def rreq(mo):
        # just read the file and return it
-       path = ui.rjoin(ui.app_dir, mo.group(2).strip(' '))
+       path = ui.rjoin(app_dir, mo.group(2).strip(' '))
        library = ''
        filenum = 0
        for filename in glob.iglob(path):            
-           if verbose>=2:
-               print "process code macro: %s" % filename
+           if ui.verbose>=2:
+               ui.logger.info("process code macro: %s" % filename)
            try:
                library += ui.read(filename)
            except IOError, e:
-               print >>sys.stderr, e
-               sys.exit(-1)
+               raise MacroError(str(e))
            filenum += 1
            
        if not filenum:
-           print >>sys.stderr, "Processing code: No file matching '%s'" % mo.group(2)
-           sys.exit(-1)
-           
+           raise MacroError("Processing code: No file matching '%s'" % mo.group(2))
        return library
 
    re_code = re.compile('(\/\/|#)\ ?!code (.*)')
    return re_code.sub(rreq, f_string)
 
-def run_json_macros(doc, f_string, ui, verbose=False):
+def run_json_macros(doc, f_string, app_dir, ui):
    included = {}
    varstrings = []
 
@@ -84,8 +80,7 @@ def run_json_macros(doc, f_string, ui, verbose=False):
                    else:
                        library = ui.read(filename)
                except IOError, e:
-                   print >>sys.stderr, e
-                   sys.exit(1)
+                   raise MacroError(str(e))
                filenum += 1
                current_file = filename.split(app_dir)[1]
                fields = current_file.split('/')
@@ -98,8 +93,7 @@ def run_json_macros(doc, f_string, ui, verbose=False):
                    else:
                        include_to[field] = library
            if not filenum:
-               print >>sys.stderr, "Processing code: No file matching '%s'" % mo.group(2)
-               sys.exit(-1)
+               raise MacroError("Processing code: No file matching '%s'" % mo.group(2))
        else:	
            fields = mo.group(2).split('.')
            library = doc

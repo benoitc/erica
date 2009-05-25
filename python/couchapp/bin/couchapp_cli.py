@@ -15,11 +15,13 @@ Good for pure Couch application development.
 A port of couchapp from Ruby (http://github.com/jchris/couchapp)
 """
 
+import logging
 import os
 import sys
 from optparse import OptionParser, OptionGroup
 
 import couchapp
+from couchapp.errors import *
 from couchapp.ui import UI
 from couchapp.app import CouchApp
 from couchapp.utils import in_couchapp
@@ -29,22 +31,32 @@ from couchapp.vendor import Vendor
 class CouchappCli(object):
     
     def __init__(self, verbose=False):
-        self.ui = UI(verbose=verbose)
+        console = logging.StreamHandler()
+        console.setLevel(logging.INFO)
+        formatter = logging.Formatter('[%(levelname)s] %(message)s')
+        console.setFormatter(formatter)
+        self.ui = UI(verbose=verbose, logging_handler=console)
         self.verbose = verbose
         
     def generate(self, appname):
         appdir = os.path.normpath(os.path.join(os.getcwd(), appname))
         if self.verbose >= 1:
-            print "Generating a new CouchApp in %s" % appdir
+            self.ui.logger.info("Generating a new CouchApp in %s" % appdir)
         cmd = CouchApp(appdir, self.ui)
-        cmd.generate()
+        try:
+            cmd.generate()
+        except AppError, e:
+            self.ui.logger.critical(str(e))
 
     def init(self, appdir, dburl):
         if verbose >= 1:
-            print "Initializing a new CouchApp in %s" % appdir
+            self.ui.logger.info("Initializing a new CouchApp in %s" % appdir)
         cmd = CouchApp(appdir, self.ui)
-        cmd.initialize(dburl)
-
+        try:
+            cmd.initialize(dburl)
+        except AppError, e:
+            self.ui.logger.critical(str(e))
+            
     def push(self, appdir, appname, dbstring, options=None):
         cmd = CouchApp(appdir, self.ui)
         try:
@@ -52,19 +64,30 @@ class CouchappCli(object):
         except ValueError, e:
             print>>sys.stderr, e
             return
+        except (AppError, MacroError), e:
+            self.ui.logger.critical(str(e))
 
     def clone(self, app_uri, appdir):
         cmd = CouchApp(appdir, self.ui)
-        cmd.clone(app_uri)
-
+        try:
+            cmd.clone(app_uri)
+        except (AppError, MacroError), e:
+            self.ui.logger.critical(str(e))
+            
     def vendor_update(self, appdir):
         vendor = Vendor(appdir, self.ui)
-        vendor.update()
-
-    def vendor_install(appdir, url, scm='git'):
+        try:
+            vendor.update()
+        except VendorError, e:
+            self.ui.logger.critical(str(e))
+            
+    def vendor_install(self, appdir, url, scm='git'):
         vendor = Vendor(appdir, self.ui)
-        vendor.install(url, scm=scm)
-    
+        try:
+            vendor.install(url, scm=scm)
+        except VendorError, e:
+            self.ui.logger.critical(str(e))
+            
 def main():
     parser = OptionParser(usage='%prog [options] cmd', version="%prog " + couchapp.__version__)
     parser.add_option('-v', dest='verbose', default=1,  action='store_const', const=2, help='print message to stdout')

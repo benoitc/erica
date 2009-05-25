@@ -24,7 +24,7 @@ try:#python 2.6, use subprocess
     closefds = os.name == 'posix'
     
     def popen3(cmd, mode='t', bufsize=0):
-        p = Popen(cmd, shell=True, bufsize=bufsize,
+        p = subprocess.Popen(cmd, shell=True, bufsize=bufsize,
             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, 
             close_fds=closefds)
         p.wait()
@@ -158,6 +158,6 @@ def external_dir():
 _vendor_dir = None
 def vendor_dir():
     global _vendor_dir
-    if vendor_dir is None:
-        _external_vendor_dir = os.path.join(external_dir(), 'vendor')
-    return _external_vendor_dir
+    if _vendor_dir is None:
+        _vendor_dir = os.path.join(external_dir(), 'vendor')
+    return _vendor_dir

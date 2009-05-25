@@ -9,6 +9,7 @@ import codecs
 import copy
 from hashlib import md5
 import httplib
+import logging
 import os
 import socket
 import string
@@ -23,7 +24,13 @@ try:
 except ImportError:
     import simplejson as json
 
+from couchapp.errors import AppError
 from couchapp.utils import *
+
+class NullHandler(logging.Handler):
+    """ null handler """
+    def emit(self, record):
+        pass
 
 
 class UI(object):
@@ -31,11 +38,19 @@ class UI(object):
     DEFAULT_SERVER_URI = 'http://127.0.0.1:5984/'
     
     # TODO: add possibility to load global conf
-    def __init__(self, verbose=False):
+    def __init__(self, verbose=False, logging_handler=None):
         # load user conf
         self.conf = {}
         self.verbose = verbose
         self.readconfig(rcpath())
+
+        # init logger
+        if logging_handler is None:
+            logging_handler = NullHandler()
+        self.logger = logging.getLogger("couchapp")
+        self.logger.setLevel(logging.INFO)
+        self.logger.addHandler(logging_handler)
+         
         
     def readconfig(self, fn):
         """ Get current configuration of couchapp.
@@ -154,21 +169,6 @@ class UI(object):
             return {}
         return data
         
-    def write_err(self, *args):
-        try:
-            if not sys.stdout.closed: sys.stdout.flush()
-            for a in args:
-                sys.stderr.write(str(a))
-            # stderr may be buffered under win32 when redirected to files,
-            # including stdout.
-            if not sys.stderr.closed: sys.stderr.flush()
-        except IOError, inst:
-            if inst.errno != errno.EPIPE:
-                raise
-                
-    def write_console(self, *args):
-        for a in args:
-            sys.stdout.write(str(a))
         
     def server(self, server_uri):
         # init couchdb server
@@ -185,15 +185,10 @@ class UI(object):
     def db(self, server_uri, dbname, create=False):
         """ reurn Database object """
         couchdb_server = self.server(server_uri)
-        try:
+        if dbname not in couchdb_server and create:
+            db = couchdb_server.create(dbname)
+        else:
             db = couchdb_server[dbname]
-        except ResourceNotFound:
-            if create:
-                db = couchdb_server.create(dbname)
-            else:
-                print >>sys.stderr, "% dont exist on %s" % (
-                    dbname, server_uri)
-                sys.exit(1)
         return db
        
     def get_db(self, dbstring):
@@ -208,7 +203,7 @@ class UI(object):
                 if 'default' in env:
                     db_env = env['default']['db']
                 else:
-                    raise ValueError("database isn't specified")
+                    raise AppError("database isn't specified")
 
             if isinstance(db_env, basestring):
                 self.db_url = [db_env]
@@ -247,7 +242,7 @@ class UI(object):
 
             if nb_try > 3:
                 if self.verbose >= 2:
-                    print >>sys.stderr, "%s file not uploaded, sorry." % filename
+                    self.logger.error("%s file not uploaded, sorry." % filename)
                 break
                 
     

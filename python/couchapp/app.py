@@ -20,8 +20,8 @@ try:
 except ImportError:
     import simplejson as json 
 
+from couchapp.errors import *
 from couchapp.macros import package_views, package_shows
-from couchapp.utils import to_bytestring
 from couchapp.utils import *
 
 class CouchApp(object):
@@ -56,7 +56,7 @@ class CouchApp(object):
         """
          
         if not self.ui.isdir(self.app_dir) and self.ui.verbose:
-            self.ui.write_err("%s directory doesn't exist." % self.app_dir)
+            self.ui.logger.error("%s directory doesn't exist." % self.app_dir)
             
         # set default_conf
         default_conf = {}
@@ -67,9 +67,8 @@ class CouchApp(object):
         if not self.ui.isfile(rc_file):
             self.ui.write_json(rc_file, default_conf)
         elif self.ui.verbose:
-            self.ui.write_err("CouchApp already initialized in %s." % self.app_dir)
-            sys.exit(1)
-            
+            raise AppError("CouchApp already initialized in %s." % self.app_dir)
+
     def generate(self):
         """ Generates a CouchApp in app_dir 
         
@@ -96,14 +95,12 @@ class CouchApp(object):
                 try:
                     shutil.copytree(location_dir, dest_dir)
                 except OSError, e:
-                    if self.ui.verbose:
-                        errno, message = e
-                        print >>sys.stderr, "Can't create a CouchApp in %s: %s" % (
-                                self.app_dir, message)
+                    errno, message = e
+                    raise AppError("Can't create a CouchApp in %s: %s" % (
+                            self.app_dir, message))
             else:
-                if self.ui.verbose:
-                    print >>sys.stderr, "Can't create a CouchApp in %s: default template not found." % (
-                            self.app_dir)
+                raise AppError("Can't create a CouchApp in %s: default template not found." % (
+                        self.app_dir))
         self.initialize()
         
     def clone(self, app_uri):
@@ -114,17 +111,15 @@ class CouchApp(object):
         
         rc_file = self.ui.rjoin(self.app_dir, '.couchapprc')
         if self.ui.isfile(rc_file):
-            print >> sys.stderr, "an app already exist here: %s" % self.app_dir
+            raise AppError("an app already exist here: %s" % self.app_dir)
         
         try:
             design_doc = db[docid]
-        except:
-            if self.ui.verbose >= 1:
-                print >>sys.stderr, 'cant get couchapp "%s"' % app_name
-                sys.exit(1)
+        except ResourceNotFound:
+            raise RequestError('cant get couchapp "%s"' % app_name)
         
         if self.ui.verbose >= 1:
-            print "Cloning %s to %s..." % (app_name, self.app_dir)
+            self.ui.logger.info("Cloning %s to %s..." % (app_name, self.app_dir))
             
         # clone
         self.designdoc_to_fs(db, design_doc)
@@ -164,12 +159,12 @@ class CouchApp(object):
 
         for db in self.ui.get_db(dbstring):
             if self.ui.verbose >= 1:
-                print "Pushing CouchApp in %s to design doc:\n%s/%s" % (self.app_dir,
-                    db.resource.uri, docid)
+                self.ui.logger.info("Pushing CouchApp in %s to design doc:\n%s/%s" % (self.app_dir,
+                    db.resource.uri, docid))
             
             index_url = self.index_url(db.resource.uri, app_name, attach_dir, index)
             if index_url:
-                print "Visit your CouchApp here:\n%s" % index_url
+                self.ui.logger.info("Visit your CouchApp here:\n%s" % index_url)
 
             if docid in db:
                 design = db[docid]
@@ -209,12 +204,12 @@ class CouchApp(object):
                     del attachments[filename]
         for filename, value in attachments.iteritems():
             if self.ui.verbose >= 2:
-                print "Attaching %s" % filename
+                self.ui.logger.info("Attaching %s" % filename)
             
-            f = open(value, 'rb')
+            content = self.ui.read(value)
             # fix issue with httplib that raises BadStatusLine
             # error because it didn't close the connection
-            self.ui.put_attachment(db, design, f, filename)
+            self.ui.put_attachment(db, design, content, filename)
                      
         # update signatures
         design = db[docid]
@@ -268,22 +263,18 @@ class CouchApp(object):
             design_doc['couchapp'] = {}
             
         if 'shows' in design_doc:
-            package_shows(design_doc, design_doc['shows'], self.ui, objects, 
-                verbose=self.ui.verbose)
+            package_shows(design_doc, design_doc['shows'], self.app_dir, objects, self.ui)
 
         if 'lists' in design_doc:
-            package_shows(design_doc, design_doc['lists'], self.ui, objects, 
-                verbose=self.ui.verbose)
+            package_shows(design_doc, design_doc['lists'], self.app_dir, objects, self.ui)
 
         if 'validate_doc_update' in design_doc:
             tmp_dict = dict(validate_doc_update=design_doc["validate_doc_update"])
-            package_shows(design_doc, tmp_dict, self.ui, objects, 
-                verbose=self.ui.verbose)
+            package_shows(design_doc, tmp_dict, self.app_dir, objects, self.ui)
             design_doc.update(tmp_dict)
 
         if 'views' in design_doc:
-            package_views(design_doc, design_doc["views"], self.ui, objects, 
-                verbose=self.ui.verbose)
+            package_views(design_doc, design_doc["views"], self.app_dir, objects, self.ui)
             
         couchapp = design_doc.get('couchapp', False)
         design_doc.update({
@@ -346,27 +337,25 @@ class CouchApp(object):
                         depth=depth+1, manifest=manifest)
             else:
                 if self.ui.verbose >= 2:
-                    print >>sys.stderr, "push %s" % rel_path                
+                    self.ui.logger.info("push %s" % rel_path)               
                 content = ''
                 try:
                     content = self.ui.read(current_path)
                 except UnicodeDecodeError, e:
-                    print >>sys.stderr, str(e)
+                    self.ui.logger.error(str(e))
                 if name.endswith('.json'):
                     try:
                         content = json.loads(content)
                     except ValueError:
                         if self.ui.verbose >= 2:
-                            print >>sys.stderr, "Json invalid in %s" % current_path
+                            self.ui.logger.error("Json invalid in %s" % current_path)
                 
                 # remove extension
                 name, ext = os.path.splitext(name)
                 if name in fields:
                     if self.ui.verbose >= 2:
-                        print >>sys.stderr, "%(name)s is already in properties. Can't add (%(name)s%(ext)s)" % {
-                        "name": name,
-                        "ext": ext
-                        }
+                        self.ui.logger.error("%(name)s is already in properties. Can't add (%(name)s%(ext)s)" % {
+                            "name": name, "ext": ext })
                 else:
                     manifest.append(rel_path)
                     fields[name] = content
@@ -375,6 +364,8 @@ class CouchApp(object):
     def vendor_attachments(self, design_doc,  docid):
         vendor_dir = self.ui.rjoin(self.app_dir, 'vendor')
         if not self.ui.isdir(vendor_dir):
+            if self.ui.verbose >=2:
+                self.ui.logger.info("% don't exist" % vendor_dir)
             return
             
         for name in self.ui.listdir(vendor_dir):
@@ -525,7 +516,7 @@ class CouchApp(object):
                                 func_name)
                         self.ui.write(filename, func)
                         if self.ui.verbose >=2:
-                            self.write_console("clone view not in manifest: %s" % filename)
+                            self.ui.logger.info("clone view not in manifest: %s" % filename)
             elif key in ('shows', 'lists'):
                 dir = self.ui.rjoin(self.app_dir, key)
                 if not self.ui.isdir(dir):
@@ -535,11 +526,11 @@ class CouchApp(object):
                             func_name)
                     self.ui.write(filename, func)
                     if self.ui.verbose >=2:
-                        self.write_console("clone show or list not in manifest: %s" % filename)
+                        self.ui.logger.info("clone show or list not in manifest: %s" % filename)
             else:
                 file_dir = self.ui.rjoin(self.app_dir, key)
                 if self.ui.verbose >=2:
-                    self.write_console("clone property not in manifest: %s" % key)
+                    self.ui.logger.info("clone property not in manifest: %s" % key)
                 if isinstance(design_doc[key], (list, tuple,)):
                     self.ui.write_json(file_dir + ".json", design[key])
                 elif isinstance(design_doc[key], dict):
@@ -579,7 +570,7 @@ class CouchApp(object):
                 if signatures.get(filename) != self.ui.sign(file_path):
                     self.ui.write(file_path, db.get_attachment(docid, filename))
                     if self.ui.verbose>=2:
-                        self.ui.write_console("clone attachment: %s" % filename)
+                        self.ui.logger.info("clone attachment: %s" % filename)
                         
     
         

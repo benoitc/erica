@@ -10,6 +10,7 @@
 import os
 import sys
 
+from couchapp.errors import VendorError
 from couchapp.ui import vendor_dir
 from couchapp.utils import *
 
@@ -87,8 +88,7 @@ class Vendor(object):
         
         """
         if not scm in self.vendor_handlers():
-            print >>sys.stderr, "%s scm isn't supported yet." % scm
-            sys.exit(-1)
+            raise VendorError("%s scm isn't supported yet." % scm)
               
         # get list of installed vendors
         installed = self.get_vendors()
@@ -98,9 +98,9 @@ class Vendor(object):
         (child_stdin, child_stdout, child_stderr) = popen3(cmd)
         err = child_stderr.read()
         if self.ui.verbose >=2:
-            print child_stdout.read()
+            self.ui.logger.info(child_stdout.read())
         if err:
-            print >>sys.stderr, err
+            raise VendorError(str(err))
                 
         # detect new vendor application and add url so we could update later
         for name in self.ui.listdir(self.vendor_dir):
@@ -136,15 +136,16 @@ class Vendor(object):
                 # for now we manage only internal handlers
                 handler = self.vendor_handlers[scm]
                 if verbose >= 1:
-                    print "Updating %s from %s" % (current_path, update_url)
+                    self.ui.logger.info("Updating %s from %s" % (
+                        current_path, update_url))
                 cmd = "%s update %s %s %s" % (handler, update_url, 
                                         current_path, self.vendor_dir)
                 (child_stdin, child_stdout, child_stderr) = self.ui.execute(cmd)
                 if self.ui.verbose >=2:
-                    print child_stdout.read()
+                    self.ui.logger.info(child_stdout.read())
                     err = child_stderr.read()
                     if err:
-                        print >>sys.stderr, err              
+                        raise VendorError(err)              
     
     def update(self, name=None): 
         """
