@@ -11,4 +11,5 @@ try:
 except:
     __version__ = '?'
 
-from couchapp.app import Couchapp
+from couchapp.ui import UI
+from couchapp.app import CouchApp

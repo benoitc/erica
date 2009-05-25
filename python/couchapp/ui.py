@@ -5,98 +5,197 @@
 # This software is licensed as described in the file LICENSE, which
 # you should have received as part of this distribution.
 #`
-
+import codecs
 import copy
+from hashlib import md5
 import httplib
 import os
-from StringIO import StringIO
 import socket
+import string
 import sys
 import time
 import urllib
 
 import httplib2
 from couchdb import Server, ResourceNotFound
+try:
+    import json 
+except ImportError:
+    import simplejson as json
 
-from couchapp.app import Couchapp
 from couchapp.utils import *
 
-DEFAULT_SERVER_URI = 'http://127.0.0.1:5984/'
-external_dir = os.path.join(os.path.dirname(__file__), '_external')
 
-def _server(server_uri):
-    if "@" in server_uri:
-        http = httplib2.Http()
-        username, password, server_uri = parse_auth(server_uri) 
-        couchdb_server = Server(server_uri)
-        http.add_credentials(username, password)
-        couchdb_server.resource.http = http
-    else:
-        couchdb_server = Server(server_uri)
-    return couchdb_server
-
-def get_userconf():
-    """ return user conf from ~/.couchapprc 
+class UI(object):
     
-    :return: dict
-    """
-    # this should work on windows too
-    homedir = os.path.expanduser('~')
-    user_conffile = os.path.join(homedir, ".couchapprc")
-    if os.path.isfile(user_conffile):
-        try:
-            return read_json(user_conffile, use_environment=True)
-        except:
-            pass
-    return {}
-
-
-def get_config(app_dir=None):
-    """ Get current configuration of couchapp. If app_dir is given
-     it return user configuration and local app configuration.
-     
-     :attr app_dir: string, path of application
-     
-     :return: dict, configuratuib
-    """
-    conf = get_userconf()
-    if app_dir and app_dir is not None:
-        rc_file = os.path.join(app_dir, '.couchapprc')
-        if os.path.isfile(rc_file):
-            conf.update(read_json(rc_file, use_environment=True))
-    return conf
-
-class ui(object):
+    DEFAULT_SERVER_URI = 'http://127.0.0.1:5984/'
     
-    def __init__(self, app_dir):
-        self.app_dir = app_dir
-        self.app = Couchapp(app_dir=self.app_dir)
-
-        # load conf
-        self.conf = get_config(app_dir)
-       
-
-    def generate_app(self, verbose=False):
-        """Generates a CouchApp in app_dir"""
-        ret = self.app.generate(verbose=verbose)
-        if not ret['ok']:
-            print >>sys.stderr, ret['error']
-        self.init_app()
-    
-    def init_app(self, db_url=''):
-        """ Initializes the .couchapprc, usually called after generate
+    # TODO: add possibility to load global conf
+    def __init__(self, verbose=False):
+        # load user conf
+        self.conf = {}
+        self.verbose = verbose
+        self.readconfig(rcpath())
         
-        :attr db_url: string. url of default db
+    def readconfig(self, fn):
+        """ Get current configuration of couchapp.
+
         """
-        conf = {}
-        if db_url:
-            conf = { "env": { "default": { "db": db_url } } }
+        conf = self.conf or {}
+        if isinstance(fn, basestring):
+            fn = [fn]
         
-        ret = self.app.initialize(default_conf=conf)
-        if not ret['ok']:
-            print >>sys.stderr, ret['error']
+        for f in fn:
+            if self.isfile(f):
+                conf.update(self.read_json(f, use_environment=True))
+        self.conf = conf
+        
+    def updateconfig(self, app_dir):
+        self.readconfig(os.path.join(app_dir, '.couchapprc'))
+        
+    def isfile(self, fpath):
+        return os.path.isfile(fpath)
+        
+    def isdir(self, path):
+        return os.path.isdir(path)
+        
+    def makedirs(self, *args):
+        for a in args:
+            os.makedirs(a)
             
+    def listdir(self, path):
+        return os.listdir(path)
+        
+    def walk(self, path):
+        return os.walk(path)
+            
+    def realpath(self, path):
+        return os.path.realpath(path)
+        
+    def dirname(self, path):
+        return os.path.dirname(path)
     
+    def rjoin(self, *args):
+        return os.path.join(*args)
+
+    def unlink(self, path):
+        os.unlink(path)
+        
+    def execute(cmd):
+        return popen3(cmd)
+        
+    def sign(self, fpath):
+        """ return md5 hash from file content
+
+        :attr fpath: string, path of file
+
+        :return: string, md5 hexdigest
+        """
+        if self.isfile(fpath):
+            content = self.read(fpath)
+            return md5(to_bytestring(content)).hexdigest()
+        return ''
+        
+    def read(self, fname):
+        """ read file content"""
+        try:
+            f = codecs.open(fname, 'rb', "utf-8")
+            data = f.read()
+        except:
+            f = open(fname, 'rb')
+            data = f.read()
+        finally:
+            f.close()
+        return data
+               
+    def write(self, fname, content):
+        """ write content in a file
+
+        :attr fname: string,filename
+        :attr content: string
+        """
+        f = open(fname, 'wb')
+        f.write(to_bytestring(content))
+        f.close()
+
+    def write_json(self, fname, content):
+        """ serialize content in json and save it
+
+        :attr fname: string
+        :attr content: string
+
+        """
+        self.write(fname, json.dumps(content))
+
+    def read_json(self, fname, use_environment=False):
+        """ read a json file and deserialize
+
+        :attr filename: string
+        :attr use_environment: boolean, default is False. If
+        True, replace environment variable by their value in file
+        content
+
+        :return: dict or list
+        """
+        try:
+            data = self.read(fname)
+        except IOError, e:
+            if e[0] == 2:
+                return {}
+            raise
+
+        if use_environment:
+            data = string.Template(data).substitute(os.environ)
+
+        try:
+            data = json.loads(data)
+        except ValueError:
+            print >>sys.stderr, "Json is invalid, can't load %s" % fname
+            return {}
+        return data
+        
+    def write_err(self, *args):
+        try:
+            if not sys.stdout.closed: sys.stdout.flush()
+            for a in args:
+                sys.stderr.write(str(a))
+            # stderr may be buffered under win32 when redirected to files,
+            # including stdout.
+            if not sys.stderr.closed: sys.stderr.flush()
+        except IOError, inst:
+            if inst.errno != errno.EPIPE:
+                raise
+                
+    def write_console(self, *args):
+        for a in args:
+            sys.stdout.write(str(a))
+        
+    def server(self, server_uri):
+        # init couchdb server
+        if "@" in server_uri:
+            http = httplib2.Http()
+            username, password, server_uri = parse_auth(server_uri) 
+            couchdb_server = Server(server_uri)
+            http.add_credentials(username, password)
+            couchdb_server.resource.http = http
+        else:
+            couchdb_server = Server(server_uri)
+        return couchdb_server
+        
+    def db(self, server_uri, dbname, create=False):
+        """ reurn Database object """
+        couchdb_server = self.server(server_uri)
+        try:
+            db = couchdb_server[dbname]
+        except ResourceNotFound:
+            if create:
+                db = couchdb_server.create(dbname)
+            else:
+                print >>sys.stderr, "% dont exist on %s" % (
+                    dbname, server_uri)
+                sys.exit(1)
+        return db
+       
     def get_db(self, dbstring):
         if not dbstring or not "/" in dbstring:
             env = self.conf.get('env', {})
@@ -104,7 +203,7 @@ class ui(object):
                 if dbstring in env:
                     db_env = env[dbstring]['db']
                 else: 
-                    db_env = "%s/%s" % (DEFAULT_SERVER_URI, dbstring)
+                    db_env = "%s/%s" % (self.DEFAULT_SERVER_URI, dbstring)
             else: 
                 if 'default' in env:
                     db_env = env['default']['db']
@@ -121,71 +220,23 @@ class ui(object):
         db = []
         for s in self.db_url:
             server_uri, db_name, docid = parse_uri(s)
- 
-            couchdb_server = _server(server_uri)
-            
             # create dbs if it don't exist
-            try:
-                _db = couchdb_server.create(db_name)
-            except: # db already exist
-                _db = couchdb_server[db_name]
+            _db = self.db(server_uri, db_name, create=True)
             db.append(_db)
         return db
 
-    def push_app(self, dbstring, app_name, verbose=False, **kwargs):
-        """Pushes the app specified to the CouchDB instance
+    def get_doc(self, db, docid):
+        return db[docid]
         
-        :attr dbstring: string, db url or db environment name.
-        :attr app_name: name of app to push. 
-        :attr verbose: boolean, default is False
-        """
-        design_doc = self.app.to_designdoc(app_name)
+    def save_doc(self, db, docid, doc):
+        db[docid] = doc
         
-        docid = design_doc['_id']
-        attach_dir = os.path.join(self.app_dir, '_attachments')
-        new_doc = copy.deepcopy(design_doc)
-        
-        couchapp = design_doc.get('couchapp', {})
-        if couchapp:
-            index = couchapp.get('index', False)
-        else:
-            index = False
-            new_doc['couchapp'] = {}
-        
-        # we process attachments later
-        del new_doc['_attachments']
-        if 'signatures' in new_doc['couchapp']:
-            del new_doc['couchapp']['signatures']
-
-        for db in self.get_db(dbstring):
-            if verbose >= 1:
-                print "Pushing CouchApp in %s to design doc:\n%s/%s" % (self.app_dir,
-                    db.resource.uri, docid)
-            
-            index_url = self.make_index_url(db.resource.uri, app_name, attach_dir, index)
-            if index_url:
-                print "Visit your CouchApp here:\n%s" % index_url
-
-            if docid in db:
-                design = db[docid]
-                _app_meta = design.get('couchapp', {})
-
-                new_doc['couchapp'] ['signatures'] = _app_meta.get('signatures', {})
-
-                new_doc.update({
-                    '_rev': design['_rev'],
-                    '_attachments': design.get('_attachments', {})
-                })
-            
-            db[docid] = new_doc
-            self.send_attachments(db, design_doc, verbose=verbose)
-
-    def _put_attachment(self, db, doc, content, filename, verbose=False):
+    def put_attachment(self, db, doc, content, fname):
         nb_try = 0
         while True:
             error = False
             try:
-                db.put_attachment(doc, content, filename)
+                db.put_attachment(doc, content, fname)
             except (socket.error, httplib.BadStatusLine):
                 time.sleep(0.4)
                 error = True
@@ -195,105 +246,9 @@ class ui(object):
                 break
 
             if nb_try > 3:
-                if verbose >= 2:
+                if self.verbose >= 2:
                     print >>sys.stderr, "%s file not uploaded, sorry." % filename
                 break
                 
-    def send_attachments(self, db, design_doc, verbose=False):
-        # init vars
-        all_signatures = {}                  
-        if not 'couchapp' in design_doc:
-            design['couchapp'] = {}
+    
         
-        _signatures = design_doc['couchapp'].get('signatures', {})
-        _attachments = design_doc.get('_attachments', {})
-        docid = design_doc['_id']
-        
-        # detect attachments to be removed and keep
-        # only new version attachments to update.
-        design = db[docid]
-        metadata = design.get('couchapp', {})
-        attachments = _attachments.copy()
-        if 'signatures' in metadata:
-            all_signatures = metadata['signatures'].copy()
-            for filename in metadata['signatures'].iterkeys():
-                if filename not in _signatures:
-                    db.delete_attachment(design, filename)
-                elif _signatures[filename] == metadata['signatures'][filename]:
-                    del attachments[filename]
-        for filename, value in attachments.iteritems():
-            if verbose >= 2:
-                print "Attaching %s" % filename
-            
-            f = open(value, 'rb')
-            # fix issue with httplib that raises BadStatusLine
-            # error because it didn't close the connection
-            self._put_attachment(db, design, f, filename, verbose=verbose)
-                     
-        # update signatures
-        design = db[docid]
-        if not 'couchapp' in design:
-            design['couchapp'] = {}
-
-        all_signatures.update(_signatures)
-        design['couchapp'].update({'signatures': all_signatures})
-        db[docid] = design
-        
-
-    def clone_app(self, app_uri, verbose=False):
-        """Clone a CouchApp from app_uri into app_dir"""
-        server_uri, db_name, docid = parse_uri(app_uri) 
-        couchdb_server = _server(server_uri)
-        app_name = get_appname(docid)
-        
-        try:
-            db = couchdb_server.create(db_name)
-        except: # db already exist
-            db = couchdb_server[db_name]
- 
-        rc_file = os.path.join(self.app_dir, '.couchapprc')
-        if os.path.isfile(rc_file):
-            print >> sys.stderr, "an app already exist here: %s" % self.app_dir
-        
-        try:
-            design_doc = db[docid]
-        except:
-            if verbose >= 1:
-                print >>sys.stderr, 'cant get couchapp "%s"' % app_name
-                sys.exit(1)
-        
-        # fetch content andut them as fie handles
-        attachments = {}
-        if '_attachments' in design_doc:
-            for filename in design_doc['_attachments'].iterkeys():
-                content = StringIO(db.get_attachment(docid, filename))
-                attachments[filename] = content
-                
-        design_doc['_attachments'] = attachments
-        
-        if verbose >= 1:
-            print "Cloning %s to %s..." % (app_name, self.app_dir)
-        ret = self.app.clone(design_doc, verbose=verbose)
-     
-        if not ret['ok']:
-            print >>sys.stderr, ret['error']
-            sys.exit(1)
-            
-        conf = {}
-        conf['env'] = {
-            'origin': {
-                'db': db.resource.uri
-            }
-        }
-        write_json(rc_file, conf)
-        
-
-    def make_index_url(self, uri, app_name, attach_dir, index):
-        if index:
-          return "%s/%s/%s/%s" % (uri, '_design', app_name, index)
-        else:
-          index_fpath = os.path.join(attach_dir, 'index.html')
-          if os.path.isfile(index_fpath):
-            return "%s/%s/%s/%s" % (uri, '_design', app_name, 'index.html')
-          else:
-            return False

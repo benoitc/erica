@@ -7,43 +7,75 @@
 # you should have received as part of this distribution.
 #
 
-import codecs
+
 import os
-import string
 import sys
 import urlparse
 import urllib
 
-try:
-    import json 
-except ImportError:
-    import simplejson as json
-
-__all__ = ['_popen3', 'in_couchapp', 'parse_uri', 'parse_auth',
-        'get_appname', 'to_bytestring', 'read_file', 'sign_file', 
-        'write_content', 'write_json', 'read_json', 'is_ok', 'error']
-
-from hashlib import md5
+__all__ = ['popen3', 'in_couchapp', 'parse_uri', 'parse_auth',
+        'get_appname', 'to_bytestring', 'external_dir', 'vendor_dir',
+        'user_rcpath', 'rcpath']
 
 
 try:#python 2.6, use subprocess
-    from subprocess import *
-    def _popen3(cmd, mode='t', bufsize=0):
+    import subprocess
+    subprocess.Popen  # trigger ImportError early
+    closefds = os.name == 'posix'
+    
+    def popen3(cmd, mode='t', bufsize=0):
         p = Popen(cmd, shell=True, bufsize=bufsize,
-            stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, 
+            close_fds=closefds)
         p.wait()
         return (p.stdin, p.stdout, p.stderr)
 except ImportError:
-    def _popen3(cmd, mode='t', bufsize=0):
-        return os.popen3(cmd, mode, bufsize)
-        
-def error(message, verbose=False):
-    if verbose:
-        print >>sys.stderr, message
-    return { 'ok': False, 'error': message }
+    subprocess = None
+    popen3 = os.popen3
     
-def is_ok():
-    return { 'ok': True }
+if os.name == 'nt':
+    def user_rcpath():
+        try:
+            home = os.path.expanduser('~')
+            if sys.getwindowsversion()[3] != 2 and userdir == '~':
+                 # We are on win < nt: fetch the APPDATA directory location and use
+                    # the parent directory as the user home dir.
+                appdir = shell.SHGetPathFromIDList(
+                    shell.SHGetSpecialFolderLocation(0, shellcon.CSIDL_APPDATA))
+                home = os.path.dirname(appdir)
+            path = os.path.join(home, '.couchapprc')
+        except:
+            home = os.path.expanduser('~')
+            path = os.path.join(home, '.couchapprc')
+        userprofile = [os.environ.get('USERPROFILE')]
+        if userprofile:
+            path.append(os.path.join(userprofile, '.couchapprc'))
+        return path
+else:
+    def user_rcpath():
+        return [os.path.expanduser('~/.couchapprc')]
+        
+        
+#TODO: manage system configuration file
+_rcpath = None
+def rcpath():
+    """ get global configuration """
+    global _rcpath
+    if _rcpath is None:
+        if 'COUCHAPPRC_PATH' in os.environ:
+            _rcpath = []
+            for p in os.environ['COUCHAPPRC_PATH'].split(os.pathsep):
+                if not p: continue
+                if os.path.isdir(p):
+                    for f, kind in osutil.listdir(p):
+                        if f.endswith('.rc'):
+                            _rcpath.append(os.path.join(p, f))
+                else:
+                    _rcpath.append(p)
+        else:
+            _rcpath = user_rcpath()
+    return _rcpath
+    
     
 def in_couchapp():
     """ return path of couchapp if we are somewhere in a couchapp. """
@@ -115,70 +147,17 @@ def to_bytestring(s):
         return s.encode('utf-8')
     else:
         return s
-
-def read_file(fname):
-    """ read file content"""
-    f = codecs.open(fname, 'rb', "utf-8")
-    data = f.read()
-    f.close()
-    return data
-
-def sign_file(file_path):
-    """ return md5 hash from file content
+        
+_external_dir = None
+def external_dir():
+    global _external_dir
+    if _external_dir is None:
+        _external_dir = os.path.join(os.path.dirname(__file__), '_external')
+    return _external_dir
     
-    :attr file_path: string, path of file
-    
-    :return: string, md5 hexdigest
-    """
-    if os.path.isfile(file_path):
-        f = open(file_path, 'rb')
-        content = f.read()
-        f.close()
-        return md5(content).hexdigest()
-    return ''
-
-def write_content(fname, content):
-    """ write content in a file
-    
-    :attr fname: string,filename
-    :attr content: string
-    """
-    f = open(fname, 'wb')
-    f.write(to_bytestring(content))
-    f.close()
-
-def write_json(filename, content):
-    """ serialize content in json and save it
-    
-    :attr filename: string
-    :attr content: string
-    
-    """
-    write_content(filename, json.dumps(content))
-
-def read_json(filename, use_environment=False):
-    """ read a json file and deserialize
-    
-    :attr filename: string
-    :attr use_environment: boolean, default is False. If
-    True, replace environment variable by their value in file
-    content
-    
-    :return: dict or list
-    """
-    try:
-        data = read_file(filename)
-    except IOError, e:
-        if e[0] == 2:
-            return {}
-        raise
-
-    if use_environment:
-        data = string.Template(data).substitute(os.environ)
-
-    try:
-        data = json.loads(data)
-    except ValueError:
-        print >>sys.stderr, "Json is invalid, can't load %s" % filename
-        return {}
-    return data
+_vendor_dir = None
+def vendor_dir():
+    global _vendor_dir
+    if vendor_dir is None:
+        _external_vendor_dir = os.path.join(external_dir(), 'vendor')
+    return _external_vendor_dir

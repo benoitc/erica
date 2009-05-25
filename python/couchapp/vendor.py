@@ -10,7 +10,7 @@
 import os
 import sys
 
-from couchapp.ui import get_userconf, external_dir
+from couchapp.ui import vendor_dir
 from couchapp.utils import *
 
 __all__ = ['VENDOR_HANDLERS', 'Vendor', 'external_vendor_dir']
@@ -18,27 +18,10 @@ __all__ = ['VENDOR_HANDLERS', 'Vendor', 'external_vendor_dir']
 COUCHAPP_VENDOR_URL = 'git://github.com/couchapp/couchapp.git'
 COUCHAPP_VENDOR_SCM = 'git'
 
-external_vendor_dir = os.path.join(external_dir, 'vendor')
-VENDOR_HANDLERS = {
-    'git': os.path.join(external_vendor_dir, 'git.sh')
-}
-
-
-def _vendor_handlers():
-    user_conf = get_userconf()
-    vendor_handlers = VENDOR_HANDLERS
-    if "vendor_handlers" in user_conf:
-        try:
-            vendor_handler.update(user_conf['vendor_handlers'])
-        except ValueError:
-            pass
-    return vendor_handlers
-    
-
 class Vendor(object):
     """ Vendor object to manage vendors in a couchapp """
     
-    def __init__(self, app_dir):
+    def __init__(self, app_dir, ui):
         """ Constructor of vendor object 
         
         :attr app_dir: string, path of app_dir
@@ -47,8 +30,23 @@ class Vendor(object):
         if not os.path.isdir(vendor_dir):
             os.makedirs(vendor_dir)
         self.vendor_dir = vendor_dir
+        self.ui = ui
+        self._vendor_handlers = None
         
-        self.vendor_handlers = _vendor_handlers()
+    def global_vendor_handlers(self):
+        return {
+            'git': self.ui.rjoin(vendor_dir(), 'git.sh')
+        }
+        
+    def vendor_handlers(self):
+        if self._vendor_handlers is None:
+            self._vendor_handlers = self.global_vendor_handlers()
+            if "vendor_handlers" in self.ui.conf:
+                try:
+                    self._vendor_handler.update(self.ui.conf['vendor_handlers'])
+                except ValueError:
+                    pass
+        return self._vendor_handlers
         
     def get_vendors(self):
         """ get list of vendors
@@ -57,13 +55,13 @@ class Vendor(object):
         """
         
         vendors = []
-        for name in os.listdir(self.vendor_dir):
-            current_path = os.path.join(self.vendor_dir, name)
-            if os.path.isdir(current_path):
+        for name in self.ui.listdir(self.vendor_dir):
+            current_path = self.ui.rjoin(self.vendor_dir, name)
+            if self.ui.isdir(current_path):
                 vendors.append(name)
         return vendors
         
-    def install(self, url, scm="git", verbose=False):
+    def install(self, url, scm="git"):
         """ install a vendor in the couchapp dir.
         
         :attr url: string, url to retrieve vendor
@@ -88,43 +86,43 @@ class Vendor(object):
         :attr verbose: boolean, False by default
         
         """
-        if not scm in  self.vendor_handlers:
+        if not scm in self.vendor_handlers():
             print >>sys.stderr, "%s scm isn't supported yet." % scm
             sys.exit(-1)
               
         # get list of installed vendors
         installed = self.get_vendors()
                 
-        handler = self.vendor_handlers[scm]
+        handler = self.vendor_handlers()[scm]
         cmd = "%s install %s %s" % (handler, url, self.vendor_dir)
-        (child_stdin, child_stdout, child_stderr) = _popen3(cmd)
+        (child_stdin, child_stdout, child_stderr) = popen3(cmd)
         err = child_stderr.read()
-        if verbose >=2:
+        if self.ui.verbose >=2:
             print child_stdout.read()
         if err:
             print >>sys.stderr, err
                 
         # detect new vendor application and add url so we could update later
-        for name in os.listdir(self.vendor_dir):
-            current_path = os.path.join(self.vendor_dir, name)
-            if os.path.isdir(current_path) and name not in installed:
-                new_file = os.path.join(current_path, '.new')
-                if os.path.isfile(new_file):
-                    new_url = read_file(new_file).strip()
+        for name in self.ui.listdir(self.vendor_dir):
+            current_path = self.ui.rjoin(self.vendor_dir, name)
+            if self.ui.isdir(current_path) and name not in installed:
+                new_file = self.ui.rjoin(current_path, '.new')
+                if self.ui.isfile(new_file):
+                    new_url = self.ui.read(new_file).strip()
                     if new_url == url:
-                        mfile = os.path.join(current_path, 'metadata.json')
-                        write_json(mfile, {
+                        mfile = self.ui.rjoin(current_path, 'metadata.json')
+                        self.ui.write_json(mfile, {
                             "scm": scm,
                             "update_url": url
                         })
-                        os.unlink(new_file)
+                        self.ui.unlink(new_file)
                         return
                         
-    def _update(self, name, verbose=False):
-        current_path = os.path.join(self.vendor_dir, name)
-        if os.path.isdir(current_path):
-            mfile = os.path.join(current_path, 'metadata.json')
-            metadata = read_json(mfile)
+    def _update(self, name):
+        current_path = self.ui.rjoin(self.vendor_dir, name)
+        if self.ui.isdir(current_path):
+            mfile = self.ui.rjoin(current_path, 'metadata.json')
+            metadata = self.ui.read_json(mfile)
             if not metadata and name == 'couchapp':
                 update_url = COUCHAPP_VENDOR_URL
                 scm = COUCHAPP_VENDOR_SCM
@@ -141,14 +139,14 @@ class Vendor(object):
                     print "Updating %s from %s" % (current_path, update_url)
                 cmd = "%s update %s %s %s" % (handler, update_url, 
                                         current_path, self.vendor_dir)
-                (child_stdin, child_stdout, child_stderr) = _popen3(cmd)
-                if verbose >=2:
+                (child_stdin, child_stdout, child_stderr) = self.ui.execute(cmd)
+                if self.ui.verbose >=2:
                     print child_stdout.read()
                     err = child_stderr.read()
                     if err:
                         print >>sys.stderr, err              
     
-    def update(self, name=None, verbose=False): 
+    def update(self, name=None): 
         """
         update vendor or all vendors if name is None
         
@@ -156,9 +154,9 @@ class Vendor(object):
         :attr verbose: boolean, False by default
         """
         multiple = isinstance(name, (list, tuple,))
-        for vendor_name in os.listdir(self.vendor_dir):
+        for vendor_name in self.ui.listdir(self.vendor_dir):
             if (multiple and vendor_name in name) or name is None:
-                self._update(vendor_name, verbose=verbose)
+                self._update(vendor_name)
             elif name and vendor_name == name:
-                self._update(vendor_name, verbose=verbose)
+                self._update(vendor_name)
                 break
