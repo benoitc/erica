@@ -19,10 +19,7 @@ import urllib
 
 from couchapp.contrib import httplib2
 from couchapp.contrib.couchdb import Server, ResourceNotFound
-try:
-    import json 
-except ImportError:
-    import simplejson as json
+from couchapp.contrib import simplejson as json
 
 from couchapp.errors import AppError
 from couchapp.utils import *

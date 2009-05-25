@@ -11,12 +11,8 @@ from hashlib import md5
 import os
 import re
 import sys
-# python 2.6
-try:
-    import json 
-except ImportError:
-    import simplejson as json
 
+from couchapp.contrib import simplejson as json
 from couchapp.errors import MacroError
 from couchapp.utils import to_bytestring
 

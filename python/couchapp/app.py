@@ -14,12 +14,7 @@ import re
 import shutil
 import sys
 
-# python 2.6
-try:
-    import json 
-except ImportError:
-    import simplejson as json 
-
+from couchapp.contrib import simplejson as json
 from couchapp.errors import *
 from couchapp.macros import package_views, package_shows
 from couchapp.utils import *
