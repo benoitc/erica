@@ -54,7 +54,7 @@ class CouchappCli(object):
         try:
             cmd.initialize(dburl)
         except AppError, e:
-            self.ui.logger.critical(str(e))
+            self.ui.logger.error(str(e))
             
     def push(self, appdir, appname, dbstring, options=None):
         cmd = CouchApp(appdir, self.ui)
