@@ -1,0 +1,9 @@
+Couchapp will create a field on your document corresponding to any directories you make within the application directory, with the text of any files found as key/value pairs.
+
+Also, any files that end in .json will be treated as json rather than text, and put in the corresponding field. Also note that file.json, file.js, or file.txt will be stored under the "file" key, so don't make collisions in the filesystem unless you want unpredictable results.
+
+Of course you know that the views, shows, and lists directories will be treated specially, as those files are processed with the !code and !json macros.
+
+ps: each design document only has one language key: CouchDB defaults to Javascript, so that's what you'll get if you don't express otherwise. The way to switch to a different langauge is to edit the file in the approot called "language", changing "javascript" for instance into "python".
+
+Oh yeah it's recommended that you delete this file.

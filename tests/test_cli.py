@@ -1,10 +1,19 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Copyright 2009 Benoit Chesneau <benoitc@e-engura.org>
+#
+# This software is licensed as described in the file LICENSE, which
+# you should have received as part of this distribution.
+
 import os
 import tempfile
+import shutil
 import sys
 import unittest
 
-from couchapp.ui import ui
-from couchapp.utils import sign_file, _popen3
+from couchapp.ui import UI
+from couchapp.utils import popen3
 
 from couchdb import Server, ResourceNotFound
 
@@ -31,14 +40,18 @@ class CliTestCase(unittest.TestCase):
         os.makedirs(self.tempdir)
         self.app_dir = os.path.join(self.tempdir, "my-app")
         self.cmd = "cd %s && couchapp" % self.tempdir
+        self.ui = UI(verbose=False)
         
     def tearDown(self):
         del self.server['couchapp-test']
         deltree(self.tempdir)
+        
+    def _make_testapp(self):
+        testapp_path = os.path.join(os.path.dirname(__file__), 'testapp')
+        shutil.copytree(testapp_path, self.app_dir)
                 
     def testGenerate(self):
-        (child_stdin, child_stdout, child_stderr) = _popen3("%s generate my-app" % self.cmd)
-        print child_stderr.read()
+        (child_stdin, child_stdout, child_stderr) = popen3("%s generate my-app" % self.cmd)
         # should create application dir
         self.assert_(os.path.isdir(self.app_dir))
         # should create view dir
@@ -53,8 +66,8 @@ class CliTestCase(unittest.TestCase):
         self.assert_(os.path.isfile(os.path.join(self.app_dir, '_attachments', 'style/main.css')))
         
     def testPush(self):
-        (child_stdin, child_stdout, child_stderr) = _popen3("%s generate my-app -v" % self.cmd)
-        (child_stdin, child_stdout, child_stderr) = _popen3("%s push my-app couchapp-test -v" % self.cmd)
+        self._make_testapp()
+        (child_stdin, child_stdout, child_stderr) = popen3("%s push my-app couchapp-test -v" % self.cmd)
         
         # any design doc created ?
         design_doc = None
@@ -91,14 +104,14 @@ class CliTestCase(unittest.TestCase):
         self.assert_('Resig' in design_doc['shows']['example-show'])
         
     def testClone(self):
-        (child_stdin, child_stdout, child_stderr) = _popen3("%s generate my-app" % self.cmd)
-        (child_stdin, child_stdout, child_stderr) = _popen3("%s push my-app couchapp-test" % self.cmd)
+        self._make_testapp()
+        (child_stdin, child_stdout, child_stderr) = popen3("%s push my-app couchapp-test" % self.cmd)
         
         design_doc = self.db['_design/my-app']
         
         app_dir =  os.path.join(self.tempdir, "test_couchapp2")
         
-        (child_stdin, child_stdout, child_stderr) = _popen3("%s clone %s %s" % (
+        (child_stdin, child_stdout, child_stderr) = popen3("%s clone %s %s" % (
                     self.cmd, "http://127.0.0.1:5984/couchapp-test/_design/my-app",
                     app_dir))
         # should clone the views
@@ -114,7 +127,7 @@ class CliTestCase(unittest.TestCase):
         design_doc['test.txt'] = "essai"
         self.db['_design/my-app'] = design_doc
         deltree(app_dir)
-        (child_stdin, child_stdout, child_stderr) = _popen3("%s clone %s %s" % (self.cmd, 
+        (child_stdin, child_stdout, child_stderr) = popen3("%s clone %s %s" % (self.cmd, 
                     "http://127.0.0.1:5984/couchapp-test/_design/my-app",
                     app_dir))
         self.assert_(os.path.isfile(os.path.join(app_dir, 'test.txt')))
@@ -123,7 +136,7 @@ class CliTestCase(unittest.TestCase):
         design_doc["views"]["more"] = { "map": "function(doc) { emit(null, doc); }" }
         self.db['_design/my-app'] = design_doc
         deltree(app_dir)
-        (child_stdin, child_stdout, child_stderr) = _popen3("%s clone %s %s" % (
+        (child_stdin, child_stdout, child_stderr) = popen3("%s clone %s %s" % (
                     self.cmd, "http://127.0.0.1:5984/couchapp-test/_design/my-app",
                     app_dir))
         self.assert_(os.path.isfile(os.path.join(app_dir, 'views/example/map.js')))
@@ -132,7 +145,7 @@ class CliTestCase(unittest.TestCase):
         del design_doc['couchapp']['manifest']
         self.db['_design/my-app'] = design_doc
         deltree(app_dir)
-        (child_stdin, child_stdout, child_stderr) = _popen3("%s clone %s %s" % (
+        (child_stdin, child_stdout, child_stderr) = popen3("%s clone %s %s" % (
                     self.cmd, "http://127.0.0.1:5984/couchapp-test/_design/my-app",
                     app_dir))
         self.assert_(os.path.isfile(os.path.join(app_dir, 'views/example/map.js')))

@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2008 Jan Lehnardt <jan@apache.org>
 # Copyright 2009 Benoit Chesneau <benoitc@e-engura.org>
 #
 # This software is licensed as described in the file LICENSE, which

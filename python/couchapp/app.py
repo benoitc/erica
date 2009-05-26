@@ -127,7 +127,7 @@ class CouchApp(object):
         }
         self.ui.write_json(rc_file, conf)
         
-    def push(self, dbstring, app_name, verbose=False, **kwargs):
+    def push(self, dbstring, app_name, **kwargs):
         """Pushes the app specified to the CouchDB instance
         
         :attr dbstring: string, db url or db environment name.
@@ -360,7 +360,7 @@ class CouchApp(object):
         vendor_dir = self.ui.rjoin(self.app_dir, 'vendor')
         if not self.ui.isdir(vendor_dir):
             if self.ui.verbose >=2:
-                self.ui.logger.info("% don't exist" % vendor_dir)
+                self.ui.logger.info("%s don't exist" % vendor_dir)
             return
             
         for name in self.ui.listdir(vendor_dir):
