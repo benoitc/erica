@@ -11,7 +11,6 @@ import os
 import sys
 
 from couchapp.errors import VendorError
-from couchapp.ui import vendor_dir
 from couchapp.utils import *
 
 __all__ = ['VENDOR_HANDLERS', 'Vendor', 'external_vendor_dir']
