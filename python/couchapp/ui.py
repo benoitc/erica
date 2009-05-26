@@ -223,12 +223,13 @@ class UI(object):
     def save_doc(self, db, docid, doc):
         db[docid] = doc
         
-    def put_attachment(self, db, doc, content, fname):
+    def put_attachment(self, db, doc, content, fname,
+        content_length=None):
         nb_try = 0
         while True:
             error = False
             try:
-                db.put_attachment(doc, content, fname)
+                db.put_attachment(doc, content, fname, content_length=content_length)
             except (socket.error, httplib.BadStatusLine):
                 time.sleep(0.4)
                 error = True

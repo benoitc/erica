@@ -443,7 +443,8 @@ class Database(object):
         except ResourceNotFound:
             return default
 
-    def put_attachment(self, doc, content, filename=None, content_type=None):
+    def put_attachment(self, doc, content, filename=None, content_type=None, 
+        content_length=None):
         """Create or replace an attachment.
 
         Note that the provided `doc` is required to have a `_rev` field. Thus,
@@ -462,6 +463,9 @@ class Database(object):
                              extension
         :since: 0.4.1
         """
+        headers = {}
+        headers.setdefault("Transfer-Encoding", "chunked")
+        
         if hasattr(content, 'read'):
             content = content.read()
         if filename is None:
@@ -472,10 +476,14 @@ class Database(object):
         if content_type is None:
             content_type = ';'.join(filter(None, mimetypes.guess_type(filename)))
 
+        if content_type:
+            headers['Content-Type'] = content_type
+
+        if content_length and content_length is not None:
+             headers['Content-Length'] = str(content_length)
+
         resp, data = self.resource(doc['_id']).put(filename, content=content,
-                                                   headers={
-            'Content-Type': content_type
-        }, rev=doc['_rev'])
+                            headers=headers, rev=doc['_rev'])
         doc['_rev'] = data['rev']
 
     def query(self, map_fun, reduce_fun=None, language='javascript',

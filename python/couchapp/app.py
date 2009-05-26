@@ -182,6 +182,7 @@ class CouchApp(object):
             design['couchapp'] = {}
         
         _signatures = design_doc['couchapp'].get('signatures', {})
+        _length = design_doc['couchapp'].get('length', {})
         _attachments = design_doc.get('_attachments', {})
         docid = design_doc['_id']
         
@@ -201,10 +202,11 @@ class CouchApp(object):
             if self.ui.verbose >= 2:
                 self.ui.logger.info("Attaching %s" % filename)
             
-            content = self.ui.read(value)
+            
             # fix issue with httplib that raises BadStatusLine
             # error because it didn't close the connection
-            self.ui.put_attachment(db, design, content, filename)
+            self.ui.put_attachment(db, design, self.ui.read(value), filename, 
+                content_length=_length.get(filename, None))
                      
         # update signatures
         design = db[docid]
@@ -374,6 +376,7 @@ class CouchApp(object):
         # get attachments
         _signatures = {}
         _attachments = {}
+        _length = {}
         all_signatures = {}
         for root, dirs, files in self.ui.walk(attach_dir):
             if files:
@@ -387,6 +390,7 @@ class CouchApp(object):
                             name = self.ui.rjoin('vendor/%s' % vendor, name)
                         _signatures[name] = self.ui.sign(file_path)
                         _attachments[name] = file_path
+                        _length[name] = int(os.path.getsize(file_path))
         
         for prop in ('couchapp', '_attachments'):
             if not prop in doc:
@@ -395,8 +399,12 @@ class CouchApp(object):
         if not 'signatures' in doc['couchapp']:
             doc['couchapp']['signatures'] = {}
             
+        if not 'length' in doc['couchapp']:
+            doc['couchapp']['length'] = {}
+            
         doc['_attachments'].update(_attachments)
         doc['couchapp']['signatures'].update(_signatures)
+        doc['couchapp']['length'].update(_length)
         
     def designdoc_to_fs(self, db, design_doc):
         """
