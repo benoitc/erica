@@ -48,7 +48,7 @@ class CouchappCli(object):
             self.ui.logger.critical(str(e))
 
     def init(self, appdir, dburl):
-        if verbose >= 1:
+        if self.ui.verbose >= 1:
             self.ui.logger.info("Initializing a new CouchApp in %s" % appdir)
         cmd = CouchApp(appdir, self.ui)
         try:
