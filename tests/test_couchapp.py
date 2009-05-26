@@ -15,7 +15,7 @@ import unittest
 from couchapp.app import CouchApp
 from couchapp.ui import UI
 
-from couchdb import Server, ResourceNotFound
+from couchapp.contrib.couchdb import Server, ResourceNotFound
 
 def deltree(path):
     for root, dirs, files in os.walk(path, topdown=False):

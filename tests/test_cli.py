@@ -12,10 +12,10 @@ import shutil
 import sys
 import unittest
 
-from couchapp.ui import UI
-from couchapp.utils import popen3
+from couchapp import CouchApp, UI
+from couchapp.utils import popen3, in_couchapp
 
-from couchdb import Server, ResourceNotFound
+from couchapp.contrib.couchdb import Server, ResourceNotFound
 
 def deltree(path):
     for root, dirs, files in os.walk(path, topdown=False):
@@ -40,16 +40,17 @@ class CliTestCase(unittest.TestCase):
         os.makedirs(self.tempdir)
         self.app_dir = os.path.join(self.tempdir, "my-app")
         self.cmd = "cd %s && couchapp" % self.tempdir
-        self.ui = UI(verbose=False)
+        self.startdir = os.getcwd()
         
     def tearDown(self):
         del self.server['couchapp-test']
         deltree(self.tempdir)
+        os.chdir(self.startdir)
         
     def _make_testapp(self):
         testapp_path = os.path.join(os.path.dirname(__file__), 'testapp')
         shutil.copytree(testapp_path, self.app_dir)
-                
+
     def testGenerate(self):
         (child_stdin, child_stdout, child_stderr) = popen3("%s generate my-app" % self.cmd)
         # should create application dir
