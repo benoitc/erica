@@ -142,6 +142,7 @@ def run_setup(with_binary):
         ],
         features=features,
         cmdclass={'build_ext': ve_build_ext},
+        test_suite='tests',
     
     )
 

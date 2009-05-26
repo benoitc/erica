@@ -50,7 +50,7 @@ class CliTestCase(unittest.TestCase):
     def _make_testapp(self):
         testapp_path = os.path.join(os.path.dirname(__file__), 'testapp')
         shutil.copytree(testapp_path, self.app_dir)
-
+    
     def testGenerate(self):
         (child_stdin, child_stdout, child_stderr) = popen3("%s generate my-app" % self.cmd)
         # should create application dir
