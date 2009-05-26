@@ -480,7 +480,7 @@ class Database(object):
             headers['Content-Type'] = content_type
 
         if content_length and content_length is not None:
-             headers['Content-Length'] = str(content_length)
+            headers['Content-Length'] = str(content_length)
 
         resp, data = self.resource(doc['_id']).put(filename, content=content,
                             headers=headers, rev=doc['_rev'])

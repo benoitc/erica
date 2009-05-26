@@ -199,14 +199,15 @@ class CouchApp(object):
                 elif _signatures[filename] == metadata['signatures'][filename]:
                     del attachments[filename]
         for filename, value in attachments.iteritems():
+            content_length = _length.get(filename, None)
             if self.ui.verbose >= 2:
-                self.ui.logger.info("Attaching %s" % filename)
+                self.ui.logger.info("Attaching %s (%s)" % (filename, content_length))
             
-            
+            f = open(value, "rb")
             # fix issue with httplib that raises BadStatusLine
             # error because it didn't close the connection
-            self.ui.put_attachment(db, design, self.ui.read(value), filename, 
-                content_length=_length.get(filename, None))
+            self.ui.put_attachment(db, design, f, filename, 
+                content_length=content_length)
                      
         # update signatures
         design = db[docid]

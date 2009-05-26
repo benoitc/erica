@@ -82,11 +82,14 @@ def in_couchapp():
     current_path = os.getcwd()
     parent = ''
     while 1:
-        if os.path.exists(os.path.join(current_path, '.couchapprc')): 
+        current_rcpath = os.path.join(current_path, '.couchapprc')
+        if os.path.exists(current_rcpath):
+            if current_rcpath in rcpath():
+                return False
             return current_path
         parent = os.path.normpath(os.path.join(current_path, '../'))
         if parent == current_path:
-            return None
+            return False
         current_path = parent
 
 def parse_uri(string):

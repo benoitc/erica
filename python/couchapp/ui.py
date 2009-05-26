@@ -113,11 +113,12 @@ class UI(object):
         try:
             f = codecs.open(fname, 'rb', "utf-8")
             data = f.read()
+            f.close()
         except:
             f = open(fname, 'rb')
             data = f.read()
-        finally:
             f.close()
+            
         return data
                
     def write(self, fname, content):
