@@ -31,10 +31,8 @@ from inspect import getsource
 from textwrap import dedent
 import re
 import socket
-try:
-    import simplejson as json
-except ImportError:
-    import json # Python 2.6
+
+from couchapp.contrib import simplejson as json
 
 __all__ = ['PreconditionFailed', 'ResourceNotFound', 'ResourceConflict',
            'ServerError', 'Server', 'Database', 'Document', 'ViewResults',
