@@ -196,7 +196,7 @@ def main():
             appdir = args[1]
         except IndexError:
             appdir = '.'
-        init(appdir, dburl, options.verbose)
+        cli.init(appdir, dburl, options.verbose)
     elif args[0] == 'vendor':
         if len(args) < 2:
             return parser.error('Incorrect number of arguments (at least two)')
