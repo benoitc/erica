@@ -5,11 +5,13 @@
 #
 # This software is licensed as described in the file LICENSE, which
 # you should have received as part of this distribution.
+#
 
-try:
-    __version__ = __import__('pkg_resources').get_distribution('Couchapp').version
-except:
-    __version__ = '?'
-
-from couchapp.ui import UI
-from couchapp.app import CouchApp
+class AppError(Exception):
+    """ raised when a application error appear """
+    
+class MacroError(Exception):
+    """ raised for macro errors"""
+    
+class VendorError(Exception):
+    """ vendor error """

@@ -6,3 +6,4 @@ include ez_setup.py
 recursive-include app-template *
 recursive-include vendor *
 recursive-include python/couchapp/_external *
+recursive-include tests/testapp *

@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2008 Jan Lehnardt <jan@apache.org>
 # Copyright 2009 Benoit Chesneau <benoitc@e-engura.org>
 #
 # This software is licensed as described in the file LICENSE, which
@@ -15,50 +14,82 @@ Good for pure Couch application development.
 A port of couchapp from Ruby (http://github.com/jchris/couchapp)
 """
 
+import logging
 import os
 import sys
 from optparse import OptionParser, OptionGroup
 
-
 import couchapp
+from couchapp.errors import *
+from couchapp.ui import UI
+from couchapp.app import CouchApp
 from couchapp.utils import in_couchapp
+from couchapp.vendor import Vendor
 
 
-def generate(appname, verbose=False):
-    appdir = os.path.normpath(os.path.join(os.getcwd(), appname))
-    if verbose >= 1:
-        print "Generating a new CouchApp in %s" % appdir
-    couchapp.FileManager.generate_app(appdir)
-
-def init(appdir, dburl, verbose=False):
-    if verbose >= 1:
-        print "Initializing a new CouchApp in %s" % appdir
-    couchapp.FileManager.init(appdir, dburl)
-
-def push(appdir, appname, dbstring, verbose=False, 
-        options=None):
-    try:
-        fm = couchapp.FileManager(dbstring, appdir)
-    except ValueError, e:
-        print>>sys.stderr, e
-        return 
-
-    fm.push_app(appdir, appname, verbose=verbose, 
-            nocss=options.css, nojs=options.js)
-
-def clone(app_uri, app_dir, verbose=False):
-    couchapp.FileManager.clone(app_uri, app_dir, verbose=verbose)
+class CouchappCli(object):
     
-def vendor_update(app_dir, verbose=False):
-    couchapp.FileManager.vendor_update(app_dir, verbose=verbose)
-    
-def vendor_install(app_dir, url, scm='git', verbose=False):
-    couchapp.FileManager.vendor_install(app_dir, url, scm=scm, 
-                                    verbose=verbose)
+    def __init__(self, verbose=False):
+        console = logging.StreamHandler()
+        console.setLevel(logging.INFO)
+        formatter = logging.Formatter('[%(levelname)s] %(message)s')
+        console.setFormatter(formatter)
+        self.ui = UI(verbose=verbose, logging_handler=console)
+        self.verbose = verbose
+        
+    def generate(self, appname):
+        appdir = os.path.normpath(os.path.join(os.getcwd(), appname))
+        if self.verbose >= 1:
+            self.ui.logger.info("Generating a new CouchApp in %s" % appdir)
+        cmd = CouchApp(appdir, self.ui)
+        try:
+            cmd.generate()
+        except AppError, e:
+            self.ui.logger.critical(str(e))
 
+    def init(self, appdir, dburl):
+        if self.ui.verbose >= 1:
+            self.ui.logger.info("Initializing a new CouchApp in %s" % appdir)
+        cmd = CouchApp(appdir, self.ui)
+        try:
+            cmd.initialize(dburl)
+        except AppError, e:
+            self.ui.logger.error(str(e))
+            
+    def push(self, appdir, appname, dbstring, options=None):
+        cmd = CouchApp(appdir, self.ui)
+        try:
+            cmd.push(dbstring, appname)
+        except ValueError, e:
+            print>>sys.stderr, e
+            return
+        except (AppError, MacroError), e:
+            self.ui.logger.critical(str(e))
+
+    def clone(self, app_uri, appdir):
+        cmd = CouchApp(appdir, self.ui)
+        try:
+            cmd.clone(app_uri)
+        except (AppError, MacroError), e:
+            self.ui.logger.critical(str(e))
+            
+    def vendor_update(self, appdir):
+        vendor = Vendor(appdir, self.ui)
+        try:
+            vendor.update()
+        except VendorError, e:
+            self.ui.logger.critical(str(e))
+            
+    def vendor_install(self, appdir, url, scm='git'):
+        vendor = Vendor(appdir, self.ui)
+        try:
+            vendor.install(url, scm=scm)
+        except VendorError, e:
+            self.ui.logger.critical(str(e))
+            
 def main():
     parser = OptionParser(usage='%prog [options] cmd', version="%prog " + couchapp.__version__)
-    parser.add_option('-v', dest='verbose', default=1, help='print message to stdout')
+    parser.add_option('-v', dest='verbose', default=1,  action='store_const', const=2, help='print message to stdout')
     parser.add_option('-q', dest='verbose', action='store_const', const=0, help="don't print any message")
     
     # generate options
@@ -68,10 +99,6 @@ def main():
     # push options
     group_push = OptionGroup(parser, "Pushes a CouchApp to CouchDB", 
             "couchapp push [options] [appdir] [appname] [dburl]")
-    group_push.add_option("--disable-css", action="store_true", 
-        dest="css", help="disable css compression")
-    group_push.add_option("--disable-js", action="store_true", 
-        dest="js", help="disable js compression")
     parser.add_option_group(group_push)
     
     # clone options
@@ -94,6 +121,8 @@ def main():
 
     if len(args) < 1:
         return parser.error('incorrect number of arguments')
+        
+    cli = CouchappCli(options.verbose)
 
     if args[0] == 'generate':
         if len(args) < 2:
@@ -101,13 +130,15 @@ def main():
                     '\n\nIncorrect number of arguments, appname is'+
                     ' missing')
         appname = args[1]
-        generate(appname, options.verbose)
+        cli.generate(appname)
     elif args[0] == 'push':
         appname = ''
         rel_path = '.'
         dbstring = ''
         # generate [dir] [appname] [url] case
         if len(args) == 4:
+            # we test if we are in a couchapp here
+            # in case it's true, abort
             if in_couchapp():
                 return parser.error('Incorrect number of arguments, you\'re in an app.')
             rel_path = args[1]
@@ -145,7 +176,7 @@ def main():
         if not appname: 
             appname = ''.join(appdir.split('/')[-1:])
         # PUSH IT!
-        push(appdir, appname, dbstring, options.verbose, options=options)
+        cli.push(appdir, appname, dbstring, options=options)
       
     elif args[0] == 'clone' or args[0] == 'pull':
         if len(args) < 2:
@@ -157,7 +188,7 @@ def main():
         else:
             app_dir = ''
         # CLONE IT!
-        clone(args[1], app_dir, options.verbose)
+        cli.clone(args[1], app_dir)
     
     elif args[0] == 'init':
         dburl = options.db or ''
@@ -165,32 +196,27 @@ def main():
             appdir = args[1]
         except IndexError:
             appdir = '.'
-        init(appdir, dburl, options.verbose)
+        cli.init(appdir, dburl)
     elif args[0] == 'vendor':
         if len(args) < 2:
             return parser.error('Incorrect number of arguments (at least two)')
-       
-            
         action = args[1]
         if action == 'update':
             try:
                 appdir = args[2]
             except IndexError:
                 appdir = '.'
-            vendor_update(appdir, options.verbose)
+            cli.vendor_update(appdir)
         elif action == 'install':
             if len(args) < 3:
-                return parser.error('Incorrect number of arguments')
-                
+                return parser.error('Incorrect number of arguments')                
             try:
                 appdir = args[3]
             except IndexError:
                 appdir = '.'
-            vendor_install(appdir, args[2], options.scm, options.verbose)
+            cli.vendor_install(appdir, args[2], options.scm)
         else:
-            print >>sys.stderr, "%s is an unknown vendor action, sorry." % action
-            
-        
+            print >>sys.stderr, "%s is an unknown vendor action, sorry." % action      
     else:
         print "%s is an unknown command, sorry." % args[0]
 

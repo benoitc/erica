@@ -5,4 +5,5 @@ Couchapp.egg-info
 build
 dist
 setuptools-*
+.svn/*
 .DS_Store
