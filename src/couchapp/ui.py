@@ -51,7 +51,6 @@ class UI(object):
         
     def readconfig(self, fn):
         """ Get current configuration of couchapp.
-
         """
         conf = self.conf or {}
         if isinstance(fn, basestring):

@@ -179,6 +179,7 @@ class CouchApp(object):
                 })
 
             db[docid] = new_doc
+            print "là"
             self.send_attachments(db, design_doc)
 
     def send_attachments(self, db, design_doc):
@@ -577,8 +578,6 @@ class CouchApp(object):
                     if self.ui.verbose>=2:
                         self.ui.logger.info("clone attachment: %s" % filename)
                         
-    
-        
     def index_url(self, uri, app_name, attach_path, index):
         if index:
             return "%s/%s/%s/%s" % (uri, '_design', app_name, index)
