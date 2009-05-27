@@ -7,3 +7,4 @@ dist
 setuptools-*
 .svn/*
 .DS_Store
+*.so
