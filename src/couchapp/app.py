@@ -179,7 +179,6 @@ class CouchApp(object):
                 })
 
             db[docid] = new_doc
-            print "là"
             self.send_attachments(db, design_doc)
 
     def send_attachments(self, db, design_doc):
