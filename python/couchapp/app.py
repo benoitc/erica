@@ -104,14 +104,20 @@ class CouchApp(object):
         app_name = get_appname(docid)
         db = self.ui.db(server_uri, db_name)
         
-        rc_file = self.ui.rjoin(self.app_dir, '.couchapprc')
-        if self.ui.isfile(rc_file):
-            raise AppError("an app already exist here: %s" % self.app_dir)
-        
         try:
             design_doc = db[docid]
         except ResourceNotFound:
             raise RequestError('cant get couchapp "%s"' % app_name)
+            
+        app_name = get_appname(design_doc['_id'])
+        if not self.app_dir or self.app_dir == ".":
+            self.app_dir = self.ui.rjoin(self.app_dir, app_name)
+        rc_file = self.ui.rjoin(self.app_dir, '.couchapprc')
+
+        if not self.ui.isdir(self.app_dir):
+            self.ui.makedirs(self.app_dir)
+        elif self.ui.isfile(rc_file):
+            raise AppError("an app already exist here: %s" % self.app_dir)  
         
         if self.ui.verbose >= 1:
             self.ui.logger.info("Cloning %s to %s..." % (app_name, self.app_dir))
@@ -417,11 +423,6 @@ class CouchApp(object):
         
         app_name = get_appname(design_doc['_id'])
         docid = design_doc['_id']
-        if not self.app_dir or self.app_dir == ".":
-            self.app_dir = self.ui.rjoin(self.app_dir, app_name)
-
-        if not self.ui.isdir(self.app_dir):
-            self.ui.makedirs(self.app_dir)
             
         metadata = design_doc.get('couchapp', {})
         
