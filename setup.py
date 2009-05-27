@@ -37,7 +37,7 @@ for dir, dirs, files in os.walk('vendor'):
     data_files.append((os.path.join('couchapp', dir), 
         [os.path.join(dir, file_) for file_ in files]))
 
-for dir, dirs, files in os.walk('python/couchapp'):
+for dir, dirs, files in os.walk('src/couchapp'):
     for i, dirname in enumerate(dirs):
         if dirname.startswith('.'): del dirs[i]
         
@@ -66,7 +66,7 @@ speedups = Feature(
     "options C speed-enhancement modules",
     standard=True,
     ext_modules = [
-        Extension("couchapp/contrib/simplejson._speedups", ["python/couchapp/contrib/simplejson/_speedups.c"]),
+        Extension("couchapp/contrib/simplejson._speedups", ["src/couchapp/contrib/simplejson/_speedups.c"]),
     ],
 )
 
@@ -119,9 +119,9 @@ def run_setup(with_binary):
 
         zip_safe = False,
     
-        packages=find_packages('python'),
+        packages=find_packages('src'),
         package_dir={
-            '': 'python'
+            '': 'src'
         },
         data_files = data_files,
         include_package_data = True,
