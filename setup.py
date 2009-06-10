@@ -104,7 +104,7 @@ def run_setup(with_binary):
     
     setup(
         name = 'Couchapp',
-        version = '0.3',
+        version = '0.3.1',
         url = 'http://github.com/couchapp/couchapp/tree/master',
         license =  'Apache License 2',
         author = 'Benoit Chesneau',
