@@ -14,7 +14,14 @@ CouchDB's replication means that programs running locally, can still be social. 
 
 ## Installation
 
-    sudo easy_install couchapp
+To install couchapp using easy_install you must make sure you have a recent version of setuptools installed (as of this writing, 0.6c6 (0.6a9 on windows) or later):
+
+    $ curl -O http://peak.telecommunity.com/dist/ez_setup.py
+    $ sudo python ez_setup.py -U setuptools
+
+To install or upgrade to the latest released version of couchapp:
+
+    $ sudo easy_install -U couchapp
 
 If this gives you trouble, see the INSTALLING file for more options.
 

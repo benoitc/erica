@@ -143,7 +143,7 @@ class UITestCase(unittest.TestCase):
         self.app.generate()
         design_doc = self.app.fs_to_designdoc("couchapp_test")
         self.assert_('signatures' in design_doc['couchapp'])
-        self.assert_(len(design_doc['couchapp']['signatures']) == 2)
+        self.assert_(len(design_doc['couchapp']['signatures']) == 3)
         self.assert_('index.html' in design_doc['couchapp']['signatures'])
         signature =  design_doc['couchapp']['signatures']['index.html']
         fsignature = self.ui.sign(os.path.join(self.app_dir, '_attachments/index.html'))
