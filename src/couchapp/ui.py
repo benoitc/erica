@@ -62,8 +62,8 @@ class UI(object):
         self.conf = conf
 
     def updateconfig(self, app_dir):
-        conf_files = [os.path.join(app_dir, '.couchapprc'),  
-            os.path.join(app_dir, 'couchapp.json')]
+        conf_files = [os.path.join(app_dir, 'couchapp.json'),
+            os.path.join(app_dir, '.couchapprc')]
         self.readconfig(conf_files)
                    
     def exists(self, path):
