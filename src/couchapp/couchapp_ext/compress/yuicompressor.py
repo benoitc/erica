@@ -11,6 +11,7 @@
 """
 simple backend to use yuicompressor to compress files
 """
+__about__ = "yui compressor v2.4.1"
 
 import codecs
 import os
@@ -20,8 +21,6 @@ import tempfile
 from couchapp.utils import read_file
 
 
-def about():
-    print "Compressing javascript with yuicompressor backend"
 
 def compress(js):
     cmd_path = os.path.join(os.path.dirname(__file__), 

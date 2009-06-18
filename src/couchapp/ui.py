@@ -48,6 +48,8 @@ class UI(object):
         self.logger = logging.getLogger("couchapp")
         self.logger.setLevel(logging.INFO)
         self.logger.addHandler(logging_handler)
+        
+       
          
         
     def readconfig(self, fn):
@@ -64,6 +66,9 @@ class UI(object):
         
     def updateconfig(self, app_dir):
         self.readconfig(os.path.join(app_dir, '.couchapprc'))
+        
+    def exists(self, path):
+        return os.path.exists(path)
         
     def isfile(self, fpath):
         return os.path.isfile(fpath)

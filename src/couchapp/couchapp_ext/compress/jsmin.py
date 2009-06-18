@@ -30,10 +30,9 @@
 # SOFTWARE.
 # */
 
-from StringIO import StringIO
+__about__ = "jsmin compressor"
 
-def about():
-    print "Compressing javascript with jsmin backend"
+from StringIO import StringIO
 
 def compress(js):
     ins = StringIO(js)
