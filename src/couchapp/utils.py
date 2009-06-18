@@ -14,8 +14,8 @@ import urlparse
 import urllib
 
 __all__ = ['popen3', 'in_couchapp', 'parse_uri', 'parse_auth',
-        'get_appname', 'to_bytestring', 'external_dir', 'vendor_dir',
-        'user_rcpath', 'rcpath', 'locateProgram', 'deltree']
+        'get_appname', 'to_bytestring', 'vendor_dir',
+        'user_rcpath', 'rcpath', 'locate_program', 'deltree']
 
 
 try:#python 2.6, use subprocess
@@ -153,7 +153,7 @@ def to_bytestring(s):
         
 # function borrowed to Fusil project(http://hachoir.org/) 
 # which allowed us to use it under Apache 2 license.
-def locateProgram(program, use_none=False, raise_error=False):
+def locate_program(program, use_none=False, raise_error=False):
     if os.path.isabs(program):
         # Absolute path: nothing to do
         return program
@@ -186,12 +186,6 @@ def deltree(path):
         for name in dirs:
             os.rmdir(os.path.join(root, name))
             
-_external_dir = None
-def external_dir():
-    global _external_dir
-    if _external_dir is None:
-        _external_dir = os.path.join(os.path.dirname(__file__), '_external')
-    return _external_dir
     
 _vendor_dir = None
 def vendor_dir():

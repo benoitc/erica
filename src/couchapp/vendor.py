@@ -13,7 +13,7 @@ import sys
 from couchapp.errors import VendorError
 from couchapp.utils import *
 
-__all__ = ['VENDOR_HANDLERS', 'Vendor', 'external_vendor_dir']
+__all__ = ['VENDOR_HANDLERS', 'Vendor']
 
 COUCHAPP_VENDOR_URL = 'git://github.com/couchapp/couchapp.git'
 COUCHAPP_VENDOR_SCM = 'git'

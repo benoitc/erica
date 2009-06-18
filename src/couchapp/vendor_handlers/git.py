@@ -12,12 +12,12 @@ import shutil
 import tempfile
 
 from couchapp.errors import VendorError
-from couchapp.utils import locateProgram, popen3, deltree
+from couchapp.utils import locate_program, popen3, deltree
 
 def git_clone(ui, url):
     """ return git cmd path """
     try:
-        cmd = locateProgram("git", raise_error=True)
+        cmd = locate_program("git", raise_error=True)
     except ValueError, e:
         raise VendorError(e)
     
