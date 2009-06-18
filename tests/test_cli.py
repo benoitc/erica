@@ -13,16 +13,11 @@ import sys
 import unittest
 
 from couchapp import CouchApp, UI
-from couchapp.utils import popen3, in_couchapp
+from couchapp.utils import popen3, in_couchapp, deltree
 
 from couchapp.contrib.couchdb import Server, ResourceNotFound
 
-def deltree(path):
-    for root, dirs, files in os.walk(path, topdown=False):
-        for name in files:
-            os.remove(os.path.join(root, name))
-        for name in dirs:
-            os.rmdir(os.path.join(root, name))
+
     
 couchapp_dir = os.path.join(os.path.dirname(__file__), '../python')
 couchapp_cli = os.path.join(os.path.dirname(__file__), '../python/couchapp/bin/couchapp_cli.py')

@@ -22,7 +22,6 @@ except TypeError:
     use_setuptools()
 
 from setuptools import setup, find_packages, Extension, Feature
-from setuptools.command.easy_install import easy_install
 from distutils.command.build_ext import build_ext
 from distutils.errors import CCompilerError, DistutilsExecError, \
     DistutilsPlatformError
@@ -43,25 +42,6 @@ for dir, dirs, files in os.walk('src/couchapp'):
         
     data_files.append((dir, [os.path.join(dir, file_) for file_ in files]))
     
-easy_install.real_process_distribution = easy_install.process_distribution
-def process_distribution(self, *args, **kwargs):
-    """ overide process_distribution to add permissions"""
-    easy_install.real_process_distribution(self, *args, **kwargs)
-    import pkg_resources
-    external_path = '/pathto/couchapp/_external'
-    try:
-        pkg_resources.require('couchapp')
-        external_path = pkg_resources.resource_filename("couchapp", "_external")
-        for dir, dirs, files in os.walk(external_path):
-            for i, dirname in enumerate(dirs):
-                if dirname.startswith('.'): del dirs[i]
-            for file_ in files:
-                os.chmod(os.path.join(dir, file_), 0755)  
-            
-    except:
-        print >>sys.stderr, "Chmoding failed. Try to 'chmod -R +x %s'" % external_path
-easy_install.process_distribution = process_distribution
-
 speedups = Feature(
     "options C speed-enhancement modules",
     standard=True,
@@ -104,7 +84,7 @@ def run_setup(with_binary):
     
     setup(
         name = 'Couchapp',
-        version = '0.3.1',
+        version = '0.3.2',
         url = 'http://github.com/couchapp/couchapp/tree/master',
         license =  'Apache License 2',
         author = 'Benoit Chesneau',

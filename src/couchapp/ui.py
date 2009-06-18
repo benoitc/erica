@@ -11,6 +11,7 @@ from hashlib import md5
 import httplib
 import logging
 import os
+import shutil
 import socket
 import string
 import sys
@@ -47,6 +48,8 @@ class UI(object):
         self.logger = logging.getLogger("couchapp")
         self.logger.setLevel(logging.INFO)
         self.logger.addHandler(logging_handler)
+        
+       
          
         
     def readconfig(self, fn):
@@ -64,6 +67,9 @@ class UI(object):
     def updateconfig(self, app_dir):
         self.readconfig(os.path.join(app_dir, '.couchapprc'))
         
+    def exists(self, path):
+        return os.path.exists(path)
+        
     def isfile(self, fpath):
         return os.path.isfile(fpath)
         
@@ -77,8 +83,8 @@ class UI(object):
     def listdir(self, path):
         return os.listdir(path)
         
-    def walk(self, path):
-        return os.walk(path)
+    def walk(self, path, **kwargs):
+        return os.walk(path, **kwargs)
             
     def realpath(self, path):
         return os.path.realpath(path)
@@ -91,6 +97,25 @@ class UI(object):
 
     def unlink(self, path):
         os.unlink(path)
+        
+    def rmdir(self, path):
+        os.rmdir(path)
+        
+    def makedirs(self, path):
+        os.makedirs(path)
+    
+    def copy(self, src, dest):
+        shutil.copy(src, dest)
+    
+    def deltree(self, path):
+        for root, dirs, files in self.walk(path, topdown=False):
+            for name in files:
+                self.unlink(self.rjoin(root, name))
+            for name in dirs:
+                self.rmdir(self.rjoin(root, name))
+                
+    def copytree(self, src, dest):
+        shutil.copytree(src, dest)
         
     def execute(cmd):
         return popen3(cmd)

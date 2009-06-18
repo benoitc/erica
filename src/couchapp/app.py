@@ -16,6 +16,7 @@ import sys
 
 from couchapp.contrib import simplejson as json
 from couchapp.errors import *
+from couchapp.extensions import Extensions
 from couchapp.macros import package_views, package_shows
 from couchapp.utils import *
 
@@ -38,6 +39,9 @@ class CouchApp(object):
         self.ui = ui
         self.ui.updateconfig(app_dir)
         self.app_dir = app_dir
+         # load extensions
+        self.extensions = Extensions(self)
+        self.extensions.load()
         
     def initialize(self, db_url=None):
         """
@@ -88,7 +92,7 @@ class CouchApp(object):
                 else:
                     dest_dir = self.ui.rjoin(self.app_dir, 'vendor')
                 try:
-                    shutil.copytree(location_dir, dest_dir)
+                    self.ui.copytree(location_dir, dest_dir)
                 except OSError, e:
                     errno, message = e
                     raise AppError("Can't create a CouchApp in %s: %s" % (
@@ -97,21 +101,29 @@ class CouchApp(object):
                 raise AppError("Can't create a CouchApp in %s: default template not found." % (
                         self.app_dir))
         self.initialize()
+        self.extensions.notify("post-generate", self.ui, self)
         
     def clone(self, app_uri):
         """Clone a CouchApp from app_uri into app_dir"""
+       
         server_uri, db_name, docid = parse_uri(app_uri) 
         app_name = get_appname(docid)
         db = self.ui.db(server_uri, db_name)
-        
+            
         try:
             design_doc = db[docid]
         except ResourceNotFound:
             raise RequestError('cant get couchapp "%s"' % app_name)
             
+        
+            
         app_name = get_appname(design_doc['_id'])
         if not self.app_dir or self.app_dir == ".":
             self.app_dir = self.ui.rjoin(self.app_dir, app_name)
+            
+        self.extensions.notify("pre-clone", self.ui, self, db=db, design_doc=design_doc)
+        
+        
         rc_file = self.ui.rjoin(self.app_dir, '.couchapprc')
 
         if not self.ui.isdir(self.app_dir):
@@ -132,6 +144,7 @@ class CouchApp(object):
             }
         }
         self.ui.write_json(rc_file, conf)
+        self.extensions.notify("post-clone", self.ui, self, db=db, design_doc=design_doc)
         
     def push(self, dbstring, app_name, **kwargs):
         """Pushes the app specified to the CouchDB instance
@@ -140,6 +153,7 @@ class CouchApp(object):
         :attr app_name: name of app to push. 
         :attr verbose: boolean, default is False
         """
+        self.extensions.notify("pre-push", self.ui, self)
         design_doc = self.fs_to_designdoc(app_name)
         
         docid = design_doc['_id']
@@ -180,6 +194,8 @@ class CouchApp(object):
 
             db[docid] = new_doc
             self.send_attachments(db, design_doc)
+            self.extensions.notify("post-push", self.ui, self, db=db)
+        
 
     def send_attachments(self, db, design_doc):
         # init vars

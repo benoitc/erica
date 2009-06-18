@@ -8,6 +8,7 @@
 
 from optparse import OptionParser
 import os
+import re
 import sys
 sys.path.append(os.path.dirname(__file__))
 
@@ -29,8 +30,6 @@ except ImportError:
         if not rel_list:
             return os.curdir
         return os.path.join(*rel_list)
-
-from couchapp.utils import write_content
 
 __all__ = ['CSSParser', 'merge_css']
 
