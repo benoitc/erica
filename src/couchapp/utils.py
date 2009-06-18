@@ -151,7 +151,7 @@ def to_bytestring(s):
     else:
         return s
         
-# function borrowed to Fusil project(http://hachoir.org/) 
+# function borrowed to Fusil project(http://fusil.hachoir.org/) 
 # which allowed us to use it under Apache 2 license.
 def locate_program(program, use_none=False, raise_error=False):
     if os.path.isabs(program):
@@ -191,5 +191,5 @@ _vendor_dir = None
 def vendor_dir():
     global _vendor_dir
     if _vendor_dir is None:
-        _vendor_dir = os.path.join(external_dir(), 'vendor')
+        _vendor_dir = os.path.join(os.path.dirname(__file__), 'vendor')
     return _vendor_dir
