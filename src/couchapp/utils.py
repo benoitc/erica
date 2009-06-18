@@ -15,7 +15,7 @@ import urllib
 
 __all__ = ['popen3', 'in_couchapp', 'parse_uri', 'parse_auth',
         'get_appname', 'to_bytestring', 'external_dir', 'vendor_dir',
-        'user_rcpath', 'rcpath']
+        'user_rcpath', 'rcpath', 'locateProgram', 'deltree']
 
 
 try:#python 2.6, use subprocess
@@ -151,6 +151,41 @@ def to_bytestring(s):
     else:
         return s
         
+# function borrowed to Fusil project(http://hachoir.org/) 
+# which allowed us to use it under Apache 2 license.
+def locateProgram(program, use_none=False, raise_error=False):
+    if os.path.isabs(program):
+        # Absolute path: nothing to do
+        return program
+    if os.path.dirname(program):
+        # ./test => $PWD/./test
+        # ../python => $PWD/../python
+        program = os.path.normpath(os.path.realpath(program))
+        return program
+    if use_none:
+        default = None
+    else:
+        default = program
+    paths = os.getenv('PATH')
+    if not paths:
+        if raise_error:
+            raise ValueError("Unable to get PATH environment variable")
+        return default
+    for path in paths.split(os.pathsep):
+        filename = os.path.join(path, program)
+        if os.access(filename, os.X_OK):
+            return filename
+    if raise_error:
+        raise ValueError("Unable to locate program %r in PATH" % program)
+    return default
+        
+def deltree(path):
+    for root, dirs, files in os.walk(path, topdown=False):
+        for name in files:
+            os.remove(os.path.join(root, name))
+        for name in dirs:
+            os.rmdir(os.path.join(root, name))
+            
 _external_dir = None
 def external_dir():
     global _external_dir

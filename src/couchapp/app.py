@@ -88,7 +88,7 @@ class CouchApp(object):
                 else:
                     dest_dir = self.ui.rjoin(self.app_dir, 'vendor')
                 try:
-                    shutil.copytree(location_dir, dest_dir)
+                    self.ui.copytree(location_dir, dest_dir)
                 except OSError, e:
                     errno, message = e
                     raise AppError("Can't create a CouchApp in %s: %s" % (

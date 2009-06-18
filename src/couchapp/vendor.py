@@ -35,17 +35,26 @@ class Vendor(object):
         
     def global_vendor_handlers(self):
         return {
-            'git': self.ui.rjoin(vendor_dir(), 'git.sh')
+            'git': 'couchapp.vendor_handlers.git'
         }
         
     def vendor_handlers(self):
         if self._vendor_handlers is None:
-            self._vendor_handlers = self.global_vendor_handlers()
+            self._vendor_handlers = {}
+            handlers = self.global_vendor_handlers()
             if "vendor_handlers" in self.ui.conf:
                 try:
-                    self._vendor_handler.update(self.ui.conf['vendor_handlers'])
+                    handlers.update(self.ui.conf['vendor_handlers'])
                 except ValueError:
                     pass
+                    
+            for handler_name, mod_name in handlers.items():
+                mod = __import__(mod_name, {}, {}, [''])
+                if not hasattr(mod, 'cmdtable'):
+                   continue
+                cmdtable = getattr(mod, 'cmdtable')
+                self._vendor_handlers[handler_name] = cmdtable
+
         return self._vendor_handlers
         
     def get_vendors(self):
@@ -72,13 +81,20 @@ class Vendor(object):
         .. code-block:: javascript
             {
                 "vendor_handlers": {
-                    "scm": "/pathto/vendorscript"
+                    "scm": "module"
                 }
             }
             
-        a vendor script receive 2 actions `install` and `update` and take differents arguments in stdin:
-            * update: `vendorscript update url vendor_path vendor_dir`
-            * install: `vendorscript install url vendor_dir`
+        a vendor module receive 2 actions `install` and `update` and take differents arguments:
+            * install :
+            
+                def install(ui, url, vendor_dir):
+                    ....
+
+            * update :
+            
+                def update(ui, url, path, vendor_dir):
+                    ....
         
         Errors should be returned to stderr. When installing the script should create a file named
         `.new` with url used to retrieve the vendor as first line.
@@ -93,13 +109,7 @@ class Vendor(object):
         installed = self.get_vendors()
                 
         handler = self.vendor_handlers()[scm]
-        cmd = "%s install %s %s" % (handler, url, self.vendor_dir)
-        (child_stdin, child_stdout, child_stderr) = popen3(cmd)
-        err = child_stderr.read()
-        if self.ui.verbose >=2:
-            self.ui.logger.info(child_stdout.read())
-        if err:
-            raise VendorError(str(err))
+        handler['install'](self.ui, url, self.vendor_dir)
                 
         # detect new vendor application and add url so we could update later
         for name in self.ui.listdir(self.vendor_dir):
@@ -128,23 +138,16 @@ class Vendor(object):
             elif metadata:
                 update_url = metadata['update_url']
                 scm = metadata['scm']
-                if not scm in VENDOR_HANDLERS:
+                if not scm in self.vendor_handlers():
                     scm = False
             
             if update_url and scm:
                 # for now we manage only internal handlers
-                handler = self.vendor_handlers[scm]
-                if verbose >= 1:
+                handler = self.vendor_handlers()[scm]
+                if self.ui.verbose >= 1:
                     self.ui.logger.info("Updating %s from %s" % (
-                        current_path, update_url))
-                cmd = "%s update %s %s %s" % (handler, update_url, 
-                                        current_path, self.vendor_dir)
-                (child_stdin, child_stdout, child_stderr) = self.ui.execute(cmd)
-                if self.ui.verbose >=2:
-                    self.ui.logger.info(child_stdout.read())
-                    err = child_stderr.read()
-                    if err:
-                        raise VendorError(err)              
+                        current_path, update_url)) 
+                handler['update'](self.ui, update_url, current_path, self.vendor_dir)         
     
     def update(self, name=None): 
         """
