@@ -167,10 +167,25 @@ class CouchApp(object):
             index = False
             new_doc['couchapp'] = {}
         
+        
         # we process attachments later
         del new_doc['_attachments']
         if 'signatures' in new_doc['couchapp']:
             del new_doc['couchapp']['signatures']
+            
+        for key, value in self.ui.conf.items():
+            if key == "env":
+                continue
+            elif key == "length":
+                continue
+            elif key == "manifest":
+                continue
+            elif key == "objects":
+                continue
+            elif key == "signatures":
+                continue
+            elif key not in new_doc['couchapp']:
+                new_doc['couchapp'][key] = value
 
         for db in self.ui.get_db(dbstring):
             if self.ui.verbose >= 1:
@@ -296,14 +311,14 @@ class CouchApp(object):
         if 'views' in design_doc:
             package_views(design_doc, design_doc["views"], self.app_dir, objects, self.ui)
             
-        couchapp = design_doc.get('couchapp', False)
-        design_doc.update({
-            'couchapp': {
-                'manifest': manifest,
-                'objects': objects
-            }
+            
+        couchapp = design_doc.get('couchapp', {})
+        couchapp.update({
+            'manifest': manifest,
+            'objects': objects
         })
-                    
+        design_doc['couchapp'] = couchapp
+     
         self.attachments(design_doc, attach_dir, docid)
         self.vendor_attachments(design_doc, docid)
         
@@ -327,7 +342,7 @@ class CouchApp(object):
             elif name.startswith('_'):
                 # files starting with "_" are always "special"
                 continue
-            elif depth == 0 and name in ('couchapp', 'couchapp.json'):
+            elif depth == 0 and (name == 'couchapp' or name == 'couchapp.json'):
                 # we are in app_meta
                 if name == "couchapp":
                     manifest.append('%s/' % rel_path)
@@ -346,6 +361,9 @@ class CouchApp(object):
 
                 if 'objects' in content:
                     del content['objects']
+                
+                if 'length' in content:
+                    del content['length']
 
                 if 'couchapp' in fields:
                     fields['couchapp'].update(content)
@@ -472,7 +490,6 @@ class CouchApp(object):
                                 v = v[key]
                         except KeyError:
                             break
-
                         # remove extension
                         last_key, ext = os.path.splitext(fname)
 
@@ -507,6 +524,7 @@ class CouchApp(object):
                                     del temp[key2]
                                 break
                             temp = temp[key2]
+                            
         
         # second pass for missing key or in case
         # manifest isn't in app
@@ -521,6 +539,8 @@ class CouchApp(object):
                     del app_meta['manifest']
                 if 'objects' in app_meta:
                     del app_meta['objects']
+                if 'lenght' in app_meta:
+                    del app_meta['lenght']
                 if app_meta:
                     couchapp_file = self.ui.rjoin(self.app_dir, 'couchapp.json')
                     self.ui.write_json(couchapp_file, app_meta)
@@ -550,24 +570,27 @@ class CouchApp(object):
                         self.ui.logger.info("clone show or list not in manifest: %s" % filename)
             else:
                 file_dir = self.ui.rjoin(self.app_dir, key)
-                if self.ui.verbose >=2:
-                    self.ui.logger.info("clone property not in manifest: %s" % key)
-                if isinstance(design_doc[key], (list, tuple,)):
-                    self.ui.write_json(file_dir + ".json", design[key])
-                elif isinstance(design_doc[key], dict):
-                    if not self.ui.isdir(file_dir):
-                        self.ui.makedirs(file_dir)
-                    for field, value in design_doc[key].iteritems():
-                        field_path = self.ui.rjoin(file_dir, field)
-                        if isinstance(value, basestring):
-                            self.ui.write(field_path, value)
-                        else:
-                            self.ui.write_json(field_path + '.json', value)        
+                if self.ui.exists(file_dir):
+                    continue
                 else:
-                    value = design_doc[key]
-                    if not isinstance(value, basestring):
-                        value = str(value)
-                    self.ui.write(file_dir, value)
+                    if self.ui.verbose >=2:
+                        self.ui.logger.info("clone property not in manifest: %s" % key)
+                    if isinstance(design_doc[key], (list, tuple,)):
+                        self.ui.write_json(file_dir + ".json", design[key])
+                    elif isinstance(design_doc[key], dict):
+                        if not self.ui.isdir(file_dir):
+                            self.ui.makedirs(file_dir)
+                        for field, value in design_doc[key].iteritems():
+                            field_path = self.ui.rjoin(file_dir, field)
+                            if isinstance(value, basestring):
+                                self.ui.write(field_path, value)
+                            else:
+                                self.ui.write_json(field_path + '.json', value)        
+                    else:
+                        value = design_doc[key]
+                        if not isinstance(value, basestring):
+                            value = str(value)
+                        self.ui.write(file_dir, value)
    
 
         # get attachments
