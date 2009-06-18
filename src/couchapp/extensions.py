@@ -24,17 +24,26 @@ class Extensions(object):
                     mod_name = options['ext']
                 else:
                     mod_name = name
-                    
+                
+                mod = None
                 try:
                     mod = __import__(mod_name, {}, {}, [''])
                 except ImportError:
                     mod_name = "couchapp.couchapp_ext.%s" % mod_name
-                    mod = __import__(mod_name, {}, {}, [''])
+                    try:
+                        mod = __import__(mod_name, {}, {}, [''])
+                    except ImportError, e:
+                        if self.app.ui.verbose:
+                            ui.logger.info("%s extension can't be loaded (%s)" % (name, str(e)))
+                        mod = None
                     
-                if hasattr(mod, 'hook'):
+                if mod is not None and hasattr(mod, 'hook'):
                     self._hooks[name] = getattr(mod, 'hook')
     
     def notify(self, hooktype, ui, app_dir, **kwargs):
         for fun in self._hooks.values():
-            fun(ui, app_dir, hooktype, **kwargs)
+            try:
+                fun(ui, app_dir, hooktype, **kwargs)
+            except:
+                continue
             
