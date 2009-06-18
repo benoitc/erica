@@ -20,7 +20,6 @@ class Extensions(object):
     def load(self):
         if 'extensions' in self.app.ui.conf:
             for name, options in self.app.ui.conf['extensions'].items():
-                print "options", name, ":", options
                 if 'ext' in options:
                     mod_name = options['ext']
                 else:
@@ -37,6 +36,5 @@ class Extensions(object):
     
     def notify(self, hooktype, ui, app_dir, **kwargs):
         for fun in self._hooks.values():
-            print hooktype
             fun(ui, app_dir, hooktype, **kwargs)
             

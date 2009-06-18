@@ -49,9 +49,6 @@ class UI(object):
         self.logger.setLevel(logging.INFO)
         self.logger.addHandler(logging_handler)
         
-       
-         
-        
     def readconfig(self, fn):
         """ Get current configuration of couchapp.
         """
@@ -63,10 +60,12 @@ class UI(object):
             if self.isfile(f):
                 conf.update(self.read_json(f, use_environment=True))
         self.conf = conf
-        
+
     def updateconfig(self, app_dir):
-        self.readconfig(os.path.join(app_dir, '.couchapprc'))
-        
+        conf_files = [os.path.join(app_dir, '.couchapprc'),  
+            os.path.join(app_dir, 'couchapp.json')]
+        self.readconfig(conf_files)
+                   
     def exists(self, path):
         return os.path.exists(path)
         
