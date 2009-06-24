@@ -266,6 +266,4 @@ class UI(object):
                 if self.verbose >= 2:
                     self.logger.error("%s file not uploaded, sorry." % filename)
                 break
-                
-    
         

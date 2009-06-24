@@ -7,13 +7,16 @@
 # you should have received as part of this distribution.
 #
 
+import base64
 import copy
 from hashlib import md5
+import mimetypes
 import os
 import re
 import shutil
 import sys
 
+from couchapp.contrib import couchdb
 from couchapp.contrib import simplejson as json
 from couchapp.errors import *
 from couchapp.extensions import Extensions
@@ -206,9 +209,14 @@ class CouchApp(object):
                     '_rev': design['_rev'],
                     '_attachments': design.get('_attachments', {})
                 })
-
-            db[docid] = new_doc
-            self.send_attachments(db, design_doc)
+                
+            if not  kwargs['atomic']:
+                db[docid] = new_doc
+                self.send_attachments(db, design_doc)
+            else:
+                self.encode_attachments(db, design_doc, new_doc)
+                db[docid] = new_doc
+                
             self.extensions.notify("post-push", self.ui, self, db=db)
         
 
@@ -233,6 +241,7 @@ class CouchApp(object):
             for filename in metadata['signatures'].iterkeys():
                 if filename not in _signatures:
                     db.delete_attachment(design, filename)
+                    del all_signatures[filename]
                 elif _signatures[filename] == metadata['signatures'][filename]:
                     del attachments[filename]
         for filename, value in attachments.iteritems():
@@ -252,8 +261,57 @@ class CouchApp(object):
             design['couchapp'] = {}
 
         all_signatures.update(_signatures)
-        design['couchapp'].update({'signatures': all_signatures})
+        design['couchapp'].update({'signatures': _signatures})
         db[docid] = design
+        
+    def encode_attachments(self, db, design_doc, new_doc):
+        all_signatures = {}                  
+        if not 'couchapp' in design_doc:
+            design['couchapp'] = {}
+        _signatures = design_doc['couchapp'].get('signatures', {})
+        _length = design_doc['couchapp'].get('length', {})
+        _attachments = design_doc.get('_attachments', {})
+        docid = design_doc['_id']
+        
+        attachments = _attachments.copy()
+        design = {}
+        try:
+            design = db[docid]
+        except couchdb.ResourceNotFound:
+            pass
+            
+        new_attachments = design.get('_attachments', {})
+        metadata = design.get('couchapp', {})
+        if 'signatures' in metadata:
+            all_signatures = metadata['signatures'].copy()
+            for filename in metadata['signatures'].iterkeys():
+                if not filename in _signatures:
+                    del new_attachments[filename]
+                    del all_signatures[filename]
+                elif _signatures[filename] == metadata['signatures'][filename]:
+                    del attachments[filename]
+        
+        for filename, value in attachments.iteritems():
+            content_length = _length.get(filename, None)
+            if self.ui.verbose >= 2:
+                self.ui.logger.info("Attaching %s (%s)" % (filename, content_length))
+            
+            f = open(value, "rb")
+            # fix issue with httplib that raises BadStatusLine
+            # error because it didn't close the connection
+            new_attachments[filename] = {
+                "content_type": ';'.join(filter(None, mimetypes.guess_type(filename))),
+                "data": base64.b64encode(f.read()),
+            }
+                     
+        # update signatures
+        if not 'couchapp' in new_doc:
+            new_doc['couchapp'] = {}
+
+        all_signatures.update(_signatures)
+        new_doc['couchapp'].update({'signatures': _signatures})
+        new_doc['_attachments'] = new_attachments
+        
             
     def fs_to_designdoc(self, app_name, pre_callback=None, post_callback=None):            
         """
