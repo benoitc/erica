@@ -210,7 +210,7 @@ class CouchApp(object):
                     '_attachments': design.get('_attachments', {})
                 })
                 
-            if not  kwargs['atomic']:
+            if not kwargs.get('atomic', False):
                 db[docid] = new_doc
                 self.send_attachments(db, design_doc)
             else:
