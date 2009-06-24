@@ -59,7 +59,7 @@ class CouchappCli(object):
     def push(self, appdir, appname, dbstring, options=None):
         cmd = CouchApp(appdir, self.ui)
         try:
-            cmd.push(dbstring, appname)
+            cmd.push(dbstring, appname, atomic=options.atomic)
         except ValueError, e:
             print>>sys.stderr, e
             return
@@ -99,6 +99,8 @@ def main():
     # push options
     group_push = OptionGroup(parser, "Pushes a CouchApp to CouchDB", 
             "couchapp push [options] [appdir] [appname] [dburl]")
+    group_push.add_option("--atomic", action="store_true", default=False, 
+            help="store atomically the couchapp.")
     parser.add_option_group(group_push)
     
     # clone options
