@@ -215,6 +215,7 @@ class CouchApp(object):
                 self.send_attachments(db, design_doc)
             else:
                 self.encode_attachments(db, design_doc, new_doc)
+                
                 db[docid] = new_doc
                 
             self.extensions.notify("post-push", self.ui, self, db=db)
@@ -360,6 +361,7 @@ class CouchApp(object):
 
         if 'lists' in design_doc:
             package_shows(design_doc, design_doc['lists'], self.app_dir, objects, self.ui)
+        
 
         if 'validate_doc_update' in design_doc:
             tmp_dict = dict(validate_doc_update=design_doc["validate_doc_update"])
@@ -369,6 +371,7 @@ class CouchApp(object):
         if 'views' in design_doc:
             package_views(design_doc, design_doc["views"], self.app_dir, objects, self.ui)
             
+       
             
         couchapp = design_doc.get('couchapp', {})
         couchapp.update({
@@ -376,8 +379,8 @@ class CouchApp(object):
             'objects': objects
         })
         design_doc['couchapp'] = couchapp
-     
         self.attachments(design_doc, attach_dir, docid)
+        
         self.vendor_attachments(design_doc, docid)
         
         # what we do after retrieving design_doc from app_dir 
@@ -395,11 +398,9 @@ class CouchApp(object):
         for name in self.ui.listdir(current_dir):
             current_path = self.ui.rjoin(current_dir, name)
             rel_path = current_path.split("%s/" % self.app_dir)[1]
-            if name == '.couchapprc':
+            if name.startswith("."):
                 continue
-            elif name == ".couchapp_ignore":
-                continue
-            elif name.startswith('_'):
+            elif depth == 0 and name.startswith('_'):
                 # files starting with "_" are always "special"
                 continue
             elif depth == 0 and (name == 'couchapp' or name == 'couchapp.json'):
@@ -440,7 +441,15 @@ class CouchApp(object):
                 try:
                     content = self.ui.read(current_path)
                 except UnicodeDecodeError, e:
-                    self.ui.logger.error(str(e))
+                    self.ui.logger.error("%s isn't encoded in utf8" % current_path)
+                    content = self.ui.read(current_path, utf8=False)
+                    try:
+                        content.encode('utf-8')
+                    except UnicodeError, e:
+                        self.ui.logger.error("plan B didn't work, %s is a binary" % current_path)
+                        self.ui.logger.error("use plan C: encode to base64")   
+                        content = "base64-encoded;%s" % base64.b64encode(content)
+                        
                 if name.endswith('.json'):
                     try:
                         content = json.loads(content)
@@ -450,7 +459,7 @@ class CouchApp(object):
                 
                 # remove extension
                 name, ext = os.path.splitext(name)
-                if name in fields:
+                if name in fields and ext in ('.txt'):
                     if self.ui.verbose >= 2:
                         self.ui.logger.error("%(name)s is already in properties. Can't add (%(name)s%(ext)s)" % {
                             "name": name, "ext": ext })
@@ -533,7 +542,7 @@ class CouchApp(object):
         if manifest:
             for filename in manifest:
                 if self.ui.verbose >=2:
-                    print "clone property: %s" % filename
+                    self.ui.logger.info("clone property: %s" % filename)
                 file_path = self.ui.rjoin(self.app_dir, filename)
                 if filename.endswith('/'): 
                     if not self.ui.isdir(file_path):
@@ -563,6 +572,9 @@ class CouchApp(object):
                             _ref = md5(to_bytestring(content)).hexdigest()
                             if objects and _ref in objects:
                                 content = objects[_ref]
+                                
+                        if content.startswith('base64-encoded;'):
+                            content = base64.b64decode(content[15:])
 
                         if fname.endswith('.json'):
                             content = json.dumps(content)

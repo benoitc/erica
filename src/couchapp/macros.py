@@ -37,7 +37,7 @@ def apply_lib(doc, funcs, app_dir, objs, ui):
                 raise MacroError("Error running !code or !json on function \"%s\": %s" % (k, e))
             if old_v != funcs[k]:
                 objs[md5(to_bytestring(funcs[k])).hexdigest()] = old_v
-
+           
 def run_code_macros(f_string, app_dir, ui):
    def rreq(mo):
        # just read the file and return it

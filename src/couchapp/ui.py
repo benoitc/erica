@@ -130,18 +130,23 @@ class UI(object):
         :return: string, md5 hexdigest
         """
         if self.isfile(fpath):
-            content = self.read(fpath)
+            content = self.read(fpath, force_read=True)
             return md5(to_bytestring(content)).hexdigest()
         return ''
         
-    def read(self, fname):
+    def read(self, fname, utf8=True, force_read=False):
         """ read file content"""
-        try:
-            f = codecs.open(fname, 'rb', "utf-8")
-            data = f.read()
-            f.close()
-        except:
-            f = open(fname, 'rb')
+        if utf8:
+            try:
+                f = codecs.open(fname, 'rb', "utf-8")
+                data = f.read()
+                f.close()
+            except UnicodeError, e:
+                if force_read:
+                    return self.read(fname, utf8=False)
+                raise
+        else:
+            f = open(fname, 'rn')
             data = f.read()
             f.close()
             
@@ -177,7 +182,7 @@ class UI(object):
         :return: dict or list
         """
         try:
-            data = self.read(fname)
+            data = self.read(fname, force_read=True)
         except IOError, e:
             if e[0] == 2:
                 return {}
