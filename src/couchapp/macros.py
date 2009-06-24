@@ -21,20 +21,22 @@ def package_shows(doc, funcs, app_dir, objs, ui):
          
 def package_views(doc, views, app_dir, objs, ui):
    for view, funcs in views.iteritems():
-       apply_lib(doc, funcs, app_dir, objs, ui)
+       if hasattr(funcs, "iteritems"):
+           apply_lib(doc, funcs, app_dir, objs, ui)
 
 def apply_lib(doc, funcs, app_dir, objs, ui):
     for k, v in funcs.iteritems():
         if not isinstance(v, basestring):
             continue
-        old_v = v
-        try:
-            funcs[k] = run_json_macros(doc, 
-                run_code_macros(v, app_dir, ui), app_dir, ui)
-        except ValueError, e:
-            raise MacroError("Error running !code or !json on function \"%s\": %s" % (k, e))
-        if old_v != funcs[k]:
-            objs[md5(to_bytestring(funcs[k])).hexdigest()] = old_v
+        else:
+            old_v = v
+            try:
+                funcs[k] = run_json_macros(doc, 
+                    run_code_macros(v, app_dir, ui), app_dir, ui)
+            except ValueError, e:
+                raise MacroError("Error running !code or !json on function \"%s\": %s" % (k, e))
+            if old_v != funcs[k]:
+                objs[md5(to_bytestring(funcs[k])).hexdigest()] = old_v
            
 
 def run_code_macros(f_string, app_dir, ui):

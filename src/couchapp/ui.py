@@ -190,7 +190,6 @@ class UI(object):
             return {}
         return data
         
-        
     def server(self, server_uri):
         # init couchdb server
         if "@" in server_uri:

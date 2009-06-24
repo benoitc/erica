@@ -395,7 +395,9 @@ class CouchApp(object):
         for name in self.ui.listdir(current_dir):
             current_path = self.ui.rjoin(current_dir, name)
             rel_path = current_path.split("%s/" % self.app_dir)[1]
-            if name.startswith('.'):
+            if name == '.couchapprc':
+                continue
+            elif name == ".couchapp_ignore":
                 continue
             elif name.startswith('_'):
                 # files starting with "_" are always "special"
