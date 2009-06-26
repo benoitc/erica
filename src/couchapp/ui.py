@@ -108,7 +108,19 @@ class UI(object):
     
     def copy(self, src, dest):
         shutil.copy(src, dest)
+        
+    def relpath(self, *args):
+        return os.path.relpath(*args)
     
+    def split_path(self, path):
+        parts = []
+        while True:
+            head, tail = os.path.split(path)
+            parts = [tail] + parts
+            path = head
+            if not path: break
+        return parts
+        
     def deltree(self, path):
         for root, dirs, files in self.walk(path, topdown=False):
             for name in files:

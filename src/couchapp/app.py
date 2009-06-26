@@ -65,7 +65,7 @@ class CouchApp(object):
         if db_url:
             default_conf = { "env": { "default": { "db": db_url } } }
 
-        rc_file = '%s/.couchapprc' % self.app_dir
+        rc_file = self.ui.rjoin(self.app_dir, '.couchapprc')
         if not self.ui.isfile(rc_file):
             self.ui.write_json(rc_file, default_conf)
         elif self.ui.verbose:
@@ -397,7 +397,7 @@ class CouchApp(object):
             current_dir = self.app_dir
         for name in self.ui.listdir(current_dir):
             current_path = self.ui.rjoin(current_dir, name)
-            rel_path = current_path.split("%s/" % self.app_dir)[1]
+            rel_path = self.ui.relpath(current_path, self.app_dir)
             if name.startswith("."):
                 continue
             elif depth == 0 and name.startswith('_'):
@@ -495,9 +495,9 @@ class CouchApp(object):
                         continue
                     else:
                         file_path = self.ui.rjoin(root, filename) 
-                        name = file_path.split('%s/' % attach_dir)[1]
+                        name = self.ui.relpath(file_path, attach_dir)
                         if vendor is not None:
-                            name = self.ui.rjoin('vendor/%s' % vendor, name)
+                            name = self.ui.rjoin('vendor', vendor, name)
                         _signatures[name] = self.ui.sign(file_path)
                         _attachments[name] = file_path
                         _length[name] = int(os.path.getsize(file_path))
@@ -550,7 +550,7 @@ class CouchApp(object):
                 elif filename == "couchapp.json":
                     continue
                 else:
-                    parts = filename.split('/')
+                    parts = self.ui.split_path(filename)
                     fname = parts.pop()
                     v = design_doc
                     while 1:
@@ -631,11 +631,11 @@ class CouchApp(object):
                         if self.ui.verbose >=2:
                             self.ui.logger.info("clone view not in manifest: %s" % filename)
             elif key in ('shows', 'lists'):
-                dir = self.ui.rjoin(self.app_dir, key)
-                if not self.ui.isdir(dir):
-                    self.ui.makedirs(dir)
+                show_path = self.ui.rjoin(self.app_dir, key)
+                if not self.ui.isdir(show_path):
+                    self.ui.makedirs(show_path)
                 for func_name, func in design_doc[key].iteritems():
-                    filename = self.ui.rjoin(dir, '%s.js' % 
+                    filename = self.ui.rjoin(show_path, '%s.js' % 
                             func_name)
                     self.ui.write(filename, func)
                     if self.ui.verbose >=2:
@@ -655,6 +655,8 @@ class CouchApp(object):
                         for field, value in design_doc[key].iteritems():
                             field_path = self.ui.rjoin(file_dir, field)
                             if isinstance(value, basestring):
+                                if value.startswith('base64-encoded;'):
+                                    value = base64.b64decode(content[15:])
                                 self.ui.write(field_path, value)
                             else:
                                 self.ui.write_json(field_path + '.json', value)        
@@ -673,10 +675,10 @@ class CouchApp(object):
                 
             for filename in design_doc['_attachments'].iterkeys():
                 if filename.startswith('vendor'):
-                    attach_parts = filename.split('/')
+                    attach_parts = self.ui.split_path(filename)
                     vendor_attach_dir = self.ui.rjoin(self.app_dir, attach_parts.pop(0),
                             attach_parts.pop(0), '_attachments')
-                    file_path = self.ui.rjoin(vendor_attach_dir, '/'.join(attach_parts))
+                    file_path = self.ui.rjoin(vendor_attach_dir, *attach_parts)
                 else:
                     file_path = self.ui.rjoin(attach_dir, filename)
                 current_dir = self.ui.dirname(file_path)

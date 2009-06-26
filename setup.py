@@ -32,12 +32,6 @@ for dir, dirs, files in os.walk('app-template'):
 for dir, dirs, files in os.walk('vendor'):
     data_files.append((os.path.join('couchapp', dir), 
         [os.path.join(dir, file_) for file_ in files]))
-
-for dir, dirs, files in os.walk('src/couchapp'):
-    for i, dirname in enumerate(dirs):
-        if dirname.startswith('.'): del dirs[i]
-        
-    data_files.append((dir, [os.path.join(dir, file_) for file_ in files]))
     
 
 setup(
