@@ -44,7 +44,6 @@ class UI(object):
         self.conf = {}
         self.verbose = verbose
         self.readconfig(rcpath())
-
         # init logger
         if logging_handler is None:
             logging_handler = NullHandler()

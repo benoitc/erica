@@ -43,17 +43,17 @@ if os.name == 'nt':
                 appdir = shell.SHGetPathFromIDList(
                     shell.SHGetSpecialFolderLocation(0, shellcon.CSIDL_APPDATA))
                 home = os.path.dirname(appdir)
-            path = os.path.join(home, '.couchapprc')
+            path = os.path.join(home, '.couchapp.conf')
         except:
             home = os.path.expanduser('~')
-            path = os.path.join(home, '.couchapprc')
+            path = os.path.join(home, '.couchapp.conf')
         userprofile = [os.environ.get('USERPROFILE')]
         if userprofile:
-            path.append(os.path.join(userprofile, '.couchapprc'))
+            path.append(os.path.join(userprofile, '.couchapp.conf'))
         return path
 else:
     def user_rcpath():
-        return [os.path.expanduser('~/.couchapprc')]
+        return [os.path.expanduser('~/.couchapp.conf')]
         
         
 #TODO: manage system configuration file
@@ -62,13 +62,13 @@ def rcpath():
     """ get global configuration """
     global _rcpath
     if _rcpath is None:
-        if 'COUCHAPPRC_PATH' in os.environ:
+        if 'COUCHAPPCONF_PATH' in os.environ:
             _rcpath = []
-            for p in os.environ['COUCHAPPRC_PATH'].split(os.pathsep):
+            for p in os.environ['COUCHAPPCONF_PATH'].split(os.pathsep):
                 if not p: continue
                 if os.path.isdir(p):
                     for f, kind in osutil.listdir(p):
-                        if f.endswith('.rc'):
+                        if f == "couchapp.conf":
                             _rcpath.append(os.path.join(p, f))
                 else:
                     _rcpath.append(p)
