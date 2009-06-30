@@ -109,7 +109,7 @@ class UI(object):
         shutil.copy(src, dest)
         
     def relpath(self, *args):
-        return os.path.relpath(*args)
+        return relpath(*args)
     
     def split_path(self, path):
         parts = []
