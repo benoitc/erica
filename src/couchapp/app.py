@@ -489,6 +489,9 @@ class CouchApp(object):
         _length = {}
         all_signatures = {}
         for root, dirs, files in self.ui.walk(attach_dir):
+            for dirname in dirs:
+                if dirname.startswith('.'):
+                    dirs.remove(dirname)
             if files:
                 for filename in files:
                     if filename.startswith('.'):
