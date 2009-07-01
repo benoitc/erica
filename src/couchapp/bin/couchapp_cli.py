@@ -70,7 +70,6 @@ class CouchappCli(object):
         for d in os.listdir(appsdir):
             appdir = os.path.join(appsdir, d)
             if os.path.isdir(appdir) and os.path.isfile(os.path.join(appdir, '.couchapprc')):
-                
                 self.push(appdir, d, dbstring, options=options)
 
     def clone(self, app_uri, appdir):
