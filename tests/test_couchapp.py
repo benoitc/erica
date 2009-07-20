@@ -76,10 +76,9 @@ class UITestCase(unittest.TestCase):
         self.assert_('template' in design_doc['lib']['helpers'])
         
         
-    def testPush(self):
+    def _push(self, atomic=False):
         self._make_testapp()
-        self.app.push("couchapp-test", "my-app")
-        
+        self.app.push("couchapp-test", "my-app", atomic=atomic)
         # any design doc created ?
         design_doc = None
         try:
@@ -113,7 +112,13 @@ class UITestCase(unittest.TestCase):
         # deep require macros
         self.assertFalse('"template"' in design_doc['shows']['example-show'])
         self.assert_('Resig' in design_doc['shows']['example-show'])
+        
+    def testPush(self):   
+        self._push()
 
+    def testPushAtomic(self):
+        self._push(atomic=True)
+        
     def testPushCouchApp(self):
         self.app.generate()
         design_doc = self.app.fs_to_designdoc("couchapp_test")

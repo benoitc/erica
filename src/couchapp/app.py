@@ -65,7 +65,7 @@ class CouchApp(object):
         if db_url:
             default_conf = { "env": { "default": { "db": db_url } } }
 
-        rc_file = '%s/.couchapprc' % self.app_dir
+        rc_file = self.ui.rjoin(self.app_dir, '.couchapprc')
         if not self.ui.isfile(rc_file):
             self.ui.write_json(rc_file, default_conf)
         elif self.ui.verbose:
@@ -210,11 +210,12 @@ class CouchApp(object):
                     '_attachments': design.get('_attachments', {})
                 })
                 
-            if not  kwargs['atomic']:
+            if not kwargs.get('atomic', False):
                 db[docid] = new_doc
                 self.send_attachments(db, design_doc)
             else:
                 self.encode_attachments(db, design_doc, new_doc)
+                
                 db[docid] = new_doc
                 
             self.extensions.notify("post-push", self.ui, self, db=db)
@@ -360,6 +361,7 @@ class CouchApp(object):
 
         if 'lists' in design_doc:
             package_shows(design_doc, design_doc['lists'], self.app_dir, objects, self.ui)
+        
 
         if 'validate_doc_update' in design_doc:
             tmp_dict = dict(validate_doc_update=design_doc["validate_doc_update"])
@@ -369,6 +371,7 @@ class CouchApp(object):
         if 'views' in design_doc:
             package_views(design_doc, design_doc["views"], self.app_dir, objects, self.ui)
             
+       
             
         couchapp = design_doc.get('couchapp', {})
         couchapp.update({
@@ -376,8 +379,8 @@ class CouchApp(object):
             'objects': objects
         })
         design_doc['couchapp'] = couchapp
-     
         self.attachments(design_doc, attach_dir, docid)
+        
         self.vendor_attachments(design_doc, docid)
         
         # what we do after retrieving design_doc from app_dir 
@@ -394,10 +397,10 @@ class CouchApp(object):
             current_dir = self.app_dir
         for name in self.ui.listdir(current_dir):
             current_path = self.ui.rjoin(current_dir, name)
-            rel_path = current_path.split("%s/" % self.app_dir)[1]
-            if name.startswith('.'):
+            rel_path = self.ui.relpath(current_path, self.app_dir)
+            if name.startswith("."):
                 continue
-            elif name.startswith('_'):
+            elif depth == 0 and name.startswith('_'):
                 # files starting with "_" are always "special"
                 continue
             elif depth == 0 and (name == 'couchapp' or name == 'couchapp.json'):
@@ -438,7 +441,15 @@ class CouchApp(object):
                 try:
                     content = self.ui.read(current_path)
                 except UnicodeDecodeError, e:
-                    self.ui.logger.error(str(e))
+                    self.ui.logger.error("%s isn't encoded in utf8" % current_path)
+                    content = self.ui.read(current_path, utf8=False)
+                    try:
+                        content.encode('utf-8')
+                    except UnicodeError, e:
+                        self.ui.logger.error("plan B didn't work, %s is a binary" % current_path)
+                        self.ui.logger.error("use plan C: encode to base64")   
+                        content = "base64-encoded;%s" % base64.b64encode(content)
+                        
                 if name.endswith('.json'):
                     try:
                         content = json.loads(content)
@@ -448,7 +459,7 @@ class CouchApp(object):
                 
                 # remove extension
                 name, ext = os.path.splitext(name)
-                if name in fields:
+                if name in fields and ext in ('.txt'):
                     if self.ui.verbose >= 2:
                         self.ui.logger.error("%(name)s is already in properties. Can't add (%(name)s%(ext)s)" % {
                             "name": name, "ext": ext })
@@ -478,15 +489,18 @@ class CouchApp(object):
         _length = {}
         all_signatures = {}
         for root, dirs, files in self.ui.walk(attach_dir):
+            for dirname in dirs:
+                if dirname.startswith('.'):
+                    dirs.remove(dirname)
             if files:
                 for filename in files:
                     if filename.startswith('.'):
                         continue
                     else:
                         file_path = self.ui.rjoin(root, filename) 
-                        name = file_path.split('%s/' % attach_dir)[1]
+                        name = self.ui.relpath(file_path, attach_dir)
                         if vendor is not None:
-                            name = self.ui.rjoin('vendor/%s' % vendor, name)
+                            name = self.ui.rjoin('vendor', vendor, name)
                         _signatures[name] = self.ui.sign(file_path)
                         _attachments[name] = file_path
                         _length[name] = int(os.path.getsize(file_path))
@@ -531,7 +545,7 @@ class CouchApp(object):
         if manifest:
             for filename in manifest:
                 if self.ui.verbose >=2:
-                    print "clone property: %s" % filename
+                    self.ui.logger.info("clone property: %s" % filename)
                 file_path = self.ui.rjoin(self.app_dir, filename)
                 if filename.endswith('/'): 
                     if not self.ui.isdir(file_path):
@@ -539,7 +553,7 @@ class CouchApp(object):
                 elif filename == "couchapp.json":
                     continue
                 else:
-                    parts = filename.split('/')
+                    parts = self.ui.split_path(filename)
                     fname = parts.pop()
                     v = design_doc
                     while 1:
@@ -561,6 +575,9 @@ class CouchApp(object):
                             _ref = md5(to_bytestring(content)).hexdigest()
                             if objects and _ref in objects:
                                 content = objects[_ref]
+                                
+                        if content.startswith('base64-encoded;'):
+                            content = base64.b64decode(content[15:])
 
                         if fname.endswith('.json'):
                             content = json.dumps(content)
@@ -617,11 +634,11 @@ class CouchApp(object):
                         if self.ui.verbose >=2:
                             self.ui.logger.info("clone view not in manifest: %s" % filename)
             elif key in ('shows', 'lists'):
-                dir = self.ui.rjoin(self.app_dir, key)
-                if not self.ui.isdir(dir):
-                    self.ui.makedirs(dir)
+                show_path = self.ui.rjoin(self.app_dir, key)
+                if not self.ui.isdir(show_path):
+                    self.ui.makedirs(show_path)
                 for func_name, func in design_doc[key].iteritems():
-                    filename = self.ui.rjoin(dir, '%s.js' % 
+                    filename = self.ui.rjoin(show_path, '%s.js' % 
                             func_name)
                     self.ui.write(filename, func)
                     if self.ui.verbose >=2:
@@ -641,6 +658,8 @@ class CouchApp(object):
                         for field, value in design_doc[key].iteritems():
                             field_path = self.ui.rjoin(file_dir, field)
                             if isinstance(value, basestring):
+                                if value.startswith('base64-encoded;'):
+                                    value = base64.b64decode(content[15:])
                                 self.ui.write(field_path, value)
                             else:
                                 self.ui.write_json(field_path + '.json', value)        
@@ -659,10 +678,10 @@ class CouchApp(object):
                 
             for filename in design_doc['_attachments'].iterkeys():
                 if filename.startswith('vendor'):
-                    attach_parts = filename.split('/')
+                    attach_parts = self.ui.split_path(filename)
                     vendor_attach_dir = self.ui.rjoin(self.app_dir, attach_parts.pop(0),
                             attach_parts.pop(0), '_attachments')
-                    file_path = self.ui.rjoin(vendor_attach_dir, '/'.join(attach_parts))
+                    file_path = self.ui.rjoin(vendor_attach_dir, *attach_parts)
                 else:
                     file_path = self.ui.rjoin(attach_dir, filename)
                 current_dir = self.ui.dirname(file_path)

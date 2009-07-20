@@ -65,6 +65,12 @@ class CouchappCli(object):
             return
         except (AppError, MacroError), e:
             self.ui.logger.critical(str(e))
+            
+    def pushapps(self, appsdir, dbstring, options=None):
+        for d in os.listdir(appsdir):
+            appdir = os.path.join(appsdir, d)
+            if os.path.isdir(appdir) and os.path.isfile(os.path.join(appdir, '.couchapprc')):
+                self.push(appdir, d, dbstring, options=options)
 
     def clone(self, app_uri, appdir):
         cmd = CouchApp(appdir, self.ui)
@@ -176,11 +182,23 @@ def main():
         appdir = os.path.normpath(os.path.join(os.getcwd(), rel_path))
         # Derive appname from the directory name (/home/foo/sofa => sofa)
         if not appname: 
-            appname = ''.join(appdir.split('/')[-1:])
+            h, appname = os.path.split(appdir)
+            
         # PUSH IT!
         cli.push(appdir, appname, dbstring, options=options)
-      
-    elif args[0] == 'clone' or args[0] == 'pull':
+    elif args[0] == 'pushapps':
+        if len(args) < 2:
+            return parser.error('Incorrect number of arguments (at least two)')
+        dbstring = ''
+        if len(args) == 3:
+            rel_path = args[1]
+            dbstring = args[2]
+        elif len(args) == 2:
+            dbstring = args[1]
+            rel_path = '.'
+        appsdir = os.path.normpath(os.path.join(os.getcwd(), rel_path))
+        cli.pushapps(appsdir, dbstring, options=options)
+    elif args[0] == 'clone':
         if len(args) < 2:
             return parser.error('Incorrect number of arguments (at least two)')
         # clone/pull <url> [dir] case

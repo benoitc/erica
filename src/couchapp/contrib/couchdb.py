@@ -32,7 +32,10 @@ from textwrap import dedent
 import re
 import socket
 
-from couchapp.contrib import simplejson as json
+try:
+    import json
+except ImportError:
+    from couchapp.contrib import simplejson as json
 
 __all__ = ['PreconditionFailed', 'ResourceNotFound', 'ResourceConflict',
            'ServerError', 'Server', 'Database', 'Document', 'ViewResults',

@@ -20,7 +20,10 @@ import urllib
 
 from couchapp.contrib import httplib2
 from couchapp.contrib.couchdb import Server, ResourceNotFound
-from couchapp.contrib import simplejson as json
+try:
+    import json
+except ImportError:
+    from couchapp.contrib import simplejson as json
 
 from couchapp.errors import AppError
 from couchapp.utils import *
@@ -41,7 +44,6 @@ class UI(object):
         self.conf = {}
         self.verbose = verbose
         self.readconfig(rcpath())
-
         # init logger
         if logging_handler is None:
             logging_handler = NullHandler()
@@ -105,7 +107,19 @@ class UI(object):
     
     def copy(self, src, dest):
         shutil.copy(src, dest)
+        
+    def relpath(self, *args):
+        return relpath(*args)
     
+    def split_path(self, path):
+        parts = []
+        while True:
+            head, tail = os.path.split(path)
+            parts = [tail] + parts
+            path = head
+            if not path: break
+        return parts
+        
     def deltree(self, path):
         for root, dirs, files in self.walk(path, topdown=False):
             for name in files:
@@ -127,18 +141,23 @@ class UI(object):
         :return: string, md5 hexdigest
         """
         if self.isfile(fpath):
-            content = self.read(fpath)
+            content = self.read(fpath, force_read=True)
             return md5(to_bytestring(content)).hexdigest()
         return ''
         
-    def read(self, fname):
+    def read(self, fname, utf8=True, force_read=False):
         """ read file content"""
-        try:
-            f = codecs.open(fname, 'rb', "utf-8")
-            data = f.read()
-            f.close()
-        except:
-            f = open(fname, 'rb')
+        if utf8:
+            try:
+                f = codecs.open(fname, 'rb', "utf-8")
+                data = f.read()
+                f.close()
+            except UnicodeError, e:
+                if force_read:
+                    return self.read(fname, utf8=False)
+                raise
+        else:
+            f = open(fname, 'rn')
             data = f.read()
             f.close()
             
@@ -174,7 +193,7 @@ class UI(object):
         :return: dict or list
         """
         try:
-            data = self.read(fname)
+            data = self.read(fname, force_read=True)
         except IOError, e:
             if e[0] == 2:
                 return {}
@@ -189,7 +208,6 @@ class UI(object):
             print >>sys.stderr, "Json is invalid, can't load %s" % fname
             return {}
         return data
-        
         
     def server(self, server_uri):
         # init couchdb server

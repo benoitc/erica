@@ -171,9 +171,19 @@ Clone downloads apps from other databases around the internet, all you have to d
 
 ## Vendor
 
-Handle vendor update and install from a git repository. Each vendor app should be in a vendor folder:
+Handle vendor update and install from a git repository.
+
+### How Vendor Apps Should Be Configured With Your Repository
+
+Within your repository, your vendor app should be in a vendor folder:
 
     vendor/appname
+
+For example, the javascript that is vendored (by default) with your use of couchapp is in the repo git://github.com/couchapp/couchapp.git, located in the path:
+
+    vendor/couchapp
+
+### Commands
 
 To update a vendor folder in your couchapp:
 
