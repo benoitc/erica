@@ -465,7 +465,6 @@ class Database(object):
         :since: 0.4.1
         """
         headers = {}
-        headers.setdefault("Transfer-Encoding", "chunked")
         
         if hasattr(content, 'read'):
             content = content.read()
@@ -915,8 +914,7 @@ class Resource(object):
             else:
                 body = content
             
-            if not headers.has_key('Transfer-Encoding') or headers.get('Transfer-Encoding') != "chunked":
-                headers.setdefault('Content-Length', str(len(body)))
+            headers.setdefault('Content-Length', str(len(body)))
 
         def _make_request(retry=1):
             try:
