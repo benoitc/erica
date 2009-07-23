@@ -253,8 +253,7 @@ class CouchApp(object):
             f = open(value, "rb")
             # fix issue with httplib that raises BadStatusLine
             # error because it didn't close the connection
-            self.ui.put_attachment(db, design, f, filename, 
-                content_length=content_length)
+            self.ui.put_attachment(db, design, f, filename)
                      
         # update signatures
         design = db[docid]
