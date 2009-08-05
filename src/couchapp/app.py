@@ -78,33 +78,31 @@ class CouchApp(object):
         :return: boolean, dict. { 'ok': True } if ok, { 'ok': False, 'error': message } 
         if something was wrong.
         """
+        DEFAULT_APP_TREE = [
+            '_attachments',
+            'lists',
+            'shows',
+            'views'
+        ]
         
-        locations = {}
-        for location, paths in self.default_locations:
-            found = False
-            location_dir = ""
-            for path in paths:
-                location_dir = os.path.normpath(self.ui.rjoin(
-                    self.ui.dirname(__file__), path))
-                if self.ui.isdir(location_dir):
-                    found = True
-                    break
-            if found:
-                if location == "template":
-                    dest_dir = self.app_dir
-                else:
-                    dest_dir = self.ui.rjoin(self.app_dir, 'vendor')
-                try:
-                    self.ui.copytree(location_dir, dest_dir)
-                except OSError, e:
-                    errno, message = e
-                    raise AppError("Can't create a CouchApp in %s: %s" % (
-                            self.app_dir, message))
-            else:
-                raise AppError("Can't create a CouchApp in %s: default template not found." % (
-                        self.app_dir))
+        TEMPLATES = ['app-template', 'vendor']
+        try:
+            os.mkdir(self.app_dir)
+        except OSError, e:
+            errno, message = e
+            raise AppError("Can't create a CouchApp in %s: %s" % (
+                    self.app_dir, message))
+        
+        for n in DEFAULT_APP_TREE:
+            path = self.ui.rjoin(self.app_dir, n)
+            self.ui.makedirs(path)
+        
+        for t in TEMPLATES:
+            self.ui.copy_helper(self.app_dir, t)
+
         self.initialize()
         self.extensions.notify("post-generate", self.ui, self)
+        
         
     def clone(self, app_uri):
         """Clone a CouchApp from app_uri into app_dir"""
@@ -149,6 +147,7 @@ class CouchApp(object):
         self.ui.write_json(rc_file, conf)
         self.extensions.notify("post-clone", self.ui, self, db=db, design_doc=design_doc)
         
+        
     def push(self, dbstring, app_name, **kwargs):
         """Pushes the app specified to the CouchDB instance
         
@@ -169,8 +168,49 @@ class CouchApp(object):
         else:
             index = False
             new_doc['couchapp'] = {}
+
+        # get docs from _docs folder
+        docs_dir = self.ui.rjoin(self.app_dir, '_docs')
+        docs = self.fs_to_docs(docs_dir)
         
-        
+        # do we export ?
+        if kwargs.get('export', False):
+            # process attachments
+            design = copy.deepcopy(design_doc)
+            del new_doc['_attachments']
+            if not 'couchapp' in design:
+                design['couchapp'] = {}
+                attachments = design['_attachments']
+                _length = design['couchapp'].get('length', {})
+                
+                new_attachments = {}
+                for filename, value in attachments.iteritems():
+                    content_length = _length.get(filename, None)
+                    if self.ui.verbose >= 2:
+                        self.ui.logger.info("Attaching %s (%s)" % (filename, content_length))
+
+                    f = open(value, "rb")
+                    # fix issue with httplib that raises BadStatusLine
+                    # error because it didn't close the connection
+                    new_attachments[filename] = {
+                        "content_type": ';'.join(filter(None, mimetypes.guess_type(filename))),
+                        "data": base64.b64encode(f.read()),
+                    }
+
+                # update signatures
+                if not 'couchapp' in new_doc:
+                    new_doc['couchapp'] = {}
+                new_doc['_attachments'] = new_attachments
+            
+            
+            if kwargs.get('output', None) is not None:
+                self.ui.write_json(kwargs.get('output'), new_doc)
+            else:
+                print json.dumps(new_doc)    
+            self.extensions.notify("post-push", self.ui, self, db=None)
+            
+            return
+      
         # we process attachments later
         del new_doc['_attachments']
         if 'signatures' in new_doc['couchapp']:
@@ -209,17 +249,67 @@ class CouchApp(object):
                     '_rev': design['_rev'],
                     '_attachments': design.get('_attachments', {})
                 })
+            else:
+                 new_doc.update({'_attachments': {}})
                 
             if not kwargs.get('atomic', False):
                 db[docid] = new_doc
                 self.send_attachments(db, design_doc)
             else:
                 self.encode_attachments(db, design_doc, new_doc)
-                
                 db[docid] = new_doc
                 
+            # send docs maybe we should do bullk update here
+            for doc in docs:
+                new_doc = copy.deepcopy(doc)
+                docid = new_doc['_id']
+                if docid in db:
+                    old_doc = db[docid]
+                    doc_meta = old_doc.get('couchapp', {})
+                    doc['couchapp']['signatures'] = doc_meta.get('signatures', {})
+                    new_doc.update({
+                        '_rev': old_doc['_rev'],
+                        '_attachments': old_doc.get('_attachments', {})
+                    })
+                else:
+                    new_doc['couchapp']['signatures'] = {}
+                    new_doc.update({'_attachments': {}})
+                     
+                if not kwargs.get('atomic', False):
+                    db[docid] = new_doc
+                    self.send_attachments(db, doc)
+                else:
+                    self.encode_attachments(db, doc, new_doc)
+                    db[docid] = new_doc
+                
             self.extensions.notify("post-push", self.ui, self, db=db)
-        
+                 
+    def push_docs(self, dbstring, docs_dir, **kwargs):
+        docs_dir = self.ui.realpath(docs_dir)
+        docs = self.fs_to_docs(docs_dir)
+        for db in self.ui.get_db(dbstring):
+            # send docs maybe we should do bullk update here
+            for doc in docs:
+                new_doc = copy.deepcopy(doc)
+                docid = new_doc['_id']
+                if docid in db:
+                    old_doc = db[docid]
+                    doc_meta = old_doc.get('couchapp', {})
+                    doc['couchapp']['signatures'] = doc_meta.get('signatures', {})
+                    new_doc.update({
+                        '_rev': old_doc['_rev'],
+                        '_attachments': old_doc.get('_attachments', {})
+                    })
+                else:
+                    new_doc['couchapp']['signatures'] = {}
+                    new_doc.update({'_attachments': {}})
+                    
+                if not kwargs.get('atomic', False):
+                    db[docid] = new_doc
+                    self.send_attachments(db, doc)
+                else:
+                    self.encode_attachments(db, doc, new_doc)
+                    db[docid] = new_doc
 
     def send_attachments(self, db, design_doc):
         # init vars
@@ -253,8 +343,8 @@ class CouchApp(object):
             f = open(value, "rb")
             # fix issue with httplib that raises BadStatusLine
             # error because it didn't close the connection
-            self.ui.put_attachment(db, design, f, filename, 
-                content_length=content_length)
+            self.ui.put_attachment(db, design, f, filename,
+                        content_length=content_length)
                      
         # update signatures
         design = db[docid]
@@ -313,17 +403,51 @@ class CouchApp(object):
         new_doc['couchapp'].update({'signatures': _signatures})
         new_doc['_attachments'] = new_attachments
         
+    def fs_to_docs(self, docs_dir):
+        """
+        function to add docs from docs_dir. docs could be json.file or folders.
+        
+        :attr docs_dir: doc dir name
+        """
+        
+        docs = []
+        for name in os.listdir(docs_dir):
+            doc_dir =  os.path.join(docs_dir, name)
+            if name.startswith('.'):
+                continue
+            elif os.path.isfile(doc_dir):
+                if name.endswith(".json"):
+                    doc = self.ui.read_json(doc_dir)
+                    docid, ext = os.path.splitext(name)
+                    
+                    doc.setdefault('_id', docid)
+                    doc.setdefault('couchapp', {})
+                    docs.append(doc)
+            else:
+                doc = { '_id': name }
+                manifest = []
+                attach_dir = self.ui.rjoin(doc_dir, '_attachments')
+                doc.update(self.dir_to_fields(doc_dir, manifest=manifest))
+                doc.setdefault('couchapp', {})
+                if not 'couchapp' in doc:
+                    doc['couchapp'] = {}
+                doc['couchapp'].update({ 'manifest': manifest })
+                self.attachments(doc, attach_dir, name)
+                
+                docs.append(doc)
+        return docs
+
             
     def fs_to_designdoc(self, app_name, pre_callback=None, post_callback=None):            
         """
         function used to get design_doc from app_dir. It return a dict with all
-        properties. attachements are file handles and shoul be processed before saving
-        design_doc to couchdb.
+        properties. attachements are file handles and shoul be processed before 
+        saving design_doc to couchdb.
         
         
         :attr app_name: string, name of applicaton. used to create design doc id.
-        :attr pre_callback: callable. Used to proccess aapp_dir and add default value to design_doc
-        before retrieving properties from app_dir.
+        :attr pre_callback: callable. Used to proccess aapp_dir and add default value 
+        to design_doc before retrieving properties from app_dir.
         
         ex.
             .. code-block:: python

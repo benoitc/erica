@@ -59,7 +59,7 @@ class CouchappCli(object):
     def push(self, appdir, appname, dbstring, options=None):
         cmd = CouchApp(appdir, self.ui)
         try:
-            cmd.push(dbstring, appname, atomic=options.atomic)
+            cmd.push(dbstring, appname, atomic=options.atomic, export=options.export, output=options.output)
         except ValueError, e:
             print>>sys.stderr, e
             return
@@ -71,6 +71,10 @@ class CouchappCli(object):
             appdir = os.path.join(appsdir, d)
             if os.path.isdir(appdir) and os.path.isfile(os.path.join(appdir, '.couchapprc')):
                 self.push(appdir, d, dbstring, options=options)
+                
+    def pushdocs(self, docsdir, dbstring, options=None):
+        cmd = CouchApp('.', self.ui)
+        cmd.push_docs(dbstring, docsdir, options=options)
 
     def clone(self, app_uri, appdir):
         cmd = CouchApp(appdir, self.ui)
@@ -107,6 +111,10 @@ def main():
             "couchapp push [options] [appdir] [appname] [dburl]")
     group_push.add_option("--atomic", action="store_true", default=False, 
             help="store atomically the couchapp.")
+    group_push.add_option("--export", action="store_true", default=False, 
+            help="Export the generated design doc to your console. If --output is specified, write to the file.")
+    group_push.add_option("--output", action="store", default=None, 
+               help="Combined with --export it allow you to save the generated design doc to the file.")
     parser.add_option_group(group_push)
     
     # clone options
@@ -198,6 +206,18 @@ def main():
             rel_path = '.'
         appsdir = os.path.normpath(os.path.join(os.getcwd(), rel_path))
         cli.pushapps(appsdir, dbstring, options=options)
+    elif args[0] == 'pushdocs':
+        if len(args) < 2:
+            return parser.error('Incorrect number of arguments (at least two)')
+        dbstring = ''
+        if len(args) == 3:
+            rel_path = args[1]
+            dbstring = args[2]
+        elif len(args) == 2:
+            dbstring = args[1]
+            rel_path = '.'
+        docsdir = os.path.normpath(os.path.join(os.getcwd(), rel_path))
+        cli.pushdocs(docsdir, dbstring, options=options)
     elif args[0] == 'clone':
         if len(args) < 2:
             return parser.error('Incorrect number of arguments (at least two)')

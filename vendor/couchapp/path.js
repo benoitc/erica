@@ -65,3 +65,13 @@ function olderPath(info) {
 function makeAbsolute(req, path) {
   return 'http://' + req.headers.Host + path;
 }
+
+
+function currentPath() {
+  path = req.path.map(function(item) {return encodeURIComponent(item)}).join('/');
+  if (req.query) {
+    return path + encodeOptions(req.query);
+  } else {
+    return path;
+  }
+}
