@@ -187,6 +187,10 @@ class CouchApp(object):
                 continue
             elif key not in new_doc['couchapp']:
                 new_doc['couchapp'][key] = value
+                
+        # get docs from _docs folder
+        docs_dir = self.ui.rjoin(self.app_dir, '_docs')
+        docs = self.fs_to_docs(docs_dir)
 
         for db in self.ui.get_db(dbstring):
             if self.ui.verbose >= 1:
@@ -213,8 +217,26 @@ class CouchApp(object):
                 self.send_attachments(db, design_doc)
             else:
                 self.encode_attachments(db, design_doc, new_doc)
-                
                 db[docid] = new_doc
+                
+            # send docs maybe we should do bullk update here
+            for doc in docs:
+                new_doc = copy.deepcopy(doc)
+                docid = new_doc['_id']
+                if docid in db:
+                    old_doc = db[docid]
+                    doc_meta = old_doc.get('couchapp', {})
+                    doc['couchapp']['signatures'] = doc_meta.get('signatures', {})
+                    new_doc.update({
+                        '_rev': old_doc['_rev'],
+                        '_attachments': old_doc.get('_attachments', {})
+                    })
+                if not kwargs.get('atomic', False):
+                    db[docid] = new_doc
+                    self.send_attachments(db, doc)
+                else:
+                    self.encode_attachments(db, doc, new_doc)
+                    db[docid] = new_doc
                 
             self.extensions.notify("post-push", self.ui, self, db=db)
         
@@ -311,17 +333,51 @@ class CouchApp(object):
         new_doc['couchapp'].update({'signatures': _signatures})
         new_doc['_attachments'] = new_attachments
         
+    def fs_to_docs(self, docs_dir):
+        """
+        function to add docs from docs_dir. docs could be json.file or folders.
+        
+        :attr docs_dir: doc dir name
+        """
+        
+        docs = []
+        for name in os.listdir(docs_dir):
+            doc_dir =  os.path.join(docs_dir, name)
+            if name.startswith('.'):
+                continue
+            elif os.path.isfile(doc_dir):
+                if name.endswith(".json"):
+                    doc = self.ui.read_json(doc_dir)
+                    docid, ext = os.path.splitext(name)
+                    
+                    doc.setdefault('_id', docid)
+                    doc.setdefault('couchapp', {})
+                    docs.append(doc)
+            else:
+                doc = { '_id': name }
+                manifest = []
+                attach_dir = self.ui.rjoin(doc_dir, '_attachments')
+                doc.update(self.dir_to_fields(doc_dir, manifest=manifest))
+                doc.setdefault('couchapp', {})
+                if not 'couchapp' in doc:
+                    doc['couchapp'] = {}
+                doc['couchapp'].update({ 'manifest': manifest })
+                self.attachments(doc, attach_dir, name)
+                
+                docs.append(doc)
+        return docs
+
             
     def fs_to_designdoc(self, app_name, pre_callback=None, post_callback=None):            
         """
         function used to get design_doc from app_dir. It return a dict with all
-        properties. attachements are file handles and shoul be processed before saving
-        design_doc to couchdb.
+        properties. attachements are file handles and shoul be processed before 
+        saving design_doc to couchdb.
         
         
         :attr app_name: string, name of applicaton. used to create design doc id.
-        :attr pre_callback: callable. Used to proccess aapp_dir and add default value to design_doc
-        before retrieving properties from app_dir.
+        :attr pre_callback: callable. Used to proccess aapp_dir and add default value 
+        to design_doc before retrieving properties from app_dir.
         
         ex.
             .. code-block:: python
