@@ -67,6 +67,43 @@ class UI(object):
         conf_files = [os.path.join(app_dir, 'couchapp.json'),
             os.path.join(app_dir, '.couchapprc')]
         self.readconfig(conf_files)
+        
+    def copy_helper(self, app_dir, directory):
+        """ copy helper used to generate an app"""
+        import couchapp
+        default_locations = [
+            os.path.join(couchapp.__path__[0], directory),
+            os.path.join(couchapp.__path__[0], '../..', directory)
+        ]
+        found = False
+        for location in default_locations:
+            template_dir = os.path.normpath(location)
+            if os.path.isdir(template_dir):
+                found = True
+                break
+        if found:
+            if directory == "vendor":
+                app_dir = os.path.join(app_dir, directory)
+                try:
+                    os.makedirs(app_dir)
+                except:
+                    pass
+            
+            for root, dirs, files in os.walk(template_dir):
+                rel = relpath(root, template_dir)
+                if rel == ".":
+                    rel = ""
+                target_path = os.path.join(app_dir, rel)
+                for d in dirs:
+                    try:
+                        os.makedirs(os.path.join(target_path, d))
+                    except:
+                        continue
+                for f in files:
+                    shutil.copy2(os.path.join(root, f), os.path.join(target_path, f))                
+        else:
+            raise AppError("Can't create a CouchApp in %s: default template not found." % (
+                    app_dir))
                    
     def exists(self, path):
         return os.path.exists(path)
@@ -98,6 +135,9 @@ class UI(object):
 
     def unlink(self, path):
         os.unlink(path)
+        
+    def makedirs(self, path, mode='0777'):
+        os.makedirs(path, mode)
         
     def rmdir(self, path):
         os.rmdir(path)

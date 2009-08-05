@@ -78,33 +78,31 @@ class CouchApp(object):
         :return: boolean, dict. { 'ok': True } if ok, { 'ok': False, 'error': message } 
         if something was wrong.
         """
+        DEFAULT_APP_TREE = [
+            '_attachments',
+            'lists',
+            'shows',
+            'views'
+        ]
         
-        locations = {}
-        for location, paths in self.default_locations:
-            found = False
-            location_dir = ""
-            for path in paths:
-                location_dir = os.path.normpath(self.ui.rjoin(
-                    self.ui.dirname(__file__), path))
-                if self.ui.isdir(location_dir):
-                    found = True
-                    break
-            if found:
-                if location == "template":
-                    dest_dir = self.app_dir
-                else:
-                    dest_dir = self.ui.rjoin(self.app_dir, 'vendor')
-                try:
-                    self.ui.copytree(location_dir, dest_dir)
-                except OSError, e:
-                    errno, message = e
-                    raise AppError("Can't create a CouchApp in %s: %s" % (
-                            self.app_dir, message))
-            else:
-                raise AppError("Can't create a CouchApp in %s: default template not found." % (
-                        self.app_dir))
+        TEMPLATES = ['app-template', 'vendor']
+        try:
+            os.mkdir(self.app_dir)
+        except OSError, e:
+            errno, message = e
+            raise AppError("Can't create a CouchApp in %s: %s" % (
+                    self.app_dir, message))
+        
+        for n in DEFAULT_APP_TREE:
+            path = self.ui.rjoin(self.app_dir, n)
+            self.ui.makedirs(path)
+        
+        for t in TEMPLATES:
+            self.ui.copy_helper(self.app_dir, t)
+
         self.initialize()
         self.extensions.notify("post-generate", self.ui, self)
+        
         
     def clone(self, app_uri):
         """Clone a CouchApp from app_uri into app_dir"""
