@@ -148,7 +148,7 @@ class CouchApp(object):
         self.extensions.notify("post-clone", self.ui, self, db=db, design_doc=design_doc)
         
         
-    def push(self, dbstring, app_name, dump_only=False, **kwargs):
+    def push(self, dbstring, app_name, **kwargs):
         """Pushes the app specified to the CouchDB instance
         
         :attr dbstring: string, db url or db environment name.
@@ -168,7 +168,6 @@ class CouchApp(object):
         else:
             index = False
             new_doc['couchapp'] = {}
-        
 
         # get docs from _docs folder
         docs_dir = self.ui.rjoin(self.app_dir, '_docs')
