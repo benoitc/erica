@@ -59,7 +59,7 @@ class CouchappCli(object):
     def push(self, appdir, appname, dbstring, options=None):
         cmd = CouchApp(appdir, self.ui)
         try:
-            cmd.push(dbstring, appname, atomic=options.atomic)
+            cmd.push(dbstring, appname, atomic=options.atomic, export=options.export, output=options.output)
         except ValueError, e:
             print>>sys.stderr, e
             return
@@ -111,6 +111,10 @@ def main():
             "couchapp push [options] [appdir] [appname] [dburl]")
     group_push.add_option("--atomic", action="store_true", default=False, 
             help="store atomically the couchapp.")
+    group_push.add_option("--export", action="store_true", default=False, 
+            help="Export the generated design doc to your console. If --output is specified, write to the file.")
+    group_push.add_option("--output", action="store", default=None, 
+               help="Combined with --export it allow you to save the generated design doc to the file.")
     parser.add_option_group(group_push)
     
     # clone options

@@ -147,7 +147,8 @@ class CouchApp(object):
         self.ui.write_json(rc_file, conf)
         self.extensions.notify("post-clone", self.ui, self, db=db, design_doc=design_doc)
         
-    def push(self, dbstring, app_name, **kwargs):
+        
+    def push(self, dbstring, app_name, dump_only=False, **kwargs):
         """Pushes the app specified to the CouchDB instance
         
         :attr dbstring: string, db url or db environment name.
@@ -168,7 +169,49 @@ class CouchApp(object):
             index = False
             new_doc['couchapp'] = {}
         
+
+        # get docs from _docs folder
+        docs_dir = self.ui.rjoin(self.app_dir, '_docs')
+        docs = self.fs_to_docs(docs_dir)
         
+        # do we export ?
+        if kwargs.get('export', False):
+            # process attachments
+            design = copy.deepcopy(design_doc)
+            del new_doc['_attachments']
+            if not 'couchapp' in design:
+                design['couchapp'] = {}
+                attachments = design['_attachments']
+                _length = design['couchapp'].get('length', {})
+                
+                new_attachments = {}
+                for filename, value in attachments.iteritems():
+                    content_length = _length.get(filename, None)
+                    if self.ui.verbose >= 2:
+                        self.ui.logger.info("Attaching %s (%s)" % (filename, content_length))
+
+                    f = open(value, "rb")
+                    # fix issue with httplib that raises BadStatusLine
+                    # error because it didn't close the connection
+                    new_attachments[filename] = {
+                        "content_type": ';'.join(filter(None, mimetypes.guess_type(filename))),
+                        "data": base64.b64encode(f.read()),
+                    }
+
+                # update signatures
+                if not 'couchapp' in new_doc:
+                    new_doc['couchapp'] = {}
+                new_doc['_attachments'] = new_attachments
+            
+            
+            if kwargs.get('output', None) is not None:
+                self.ui.write_json(kwargs.get('output'), new_doc)
+            else:
+                print json.dumps(new_doc)    
+            self.extensions.notify("post-push", self.ui, self, db=None)
+            
+            return
+      
         # we process attachments later
         del new_doc['_attachments']
         if 'signatures' in new_doc['couchapp']:
@@ -187,10 +230,6 @@ class CouchApp(object):
                 continue
             elif key not in new_doc['couchapp']:
                 new_doc['couchapp'][key] = value
-                
-        # get docs from _docs folder
-        docs_dir = self.ui.rjoin(self.app_dir, '_docs')
-        docs = self.fs_to_docs(docs_dir)
 
         for db in self.ui.get_db(dbstring):
             if self.ui.verbose >= 1:
@@ -245,7 +284,7 @@ class CouchApp(object):
                     db[docid] = new_doc
                 
             self.extensions.notify("post-push", self.ui, self, db=db)
-        
+                 
     def push_docs(self, dbstring, docs_dir, **kwargs):
         docs_dir = self.ui.realpath(docs_dir)
         docs = self.fs_to_docs(docs_dir)
