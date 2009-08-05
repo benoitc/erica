@@ -211,6 +211,8 @@ class CouchApp(object):
                     '_rev': design['_rev'],
                     '_attachments': design.get('_attachments', {})
                 })
+            else:
+                 new_doc.update({'_attachments': {}})
                 
             if not kwargs.get('atomic', False):
                 db[docid] = new_doc
@@ -231,6 +233,10 @@ class CouchApp(object):
                         '_rev': old_doc['_rev'],
                         '_attachments': old_doc.get('_attachments', {})
                     })
+                else:
+                    new_doc['couchapp']['signatures'] = {}
+                    new_doc.update({'_attachments': {}})
+                     
                 if not kwargs.get('atomic', False):
                     db[docid] = new_doc
                     self.send_attachments(db, doc)
@@ -240,6 +246,32 @@ class CouchApp(object):
                 
             self.extensions.notify("post-push", self.ui, self, db=db)
         
+    def push_docs(self, dbstring, docs_dir, **kwargs):
+        docs_dir = self.ui.realpath(docs_dir)
+        docs = self.fs_to_docs(docs_dir)
+        for db in self.ui.get_db(dbstring):
+            # send docs maybe we should do bullk update here
+            for doc in docs:
+                new_doc = copy.deepcopy(doc)
+                docid = new_doc['_id']
+                if docid in db:
+                    old_doc = db[docid]
+                    doc_meta = old_doc.get('couchapp', {})
+                    doc['couchapp']['signatures'] = doc_meta.get('signatures', {})
+                    new_doc.update({
+                        '_rev': old_doc['_rev'],
+                        '_attachments': old_doc.get('_attachments', {})
+                    })
+                else:
+                    new_doc['couchapp']['signatures'] = {}
+                    new_doc.update({'_attachments': {}})
+                    
+                if not kwargs.get('atomic', False):
+                    db[docid] = new_doc
+                    self.send_attachments(db, doc)
+                else:
+                    self.encode_attachments(db, doc, new_doc)
+                    db[docid] = new_doc
 
     def send_attachments(self, db, design_doc):
         # init vars

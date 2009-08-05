@@ -71,6 +71,10 @@ class CouchappCli(object):
             appdir = os.path.join(appsdir, d)
             if os.path.isdir(appdir) and os.path.isfile(os.path.join(appdir, '.couchapprc')):
                 self.push(appdir, d, dbstring, options=options)
+                
+    def pushdocs(self, docsdir, dbstring, options=None):
+        cmd = CouchApp('.', self.ui)
+        cmd.push_docs(dbstring, docsdir, options=options)
 
     def clone(self, app_uri, appdir):
         cmd = CouchApp(appdir, self.ui)
@@ -198,6 +202,18 @@ def main():
             rel_path = '.'
         appsdir = os.path.normpath(os.path.join(os.getcwd(), rel_path))
         cli.pushapps(appsdir, dbstring, options=options)
+    elif args[0] == 'pushdocs':
+        if len(args) < 2:
+            return parser.error('Incorrect number of arguments (at least two)')
+        dbstring = ''
+        if len(args) == 3:
+            rel_path = args[1]
+            dbstring = args[2]
+        elif len(args) == 2:
+            dbstring = args[1]
+            rel_path = '.'
+        docsdir = os.path.normpath(os.path.join(os.getcwd(), rel_path))
+        cli.pushdocs(docsdir, dbstring, options=options)
     elif args[0] == 'clone':
         if len(args) < 2:
             return parser.error('Incorrect number of arguments (at least two)')
