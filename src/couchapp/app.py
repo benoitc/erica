@@ -171,7 +171,10 @@ class CouchApp(object):
 
         # get docs from _docs folder
         docs_dir = self.ui.rjoin(self.app_dir, '_docs')
-        docs = self.fs_to_docs(docs_dir)
+        if self.ui.isdir(docs_dir):
+            docs = self.fs_to_docs(docs_dir)
+        else:
+            docs = []
         
         # do we export ?
         if kwargs.get('export', False):

@@ -1,11 +1,11 @@
 // from couch.js
-function encodeOptions(options, noJSON) {
+function encodeOptions(options, noJson) {
   var buf = []
   if (typeof(options) == "object" && options !== null) {
     for (var name in options) {
       if (!options.hasOwnProperty(name)) continue;
       var value = options[name];
-      if (!noJSON && (name == "key" || name == "startkey" || name == "endkey")) {
+      if (!noJson) && (name == "key" || name == "startkey" || name == "endkey") {
         value = toJSON(value);
       }
       buf.push(encodeURIComponent(name) + "=" + encodeURIComponent(value));
