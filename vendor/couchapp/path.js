@@ -5,7 +5,7 @@ function encodeOptions(options, noJson) {
     for (var name in options) {
       if (!options.hasOwnProperty(name)) continue;
       var value = options[name];
-      if (!noJson) && (name == "key" || name == "startkey" || name == "endkey") {
+      if (!noJson && (name == "key" || name == "startkey" || name == "endkey")) {
         value = toJSON(value);
       }
       buf.push(encodeURIComponent(name) + "=" + encodeURIComponent(value));
