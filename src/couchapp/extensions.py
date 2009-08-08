@@ -34,7 +34,7 @@ class Extensions(object):
                         mod = __import__(mod_name, {}, {}, [''])
                     except ImportError, e:
                         if self.app.ui.verbose:
-                            ui.logger.info("%s extension can't be loaded (%s)" % (name, str(e)))
+                            self.app.ui.logger.info("%s extension can't be loaded (%s)" % (name, str(e)))
                         mod = None
                     
                 if mod is not None and hasattr(mod, 'hook'):
@@ -44,6 +44,7 @@ class Extensions(object):
         for fun in self._hooks.values():
             try:
                 fun(ui, app_dir, hooktype, **kwargs)
-            except:
+            except Exception, e:
+                self.app.ui.logger.warning(unicode(e))
                 continue
             
