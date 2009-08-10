@@ -12,24 +12,7 @@ import re
 import sys
 sys.path.append(os.path.dirname(__file__))
 
-# backport os.path.relpath if python < 2.6
-try:
-    import os.path.relpath as _relpath
-except ImportError:
-    def _relpath(path, start=os.curdir):
-        if not path:
-            raise ValueError("no path specified")
-        
-        start_list = os.path.abspath(start).split("/")
-        path_list = os.path.abspath(path).split("/")
-
-        # Work out how much of the filepath is shared by start and path.
-        i = len(os.path.commonprefix([start_list, path_list]))
-
-        rel_list = ['..'] * (len(start_list)-i) + path_list[i:]
-        if not rel_list:
-            return os.curdir
-        return os.path.join(*rel_list)
+from couchapp.utils import relpath
 
 __all__ = ['CSSParser', 'merge_css']
 
@@ -121,7 +104,7 @@ def merge_css(app_dir, app_name, verbose=False):
         css_path = os.path.join(os.path.dirname(src_fpath),
                 css_url)
 
-        rel_path = _relpath(css_path, fname_dir)
+        rel_path = relpath(css_path, fname_dir)
         return "url(%s)" % rel_path
     
     for fname, src_files in conf['css'].iteritems():

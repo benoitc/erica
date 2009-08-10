@@ -10,6 +10,7 @@
 import os
 import re
 
+from couchapp.utils import relpath
 from couchapp.couchapp_ext.compress import compress_css
 
 class Compress(object):
@@ -37,7 +38,7 @@ class Compress(object):
             css_path = self.ui.rjoin(self.ui.dirname(src_fpath),
                     css_url)
 
-            rel_path = _relpath(css_path, fname_dir)
+            rel_path = relpath(css_path, fname_dir)
             return "url(%s)" % rel_path
 
         for fname, src_files in css.iteritems():
