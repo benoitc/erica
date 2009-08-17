@@ -12,7 +12,6 @@ import re
 
 from couchapp.utils import relpath
 from couchapp.couchapp_ext.compress import compress_css
-from couchapp.couchapp_ext.compress.compress_css import _relpath
 
 class Compress(object):
     
