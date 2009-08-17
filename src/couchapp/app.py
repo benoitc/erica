@@ -703,8 +703,8 @@ class CouchApp(object):
                             if objects and _ref in objects:
                                 content = objects[_ref]
                                 
-                        if content.startswith('base64-encoded;'):
-                            content = base64.b64decode(content[15:])
+                            if content.startswith('base64-encoded;'):
+                                content = base64.b64decode(content[15:])
 
                         if fname.endswith('.json'):
                             content = json.dumps(content)
