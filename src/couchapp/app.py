@@ -263,7 +263,7 @@ class CouchApp(object):
                 self.encode_attachments(db, design_doc, new_doc)
                 db[docid] = new_doc
                 
-            # send docs maybe we should do bullk update here
+            # send docs maybe we should do bulk update here
             for doc in docs:
                 new_doc = copy.deepcopy(doc)
                 docid = new_doc['_id']
@@ -292,7 +292,7 @@ class CouchApp(object):
         docs_dir = self.ui.realpath(docs_dir)
         docs = self.fs_to_docs(docs_dir)
         for db in self.ui.get_db(dbstring):
-            # send docs maybe we should do bullk update here
+            # send docs maybe we should do bulk update here
             for doc in docs:
                 new_doc = copy.deepcopy(doc)
                 docid = new_doc['_id']
@@ -444,8 +444,8 @@ class CouchApp(object):
             
     def fs_to_designdoc(self, app_name, pre_callback=None, post_callback=None):            
         """
-        function used to get design_doc from app_dir. It return a dict with all
-        properties. attachements are file handles and shoul be processed before 
+        function used to get design_doc from app_dir. It returns a dict with all
+        properties. attachements are file handles and should be processed before 
         saving design_doc to couchdb.
         
         
@@ -483,6 +483,10 @@ class CouchApp(object):
         
         if not 'couchapp' in design_doc:
             design_doc['couchapp'] = {}
+
+        self.attachments(design_doc, attach_dir, docid)
+        
+        self.vendor_attachments(design_doc, docid)
             
         if 'shows' in design_doc:
             package_shows(design_doc, design_doc['shows'], self.app_dir, objects, self.ui)
@@ -510,9 +514,6 @@ class CouchApp(object):
             'objects': objects
         })
         design_doc['couchapp'] = couchapp
-        self.attachments(design_doc, attach_dir, docid)
-        
-        self.vendor_attachments(design_doc, docid)
         
         # what we do after retrieving design_doc from app_dir 
         if pre_callback and callable(pre_callback):
