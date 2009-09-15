@@ -197,7 +197,7 @@ class UI(object):
                     return self.read(fname, utf8=False)
                 raise
         else:
-            f = open(fname, 'rn')
+            f = open(fname, 'rb')
             data = f.read()
             f.close()
             

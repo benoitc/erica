@@ -344,10 +344,11 @@ class CouchApp(object):
             if self.ui.verbose >= 2:
                 self.ui.logger.info("Attaching %s (%s)" % (filename, content_length))
             
-            f = open(value, "rb")
-            # fix issue with httplib that raises BadStatusLine
-            # error because it didn't close the connection
-            self.ui.put_attachment(db, design, f, filename,
+            if isinstance(value, basestring):
+                f = open(value, "rb")
+                # fix issue with httplib that raises BadStatusLine
+                # error because it didn't close the connection
+                self.ui.put_attachment(db, design, f, filename,
                         content_length=content_length)
                      
         # update signatures
@@ -391,13 +392,14 @@ class CouchApp(object):
             if self.ui.verbose >= 2:
                 self.ui.logger.info("Attaching %s (%s)" % (filename, content_length))
             
-            f = open(value, "rb")
-            # fix issue with httplib that raises BadStatusLine
-            # error because it didn't close the connection
-            new_attachments[filename] = {
-                "content_type": ';'.join(filter(None, mimetypes.guess_type(filename))),
-                "data": base64.b64encode(f.read()),
-            }
+            if isinstance(value, basestring):
+                f = open(value, "rb")
+                # fix issue with httplib that raises BadStatusLine
+                # error because it didn't close the connection
+                new_attachments[filename] = {
+                    "content_type": ';'.join(filter(None, mimetypes.guess_type(filename))),
+                    "data": base64.b64encode(f.read()),
+                    }
                      
         # update signatures
         if not 'couchapp' in new_doc:
@@ -420,6 +422,7 @@ class CouchApp(object):
             if name.startswith('.'):
                 continue
             elif os.path.isfile(doc_dir):
+                print " add a doc %s" % doc_dir
                 if name.endswith(".json"):
                     doc = self.ui.read_json(doc_dir)
                     docid, ext = os.path.splitext(name)
