@@ -422,7 +422,6 @@ class CouchApp(object):
             if name.startswith('.'):
                 continue
             elif os.path.isfile(doc_dir):
-                print " add a doc %s" % doc_dir
                 if name.endswith(".json"):
                     doc = self.ui.read_json(doc_dir)
                     docid, ext = os.path.splitext(name)
