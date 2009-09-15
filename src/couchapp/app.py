@@ -266,6 +266,12 @@ class CouchApp(object):
             # send docs maybe we should do bullk update here
             for doc in docs:
                 new_doc = copy.deepcopy(doc)
+                inline_attachments = {}
+                if isinstance(doc.get('_attachments', False), dict):
+                    first_attachment = doc['_attachments'].values()[0]
+                    if isinstance(first_attachment, dict):
+                        inline_attachments = doc['_attachments']
+                
                 docid = new_doc['_id']
                 if docid in db:
                     old_doc = db[docid]
@@ -273,17 +279,19 @@ class CouchApp(object):
                     doc['couchapp']['signatures'] = doc_meta.get('signatures', {})
                     new_doc.update({
                         '_rev': old_doc['_rev'],
-                        '_attachments': old_doc.get('_attachments', {})
+                        '_attachments': old_doc.get('_attachments', inline_attachments)
                     })
                 else:
                     new_doc['couchapp']['signatures'] = {}
-                    new_doc.update({'_attachments': {}})
+                    new_doc.update({'_attachments': inline_attachments})
                      
                 if not kwargs.get('atomic', False):
                     db[docid] = new_doc
-                    self.send_attachments(db, doc)
+                    if not inline_attachments:
+                        self.send_attachments(db, doc)
                 else:
-                    self.encode_attachments(db, doc, new_doc)
+                    if not inline_attachments:
+                        self.encode_attachments(db, doc, new_doc)
                     db[docid] = new_doc
                 
             self.extensions.notify("post-push", self.ui, self, db=db)
