@@ -503,6 +503,9 @@ class CouchApp(object):
         if 'updates' in design_doc:
             package_shows(design_doc, design_doc['updates'], self.app_dir, objects, self.ui)
             
+        if 'filters' in design_doc:
+            package_shows(design_doc, design_doc['filters'], self.app_dir, objects, self.ui)
+            
         if 'validate_doc_update' in design_doc:
             tmp_dict = dict(validate_doc_update=design_doc["validate_doc_update"])
             package_shows(design_doc, tmp_dict, self.app_dir, objects, self.ui)
