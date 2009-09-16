@@ -494,17 +494,9 @@ class CouchApp(object):
         if not 'couchapp' in design_doc:
             design_doc['couchapp'] = {}
             
-        if 'shows' in design_doc:
-            package_shows(design_doc, design_doc['shows'], self.app_dir, objects, self.ui)
-
-        if 'lists' in design_doc:
-            package_shows(design_doc, design_doc['lists'], self.app_dir, objects, self.ui)
-        
-        if 'updates' in design_doc:
-            package_shows(design_doc, design_doc['updates'], self.app_dir, objects, self.ui)
-            
-        if 'filters' in design_doc:
-            package_shows(design_doc, design_doc['filters'], self.app_dir, objects, self.ui)
+        for funs in ['shows', 'lists', 'updates', 'filters']:
+            if funs in design_doc:
+                package_shows(design_doc, design_doc[funs], self.app_dir, objects, self.ui)
             
         if 'validate_doc_update' in design_doc:
             tmp_dict = dict(validate_doc_update=design_doc["validate_doc_update"])
