@@ -90,6 +90,10 @@ class UITestCase(unittest.TestCase):
         # should create view
         self.assert_('function' in design_doc['views']['example']['map'])
         
+        # should not create empty views
+        self.assertFalse('empty' in design_doc['views'])
+        self.assertFalse('wrong' in design_doc['views'])
+        
         # should use macros
         self.assert_('stddev' in design_doc['views']['example']['map'])
         self.assert_('ejohn.org' in design_doc['shows']['example-show'])
@@ -112,6 +116,8 @@ class UITestCase(unittest.TestCase):
         # deep require macros
         self.assertFalse('"template"' in design_doc['shows']['example-show'])
         self.assert_('Resig' in design_doc['shows']['example-show'])
+        
+        
         
     def testPush(self):   
         self._push()
