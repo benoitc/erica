@@ -36,7 +36,7 @@ for dir, dirs, files in os.walk('vendor'):
 
 setup(
     name = 'Couchapp',
-    version = '0.3.31',
+    version = '0.3.32',
     url = 'http://github.com/couchapp/couchapp/tree/master',
     license =  'Apache License 2',
     author = 'Benoit Chesneau',
