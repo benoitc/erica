@@ -116,9 +116,7 @@ class CouchApp(object):
             design_doc = db[docid]
         except ResourceNotFound:
             raise RequestError('cant get couchapp "%s"' % app_name)
-            
-        
-            
+
         app_name = get_appname(design_doc['_id'])
         if not self.app_dir or self.app_dir == ".":
             self.app_dir = self.ui.rjoin(self.app_dir, app_name)
@@ -240,8 +238,7 @@ class CouchApp(object):
                     db.resource.uri, docid))
             
             index_url = self.index_url(db.resource.uri, app_name, attach_dir, index)
-            if index_url:
-                self.ui.logger.info("Visit your CouchApp here:\n%s" % index_url)
+            
 
             if docid in db:
                 design = db[docid]
@@ -295,6 +292,8 @@ class CouchApp(object):
                     db[docid] = new_doc
                 
             self.extensions.notify("post-push", self.ui, self, db=db)
+            if index_url:
+                self.ui.logger.info("Visit your CouchApp here:\n%s" % index_url)
                  
     def push_docs(self, dbstring, docs_dir, **kwargs):
         docs_dir = self.ui.realpath(docs_dir)
@@ -420,10 +419,8 @@ class CouchApp(object):
     def fs_to_docs(self, docs_dir):
         """
         function to add docs from docs_dir. docs could be json.file or folders.
-        
         :attr docs_dir: doc dir name
         """
-        
         docs = []
         for name in os.listdir(docs_dir):
             doc_dir =  os.path.join(docs_dir, name)
