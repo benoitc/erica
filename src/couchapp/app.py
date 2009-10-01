@@ -161,7 +161,10 @@ class CouchApp(object):
                 target_path = self.ui.rjoin(path, target)
                 root_path = [template_dir] + functions_path + [template]
                 root = self.ui.rjoin(*root_path)
-                shutil.copy2(root, target_path)
+                try:
+                    shutil.copy2(root, target_path)
+                except:
+                    self.ui.logger.info("%s not found in %s" % (template, self.ui.rjoin(*root_path[:-1])))
         else:
             raise AppError("Defaults templates not found. Check your install.")
         
