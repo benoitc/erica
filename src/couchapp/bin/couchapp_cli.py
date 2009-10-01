@@ -38,6 +38,8 @@ class CouchappCli(object):
         self.verbose = verbose
         
     def generate(self, appdir, kind='app', name=None):
+        if kind == 'app' and name is not None:
+            appdir = os.path.normpath(os.path.join(appdir, name))
         cmd = CouchApp(appdir, self.ui)
         try:
             cmd.generate(kind, name)
