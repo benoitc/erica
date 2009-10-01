@@ -72,19 +72,19 @@ class CouchApp(object):
             raise AppError("CouchApp already initialized in %s." % self.app_dir)
 
 
-    def generate(self, kind='app', name=None):
+    def generate(self, kind='app', name=None, template=None):
         if kind not in ["app", "view", "list", "show", 'filter', 'function']:
             raise AppError("Can't generate %s in your couchapp" % kind)
         
         if kind == "app":
-            self.generate_app()
+            self.generate_app(template=template)
         else:
             if name is None:
                 raise AppError("Can't generate %s function, name is missing" % kind)
-            self.generate_function(kind, name)
+            self.generate_function(kind, name, template)
         
         
-    def generate_app(self):
+    def generate_app(self, template=None):
         """ Generates a CouchApp in app_dir 
         
         :attr verbose: boolean, default False
@@ -100,6 +100,9 @@ class CouchApp(object):
         ]
         
         TEMPLATES = ['app', 'vendor']
+        prefix = ''
+        if template is not None:
+            prefix = self.ui.rjoin(*template.split('/'))
         try:
             os.mkdir(self.app_dir)
         except OSError, e:
@@ -112,13 +115,30 @@ class CouchApp(object):
             self.ui.makedirs(path)
         
         for t in TEMPLATES:
+            if prefix:
+                # we do the job twice for now to make sure an app or vendor
+                # template exist in user template location
+                # fast on linux since there is only one user dir location
+                # but could be a little slower on windows
+                for user_location in user_path():
+                    location = os.path.join(user_location, 'templates', prefix, t)
+                    if self.ui.exists(location):
+                        t = self.ui.rjoin(prefix, t)
+                        break
+                
             self.ui.copy_helper(self.app_dir, t)
 
         self.initialize()
         self.extensions.notify("post-generate", self.ui, self)
         
-    def generate_function(self, kind, name):
-        template_dir = self.ui.find_template_dir()
+    def generate_function(self, kind, name, template=None):
+        functions_path = ['functions']
+        if template is not None:
+            functions_path = []
+            rel_path = self.ui.rjoin(*template.split('/'))
+            template_dir =  self.ui.find_template_dir(rel_path)
+        else:
+            template_dir = self.ui.find_template_dir()
         if template_dir:
             functions = []
             path = self.app_dir
@@ -132,7 +152,6 @@ class CouchApp(object):
             else:
                 path = self.ui.rjoin(path, "%ss" % kind)
                 functions = [('%s.js' % kind, "%s.js" % name )]
-            
             try:
                 os.makedirs(path)
             except:
@@ -140,7 +159,8 @@ class CouchApp(object):
             
             for template, target in functions:
                 target_path = self.ui.rjoin(path, target)
-                root = self.ui.rjoin(template_dir, 'functions', template)
+                root_path = [template_dir] + functions_path + [template]
+                root = self.ui.rjoin(*root_path)
                 shutil.copy2(root, target_path)
         else:
             raise AppError("Defaults templates not found. Check your install.")

@@ -37,12 +37,14 @@ class CouchappCli(object):
         self.ui = UI(verbose=verbose, logging_handler=console)
         self.verbose = verbose
         
-    def generate(self, appdir, kind='app', name=None):
+    def generate(self, appdir, kind='app', name=None, template=None):
         if kind == 'app' and name is not None:
             appdir = os.path.normpath(os.path.join(appdir, name))
+            name = None
+            
         cmd = CouchApp(appdir, self.ui)
         try:
-            cmd.generate(kind, name)
+            cmd.generate(kind=kind, name=name, template=template)
         except AppError, e:
             self.ui.logger.critical(str(e))
         
@@ -161,6 +163,15 @@ def main():
             kind = args[1]
             name = args[2]
             cli.generate(appdir, kind, name)
+        elif len(args) == 4:
+            rel_path = in_couchapp()
+            if not rel_path:
+                rel_path = '.'
+            appdir = os.path.normpath(os.path.join(os.getcwd(), rel_path))    
+            kind = args[1]
+            name = args[2]
+            template = args[3]
+            cli.generate(appdir, kind, name, template)
     elif args[0] == 'push':
         appname = ''
         rel_path = '.'

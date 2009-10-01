@@ -101,6 +101,13 @@ class UI(object):
                 os.path.join(couchapp.__path__[0], 'templates', directory),
                 os.path.join(couchapp.__path__[0], '../../templates', directory)
         ]
+        
+        if directory:
+            user_locations = []
+            for user_location in user_path():
+                user_locations.append(os.path.join(user_location, 'templates', directory))
+            default_locations = user_locations + default_locations
+
         found = False
         for location in default_locations:
             template_dir = os.path.normpath(location)
