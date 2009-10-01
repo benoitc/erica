@@ -15,7 +15,8 @@ import urllib
 
 __all__ = ['popen3', 'in_couchapp', 'parse_uri', 'parse_auth',
         'get_appname', 'to_bytestring', 'vendor_dir',
-        'user_rcpath', 'rcpath', 'locate_program', 'deltree', 'relpath']
+        'user_rcpath', 'rcpath', 'locate_program', 'deltree', 
+        'relpath', 'user_path']
 
 
 try:#python 2.6, use subprocess
@@ -50,10 +51,32 @@ if os.name == 'nt':
         userprofile = [os.environ.get('USERPROFILE')]
         if userprofile:
             path.append(os.path.join(userprofile, '.couchapp.conf'))
+        return path  
+    def user_path():
+        try:
+            home = os.path.expanduser('~')
+            if sys.getwindowsversion()[3] != 2 and userdir == '~':
+                 # We are on win < nt: fetch the APPDATA directory location and use
+                    # the parent directory as the user home dir.
+                appdir = shell.SHGetPathFromIDList(
+                    shell.SHGetSpecialFolderLocation(0, shellcon.CSIDL_APPDATA))
+                home = os.path.dirname(appdir)
+            path = os.path.join(home, '.couchapp')
+        except:
+            home = os.path.expanduser('~')
+            path = os.path.join(home, '.couchapp')
+        userprofile = [os.environ.get('USERPROFILE')]
+        if userprofile:
+            path.append(os.path.join(userprofile, '.couchapp'))
         return path
+    
 else:
     def user_rcpath():
         return [os.path.expanduser('~/.couchapp.conf')]
+        
+    def user_path():
+        return [os.path.expanduser('~/.couchapp')]
+        
         
 # backport relpath from python2.6
 if not hasattr(os.path, 'relpath'):
