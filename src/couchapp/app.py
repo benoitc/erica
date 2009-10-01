@@ -73,7 +73,7 @@ class CouchApp(object):
 
 
     def generate(self, kind='app', name=None, template=None):
-        if kind not in ["app", "view", "list", "show", 'filter', 'function']:
+        if kind not in ["app", "view", "list", "show", 'filter', 'function', 'vendor']:
             raise AppError("Can't generate %s in your couchapp" % kind)
         
         if kind == "app":
@@ -115,6 +115,7 @@ class CouchApp(object):
             self.ui.makedirs(path)
         
         for t in TEMPLATES:
+            app_dir = self.app_dir
             if prefix:
                 # we do the job twice for now to make sure an app or vendor
                 # template exist in user template location
@@ -123,10 +124,16 @@ class CouchApp(object):
                 for user_location in user_path():
                     location = os.path.join(user_location, 'templates', prefix, t)
                     if self.ui.exists(location):
+                        if t == "vendor":
+                            app_dir = self.ui.rjoin(app_dir, "vendor")
+                            try:
+                                os.makedirs(app_dir)
+                            except:
+                                pass
                         t = self.ui.rjoin(prefix, t)
                         break
                 
-            self.ui.copy_helper(self.app_dir, t)
+            self.ui.copy_helper(app_dir, t)
 
         self.initialize()
         self.extensions.notify("post-generate", self.ui, self)
@@ -149,6 +156,15 @@ class CouchApp(object):
                 functions = [('map.js', 'map.js'), ('reduce.js', 'reduce.js')]
             elif kind == "function":
                 functions = [('%s.js' % name, '%s.js' % name)]
+            elif kind == "vendor":
+                app_dir = self.ui.rjoin(self.app_dir, "vendor", name)
+                try:
+                    os.makedirs(app_dir)
+                except:
+                    pass
+                target_path = self.ui.rjoin(*template.split('/'))
+                self.ui.copy_helper(app_dir, target_path)
+                return
             else:
                 path = self.ui.rjoin(path, "%ss" % kind)
                 functions = [('%s.js' % kind, "%s.js" % name )]
