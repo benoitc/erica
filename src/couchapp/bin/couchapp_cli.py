@@ -37,15 +37,18 @@ class CouchappCli(object):
         self.ui = UI(verbose=verbose, logging_handler=console)
         self.verbose = verbose
         
-    def generate(self, appname):
+    def generate(self, appdir, kind='app', name=None):
+        cmd = CouchApp(appdir, self.ui)
+        try:
+            cmd.generate(kind, name)
+        except AppError, e:
+            self.ui.logger.critical(str(e))
+        
+    def generate_app(self, appname):
         appdir = os.path.normpath(os.path.join(os.getcwd(), appname))
         if self.verbose >= 1:
             self.ui.logger.info("Generating a new CouchApp in %s" % appdir)
-        cmd = CouchApp(appdir, self.ui)
-        try:
-            cmd.generate()
-        except AppError, e:
-            self.ui.logger.critical(str(e))
+        self.generate(appdir)
 
     def init(self, appdir, dburl):
         if self.ui.verbose >= 1:
@@ -145,8 +148,17 @@ def main():
             return parser.error('cmd: "generate appname"'+
                     '\n\nIncorrect number of arguments, appname is'+
                     ' missing')
-        appname = args[1]
-        cli.generate(appname)
+        if len(args) == 2:
+            appname = args[1]
+            cli.generate_app(appname)
+        elif len(args) == 3:
+            rel_path = in_couchapp()
+            if not rel_path:
+                rel_path = '.'
+            appdir = os.path.normpath(os.path.join(os.getcwd(), rel_path))    
+            kind = args[1]
+            name = args[2]
+            cli.generate(appdir, kind, name)
     elif args[0] == 'push':
         appname = ''
         rel_path = '.'

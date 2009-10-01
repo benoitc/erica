@@ -27,7 +27,7 @@ class CouchApp(object):
     """ app object. used to push/clone/init/create a couchapp """
     
     default_locations = (
-        ("template", ['app-template', '../../app-template']),
+        ("template", ['app', '../../templates/app']),
         ("vendor", ['vendor', '../../vendor'])
     )
         
@@ -71,7 +71,20 @@ class CouchApp(object):
         elif self.ui.verbose:
             raise AppError("CouchApp already initialized in %s." % self.app_dir)
 
-    def generate(self):
+
+    def generate(self, kind='app', name=None):
+        if kind not in ["app", "view", "list", "show", 'filter', 'function']:
+            raise AppError("Can't generate %s in your couchapp" % kind)
+        
+        if kind == "app":
+            self.generate_app()
+        else:
+            if name is None:
+                raise AppError("Can't generate %s function, name is missing" % kind)
+            self.generate_function(kind, name)
+        
+        
+    def generate_app(self):
         """ Generates a CouchApp in app_dir 
         
         :attr verbose: boolean, default False
@@ -86,7 +99,7 @@ class CouchApp(object):
             'views'
         ]
         
-        TEMPLATES = ['app-template', 'vendor']
+        TEMPLATES = ['app', 'vendor']
         try:
             os.mkdir(self.app_dir)
         except OSError, e:
@@ -104,6 +117,33 @@ class CouchApp(object):
         self.initialize()
         self.extensions.notify("post-generate", self.ui, self)
         
+    def generate_function(self, kind, name):
+        template_dir = self.ui.find_template_dir()
+        if template_dir:
+            functions = []
+            path = self.app_dir
+            if kind == "view":
+                path = self.ui.rjoin(path, "%ss" % kind, name)
+                if self.ui.exists(path):
+                    raise AppError("The view %s already exists" % name)
+                functions = [('map.js', 'map.js'), ('reduce.js', 'reduce.js')]
+            elif kind == "function":
+                functions = [('%s.js' % name, '%s.js' % name)]
+            else:
+                path = self.ui.rjoin(path, "%ss" % kind)
+                functions = [('%s.js' % kind, "%s.js" % name )]
+            
+            try:
+                os.makedirs(path)
+            except:
+                pass
+            
+            for template, target in functions:
+                target_path = self.ui.rjoin(path, target)
+                root = self.ui.rjoin(template_dir, 'functions', template)
+                shutil.copy2(root, target_path)
+        else:
+            raise AppError("Defaults templates not found. Check your install.")
         
     def clone(self, app_uri):
         """Clone a CouchApp from app_uri into app_dir"""

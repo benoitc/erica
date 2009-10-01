@@ -70,18 +70,8 @@ class UI(object):
         
     def copy_helper(self, app_dir, directory):
         """ copy helper used to generate an app"""
-        import couchapp
-        default_locations = [
-            os.path.join(couchapp.__path__[0], directory),
-            os.path.join(couchapp.__path__[0], '../..', directory)
-        ]
-        found = False
-        for location in default_locations:
-            template_dir = os.path.normpath(location)
-            if os.path.isdir(template_dir):
-                found = True
-                break
-        if found:
+        template_dir = self.find_template_dir(directory)
+        if template_dir:
             if directory == "vendor":
                 app_dir = os.path.join(app_dir, directory)
                 try:
@@ -104,6 +94,22 @@ class UI(object):
         else:
             raise AppError("Can't create a CouchApp in %s: default template not found." % (
                     app_dir))
+                    
+    def find_template_dir(self, directory=''):
+        import couchapp
+        default_locations = [
+                os.path.join(couchapp.__path__[0], 'templates', directory),
+                os.path.join(couchapp.__path__[0], '../../templates', directory)
+        ]
+        found = False
+        for location in default_locations:
+            template_dir = os.path.normpath(location)
+            if os.path.isdir(template_dir):
+                found = True
+                break
+        if found:
+            return template_dir
+        return False
                    
     def exists(self, path):
         return os.path.exists(path)
