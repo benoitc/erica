@@ -287,10 +287,9 @@ class UI(object):
         if not dbstring or not "/" in dbstring:
             env = self.conf.get('env', {})
             if dbstring:
+                db_env = "%s/%s" % (self.DEFAULT_SERVER_URI, dbstring)
                 if dbstring in env:
-                    db_env = env[dbstring]['db']
-                else: 
-                    db_env = "%s/%s" % (self.DEFAULT_SERVER_URI, dbstring)
+                    db_env = env[dbstring].get('db', db_env)
             else: 
                 if 'default' in env:
                     db_env = env['default']['db']
@@ -311,6 +310,18 @@ class UI(object):
             _db = self.db(server_uri, db_name, create=True)
             db.append(_db)
         return db
+        
+    def get_app_name(self, dbstring, default):
+        env = self.conf.get('env', {})
+        if dbstring and not "/" in dbstring:
+            if dbstring in env:
+                return env[dbstring].get('name', default)
+            elif  'default' in env:
+                return env['default'].get('name', default)
+        elif not dbstring:
+            if 'default' in env:
+                return env['default'].get('name', default)
+        return default
 
     def get_doc(self, db, docid):
         return db[docid]

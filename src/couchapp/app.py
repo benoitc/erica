@@ -218,6 +218,7 @@ class CouchApp(object):
         :attr verbose: boolean, default is False
         """
         self.extensions.notify("pre-push", self.ui, self)
+        app_name = self.ui.get_app_name(dbstring, app_name)
         design_doc = self.fs_to_designdoc(app_name)
         
         docid = design_doc['_id']
