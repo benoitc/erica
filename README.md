@@ -211,12 +211,7 @@ Also, join us on [irc.freenode.net in the #couchapp room](irc://irc.freenode.net
 
 ### Apps Using CouchApp
 
-There are a few apps out there already using CouchApp. Please send a pull request adding yours to the list if you're using it too.
-
-* [Sofa](http://github.com/jchris/sofa)
-* [Couch-Wiki](http://github.com/janl/couch-wiki)
-* [CouchDB Twitter Client](http://github.com/jchris/couchdb-twitter-client)
-
+There are a [few apps](http://wiki.github.com/couchapp/couchapp/apps) out there already using CouchApp. Please send a pull request adding yours to the list if you're using it too.
 
 ## License
 
