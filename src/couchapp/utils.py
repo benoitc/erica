@@ -54,6 +54,7 @@ if os.name == 'nt':
             path.append(os.path.join(userprofile, '.couchapp.conf'))
         return path  
     def user_path():
+        path = []
         try:
             home = os.path.expanduser('~')
             if sys.getwindowsversion()[3] != 2 and userdir == '~':
@@ -62,10 +63,10 @@ if os.name == 'nt':
                 appdir = shell.SHGetPathFromIDList(
                     shell.SHGetSpecialFolderLocation(0, shellcon.CSIDL_APPDATA))
                 home = os.path.dirname(appdir)
-            path = os.path.join(home, '.couchapp')
+            path.append(os.path.join(home, '.couchapp'))
         except:
             home = os.path.expanduser('~')
-            path = os.path.join(home, '.couchapp')
+            path.append(os.path.join(home, '.couchapp'))
         userprofile = [os.environ.get('USERPROFILE')]
         if userprofile:
             path.append(os.path.join(userprofile, '.couchapp'))
