@@ -36,6 +36,7 @@ except ImportError:
     
 if os.name == 'nt':
     def user_rcpath():
+        path = []
         try:
             home = os.path.expanduser('~')
             if sys.getwindowsversion()[3] != 2 and userdir == '~':
@@ -44,10 +45,10 @@ if os.name == 'nt':
                 appdir = shell.SHGetPathFromIDList(
                     shell.SHGetSpecialFolderLocation(0, shellcon.CSIDL_APPDATA))
                 home = os.path.dirname(appdir)
-            path = os.path.join(home, '.couchapp.conf')
+            path.append(os.path.join(home, '.couchapp.conf'))
         except:
             home = os.path.expanduser('~')
-            path = os.path.join(home, '.couchapp.conf')
+            path.append(os.path.join(home, '.couchapp.conf'))
         userprofile = [os.environ.get('USERPROFILE')]
         if userprofile:
             path.append(os.path.join(userprofile, '.couchapp.conf'))
