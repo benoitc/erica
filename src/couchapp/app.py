@@ -631,6 +631,8 @@ class CouchApp(object):
             elif depth == 0 and name.startswith('_'):
                 # files starting with "_" are always "special"
                 continue
+            elif name == '_attachments':
+                continue
             elif depth == 0 and (name == 'couchapp' or name == 'couchapp.json'):
                 # we are in app_meta
                 if name == "couchapp":
