@@ -25,7 +25,7 @@ from setuptools import setup, find_packages
 
 data_files = []
 
-for dir, dirs, files in os.walk('app-template'):
+for dir, dirs, files in os.walk('templates'):
     data_files.append((os.path.join('couchapp', dir), 
         [os.path.join(dir, file_) for file_ in files]))
 
