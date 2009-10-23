@@ -7,3 +7,5 @@ suggesting improvements, submitting changes or asking hard question
 Some of these people are:
 
 * Andy Wenk <andy.wenk@googlemail.com>
+* Simon Metson @drsm79
+* Jason Davies @jasondavies

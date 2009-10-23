@@ -14,7 +14,14 @@ CouchDB's replication means that programs running locally, can still be social. 
 
 ## Installation
 
-    sudo easy_install couchapp
+Couchapp requires Python 2.5x or sup. To install couchapp using easy_install you must make sure you have a recent version of setuptools installed (as of this writing, 0.6c6 (0.6a9 on windows) or later):
+
+    $ curl -O http://peak.telecommunity.com/dist/ez_setup.py
+    $ sudo python ez_setup.py -U setuptools
+
+To install or upgrade to the latest released version of couchapp:
+
+    $ sudo easy_install -U couchapp
 
 If this gives you trouble, see the INSTALLING file for more options.
 
@@ -164,9 +171,19 @@ Clone downloads apps from other databases around the internet, all you have to d
 
 ## Vendor
 
-Handle vendor update and install from a git repository. Each vendor app should be in a vendor folder:
+Handle vendor update and install from a git repository.
+
+### How Vendor Apps Should Be Configured With Your Repository
+
+Within your repository, your vendor app should be in a vendor folder:
 
     vendor/appname
+
+For example, the javascript that is vendored (by default) with your use of couchapp is in the repo git://github.com/couchapp/couchapp.git, located in the path:
+
+    vendor/couchapp
+
+### Commands
 
 To update a vendor folder in your couchapp:
 
@@ -194,7 +211,7 @@ Also, join us on [irc.freenode.net in the #couchapp room](irc://irc.freenode.net
 
 ### Apps Using CouchApp
 
-There are a few apps out there already using CouchApp. Please send a pull request adding yours to the list if you're using it too.
+There are a [few apps](http://wiki.github.com/couchapp/couchapp/apps) out there already using CouchApp. Please send a pull request adding yours to the list if you're using it too.
 
 * [Sofa](http://github.com/jchris/sofa)
 * [CouchDB Twitter Client](http://github.com/jchris/couchdb-twitter-client)

@@ -5,54 +5,39 @@
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
-import ez_setup
-ez_setup.use_setuptools()
-
-from setuptools import setup, find_packages
-from setuptools.command.easy_install import easy_install
 
 import os
 import sys
 
+from ez_setup import use_setuptools
+if 'cygwin' in sys.platform.lower():
+   min_version='0.6c6'
+else:
+   min_version='0.6a9'
+try:
+    use_setuptools(min_version=min_version)
+except TypeError:
+    # If a non-local ez_setup is already imported, it won't be able to
+    # use the min_version kwarg and will bail with TypeError
+    use_setuptools()
+
+from setuptools import setup, find_packages
+
 data_files = []
 
-for dir, dirs, files in os.walk('app-template'):
+for dir, dirs, files in os.walk('templates'):
     data_files.append((os.path.join('couchapp', dir), 
         [os.path.join(dir, file_) for file_ in files]))
 
 for dir, dirs, files in os.walk('vendor'):
     data_files.append((os.path.join('couchapp', dir), 
         [os.path.join(dir, file_) for file_ in files]))
-
-for dir, dirs, files in os.walk('python/couchapp'):
-    for i, dirname in enumerate(dirs):
-        if dirname.startswith('.'): del dirs[i]
-        
-    data_files.append((dir, [os.path.join(dir, file_) for file_ in files]))
     
-easy_install.real_process_distribution = easy_install.process_distribution
-def process_distribution(self, *args, **kwargs):
-    """ overide process_distribution to add permissions"""
-    easy_install.real_process_distribution(self, *args, **kwargs)
-    import pkg_resources
-    external_path = '/pathto/couchapp/_external'
-    try:
-        pkg_resources.require('couchapp')
-        external_path = pkg_resources.resource_filename("couchapp", "_external")
-        for dir, dirs, files in os.walk(external_path):
-            for i, dirname in enumerate(dirs):
-                if dirname.startswith('.'): del dirs[i]
-            for file_ in files:
-                os.chmod(os.path.join(dir, file_), 0755)  
-            
-    except:
-        print >>sys.stderr, "Chmoding failed. Try to 'chmod -R +x %s'" % external_path
-easy_install.process_distribution = process_distribution        
- 
+
 setup(
     name = 'Couchapp',
-    version = '0.2',
-    url = 'http://github.com/benoitc/couchapp/tree/master',
+    version = '0.3.4',
+    url = 'http://github.com/couchapp/couchapp/tree/master',
     license =  'Apache License 2',
     author = 'Benoit Chesneau',
     author_email = 'benoitc@e-engura.org',
@@ -65,10 +50,10 @@ setup(
     platforms = ['any'],
 
     zip_safe = False,
-    
-    packages=find_packages('python'),
+
+    packages=find_packages('src'),
     package_dir={
-        '': 'python'
+        '': 'src'
     },
     data_files = data_files,
     include_package_data = True,
@@ -87,15 +72,6 @@ setup(
         'Topic :: Database',
         'Topic :: Utilities',
     ],
+    test_suite='tests',
 
-    setup_requires = [
-        'setuptools>=0.6c7',
-    ],
-
-    install_requires = [
-        'couchdb>=0.5',
-        'simplejson',
-    ],
-    
 )
-
