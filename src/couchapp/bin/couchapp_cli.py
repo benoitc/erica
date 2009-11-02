@@ -111,7 +111,7 @@ def main():
     
     # generate options
     parser.add_option_group(OptionGroup(parser, "Generate a new CouchApp! (start here)",
-            "couchapp generate <appname> [appdir]"))
+            "couchapp generate <appname>|<appdir>"))
             
     # push options
     group_push = OptionGroup(parser, "Pushes a CouchApp to CouchDB", 

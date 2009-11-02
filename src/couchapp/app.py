@@ -103,7 +103,7 @@ class CouchApp(object):
         if template is not None:
             prefix = self.ui.rjoin(*template.split('/'))
         try:
-            os.mkdir(self.app_dir)
+            os.makedirs(self.app_dir)
         except OSError, e:
             errno, message = e
             raise AppError("Can't create a CouchApp in %s: %s" % (
