@@ -128,7 +128,7 @@ if not hasattr(os.path, 'relpath'):
 
             rel_list = [os.path.pardir] * (len(start_list)-i) + path_list[i:]
             if not rel_list:
-                return curdir
+                return os.path.curdir
             return os.path.join(*rel_list)
     else:
         def relpath(path, start=os.path.curdir):
