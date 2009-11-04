@@ -9,19 +9,13 @@
 import os
 import sys
 
-from ez_setup import use_setuptools
-if 'cygwin' in sys.platform.lower():
-   min_version='0.6c6'
-else:
-   min_version='0.6a9'
 try:
-    use_setuptools(min_version=min_version)
-except TypeError:
-    # If a non-local ez_setup is already imported, it won't be able to
-    # use the min_version kwarg and will bail with TypeError
-    use_setuptools()
+    from setuptools import setup, find_packages
+except ImportError:
+    import ez_setup
+    ez_setup.use_setuptools()
+    from setuptools import setup, find_packages
 
-from setuptools import setup, find_packages
 
 data_files = []
 
@@ -36,7 +30,7 @@ for dir, dirs, files in os.walk('vendor'):
 
 setup(
     name = 'Couchapp',
-    version = '0.3.4',
+    version = '0.4',
     url = 'http://github.com/couchapp/couchapp/tree/master',
     license =  'Apache License 2',
     author = 'Benoit Chesneau',
@@ -57,6 +51,11 @@ setup(
     },
     data_files = data_files,
     include_package_data = True,
+    
+    install_requires = [
+        'couchdbkit',
+        'simplejson'
+    ],
     entry_points = {
         'console_scripts': [
             'couchapp = couchapp.bin.couchapp_cli:main',
@@ -73,5 +72,4 @@ setup(
         'Topic :: Utilities',
     ],
     test_suite='tests',
-
 )

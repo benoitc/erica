@@ -6,13 +6,14 @@
 # This software is licensed as described in the file LICENSE, which
 # you should have received as part of this distribution.
 #
+
+import anyjson
 import glob
 from hashlib import md5
 import os
 import re
 import sys
 
-from couchapp.contrib import simplejson as json
 from couchapp.errors import MacroError
 from couchapp.utils import to_bytestring
 
@@ -117,6 +118,6 @@ def run_json_macros(doc, f_string, app_dir, ui):
        return f_string
 
    for k, v in included.iteritems():
-       varstrings.append("var %s = %s;" % (k, json.dumps(v)))
+       varstrings.append("var %s = %s;" % (k, anyjson.serialize(v)))
 
    return re_json.sub(rjson2, f_string)

@@ -6,6 +6,7 @@
 # you should have received as part of this distribution.
 #
 
+import anyjson
 import base64
 import copy
 from hashlib import md5
@@ -15,12 +16,15 @@ import re
 import shutil
 import sys
 
-from couchapp.contrib import couchdb
-from couchapp.contrib import simplejson as json
+
+from couchdbkit.resource import ResourceNotFound
+
 from couchapp.errors import *
 from couchapp.extensions import Extensions
 from couchapp.macros import package_views, package_shows
 from couchapp.utils import *
+
+
 
 class CouchApp(object):
     """ app object. used to push/clone/init/create a couchapp """
@@ -218,7 +222,7 @@ class CouchApp(object):
         conf = {}
         conf['env'] = {
             'origin': {
-                'db': db.resource.uri
+                'db': db.res.uri
             }
         }
         self.ui.write_json(rc_file, conf)
@@ -287,7 +291,7 @@ class CouchApp(object):
             if kwargs.get('output', None) is not None:
                 self.ui.write_json(kwargs.get('output'), new_doc)
             else:
-                print json.dumps(new_doc)    
+                print anyjson.serialize(new_doc)    
             self.extensions.notify("post-push", self.ui, self, db=None)
             
             return
@@ -314,9 +318,9 @@ class CouchApp(object):
         for db in self.ui.get_db(dbstring):
             if self.ui.verbose >= 1:
                 self.ui.logger.info("Pushing CouchApp in %s to design doc:\n%s/%s" % (self.app_dir,
-                    db.resource.uri, docid))
+                    db.res.uri, docid))
             
-            index_url = self.index_url(db.resource.uri, app_name, attach_dir, index)
+            index_url = self.index_url(db.res.uri, app_name, attach_dir, index)
             
 
             if docid in db:
@@ -332,7 +336,7 @@ class CouchApp(object):
             else:
                  new_doc.update({'_attachments': {}})
                 
-            if not kwargs.get('atomic', False):
+            if kwargs.get('no_atomic', False):
                 db[docid] = new_doc
                 self.send_attachments(db, design_doc)
             else:
@@ -361,11 +365,13 @@ class CouchApp(object):
                     new_doc['couchapp']['signatures'] = {}
                     new_doc.update({'_attachments': inline_attachments})
                      
-                if not kwargs.get('atomic', False):
+                
+                if kwargs.get('no_atomic', False):
                     db[docid] = new_doc
                     if not inline_attachments:
                         self.send_attachments(db, doc)
                 else:
+                    
                     if not inline_attachments:
                         self.encode_attachments(db, doc, new_doc)
                     db[docid] = new_doc
@@ -394,7 +400,7 @@ class CouchApp(object):
                     new_doc['couchapp']['signatures'] = {}
                     new_doc.update({'_attachments': {}})
                     
-                if not kwargs.get('atomic', False):
+                if kwargs.get('no_atomic', False):
                     db[docid] = new_doc
                     self.send_attachments(db, doc)
                 else:
@@ -459,7 +465,7 @@ class CouchApp(object):
         design = {}
         try:
             design = db[docid]
-        except couchdb.ResourceNotFound:
+        except ResourceNotFound:
             pass
             
         new_attachments = design.get('_attachments', {})
@@ -484,7 +490,7 @@ class CouchApp(object):
                 # error because it didn't close the connection
                 new_attachments[filename] = {
                     "content_type": ';'.join(filter(None, mimetypes.guess_type(filename))),
-                    "data": base64.b64encode(f.read()),
+                    "data": f.read(),
                     }
                      
         # update signatures
@@ -681,7 +687,7 @@ class CouchApp(object):
                         
                 if name.endswith('.json'):
                     try:
-                        content = json.loads(content)
+                        content = anyjson.deserialize(content)
                     except ValueError:
                         if self.ui.verbose >= 2:
                             self.ui.logger.error("Json invalid in %s" % current_path)
@@ -809,7 +815,7 @@ class CouchApp(object):
                                 content = base64.b64decode(content[15:])
 
                         if fname.endswith('.json'):
-                            content = json.dumps(content)
+                            content = anyjson.serialize(content)
 
                         del v[last_key]
 
@@ -918,7 +924,7 @@ class CouchApp(object):
                     self.ui.makedirs(current_dir)
         
                 if signatures.get(filename) != self.ui.sign(file_path):
-                    self.ui.write(file_path, db.get_attachment(docid, filename))
+                    self.ui.write(file_path, db.fetch_attachment(docid, filename))
                     if self.ui.verbose>=2:
                         self.ui.logger.info("clone attachment: %s" % filename)
                         

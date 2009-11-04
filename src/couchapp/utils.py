@@ -13,11 +13,12 @@ import sys
 import urlparse
 import urllib
 
+
+
 __all__ = ['popen3', 'in_couchapp', 'parse_uri', 'parse_auth',
         'get_appname', 'to_bytestring', 'vendor_dir',
         'user_rcpath', 'rcpath', 'locate_program', 'deltree', 
         'relpath', 'user_path']
-
 
 try:#python 2.6, use subprocess
     import subprocess
