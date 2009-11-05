@@ -335,7 +335,7 @@ class CouchApp(object):
                 })
             else:
                  new_doc.update({'_attachments': {}})
-                
+                 
             if kwargs.get('no_atomic', False):
                 db[docid] = new_doc
                 self.send_attachments(db, design_doc)
