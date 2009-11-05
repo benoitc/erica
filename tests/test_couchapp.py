@@ -15,7 +15,7 @@ import unittest
 from couchapp.app import CouchApp
 from couchapp.ui import UI
 
-from couchapp.contrib.couchdb import Server, ResourceNotFound
+from couchdbkit import Server, ResourceNotFound
 
 def deltree(path):
     for root, dirs, files in os.walk(path, topdown=False):
@@ -29,7 +29,7 @@ class UITestCase(unittest.TestCase):
     
     def setUp(self):
         self.server = Server()
-        self.db = self.server.create('couchapp-test')
+        self.db = self.server.create_db('couchapp-test')
         
         f, fname = tempfile.mkstemp()
         os.unlink(fname)

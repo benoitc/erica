@@ -15,7 +15,7 @@ import unittest
 from couchapp import CouchApp, UI
 from couchapp.utils import popen3, in_couchapp, deltree
 
-from couchapp.contrib.couchdb import Server, ResourceNotFound
+from couchdbkit import Server, ResourceNotFound
 
 
     
@@ -27,7 +27,7 @@ class CliTestCase(unittest.TestCase):
     
     def setUp(self):
         self.server = Server()
-        self.db = self.server.create('couchapp-test')
+        self.db = self.server.create_db('couchapp-test')
         
         f, fname = tempfile.mkstemp()
         os.unlink(fname)
