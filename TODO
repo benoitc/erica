@@ -4,4 +4,5 @@ TODO : 0.5
 - more unitests
 - couchdbdesktop compatibility
 - cleaner hook system
+- instant updates
 - .ignore file.
