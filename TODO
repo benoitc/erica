@@ -1,5 +1,7 @@
 
-TODO : 0.4
+TODO : 0.5
 ------------
-- replace httplib2 and couchdb contrib by a thin client
 - more unitests
+- couchdbdesktop compatibility
+- cleaner hook system
+- .ignore file.
