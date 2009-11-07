@@ -9,12 +9,9 @@
 import os
 import sys
 
-try:
-    from setuptools import setup, find_packages
-except ImportError:
-    import ez_setup
-    ez_setup.use_setuptools()
-    from setuptools import setup, find_packages
+import distribute_setup
+distribute_setup.use_setuptools()
+from setuptools import setup, find_packages
 
 
 data_files = []
@@ -30,7 +27,7 @@ for dir, dirs, files in os.walk('vendor'):
 
 setup(
     name = 'Couchapp',
-    version = '0.4',
+    version = '0.4.1',
     url = 'http://github.com/couchapp/couchapp/tree/master',
     license =  'Apache License 2',
     author = 'Benoit Chesneau',
@@ -53,7 +50,8 @@ setup(
     include_package_data = True,
     
     install_requires = [
-        'couchdbkit',
+        'distribute',
+        'couchdbkit>=0.2.2',
         'simplejson'
     ],
     entry_points = {
