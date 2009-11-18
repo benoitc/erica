@@ -48,11 +48,7 @@ setup(
     },
     data_files = data_files,
     include_package_data = True,
-    
-    install_requires = [
-        'distribute',
-        'simplejson'
-    ],
+
     entry_points = {
         'console_scripts': [
             'couchapp = couchapp.bin.couchapp_cli:main',
