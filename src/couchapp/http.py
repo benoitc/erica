@@ -45,7 +45,6 @@ def is_doc(dbstring, docid):
     try:
         parse_resp(resp)
     except:
-        print "ici"
         return False
     return True
     
@@ -248,6 +247,7 @@ def make_request(url, method, body=None, headers=None):
         except socket.gaierror:
             http.close()
             raise RequestFailed("Unable to find the server at %s" % http.host)
+        except (socket.error, httplib.HTTPException):
             http.close()
             if i == 0:
                 continue
