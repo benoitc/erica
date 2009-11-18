@@ -69,14 +69,14 @@ def get_doc(dbstring, docid):
     data = resp.read()
     return json.loads(data)
     
-def save_doc(dbstring, doc):
+def save_doc(dbstring, doc, encode=False):
     """ save doc
     
     @param dbstring: db url
     @param doc: dict, the document dict
     
     """
-    if '_attachments' in doc:
+    if '_attachments' in doc and encode:
         doc['_attachments'] = encode_attachments(doc['_attachments'])
     docid = escape_docid(doc['_id'])
     json_doc = json.dumps(doc).encode("utf-8")

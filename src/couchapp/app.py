@@ -14,8 +14,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-
-import anyjson
 import base64
 import copy
 from hashlib import md5
@@ -25,6 +23,10 @@ import re
 import shutil
 import sys
 
+try:
+    import json
+except ImportError:
+    import simplejson as json
 
 from couchapp.errors import *
 from couchapp.extensions import Extensions
@@ -298,7 +300,7 @@ class CouchApp(object):
             if kwargs.get('output', None) is not None:
                 self.ui.write_json(kwargs.get('output'), new_doc)
             else:
-                print anyjson.serialize(new_doc)    
+                print json.dumps(new_doc).encode('utf-8')
             self.extensions.notify("post-push", self.ui, self, db=None)
             
             return
@@ -690,7 +692,7 @@ class CouchApp(object):
                         
                 if name.endswith('.json'):
                     try:
-                        content = anyjson.deserialize(content)
+                        content = json.loads(content)
                     except ValueError:
                         if self.ui.verbose >= 2:
                             self.ui.logger.error("Json invalid in %s" % current_path)
@@ -818,7 +820,7 @@ class CouchApp(object):
                                 content = base64.b64decode(content[15:])
 
                         if fname.endswith('.json'):
-                            content = anyjson.serialize(content)
+                            content = json.dumps(content).encode('utf-8')
 
                         del v[last_key]
 
