@@ -50,10 +50,7 @@ setup(
 
     zip_safe = False,
 
-    packages=find_packages('src'),
-    package_dir={
-        '': 'src'
-    },
+    packages=find_packages(),
     data_files = data_files,
     include_package_data = True,
     
