@@ -20,12 +20,14 @@ import sys
 import time
 import urllib
 
+try:
+    import json
+except ImportError:
+    import simplejson as json
 
-import anyjson
-from couchdbkit import Server, ResourceNotFound
-from restkit.httpc import BasicAuth
 
 from couchapp import __version__
+from couchapp.http import create_db
 from couchapp.errors import AppError
 from couchapp.utils import *
 
@@ -236,7 +238,7 @@ class UI(object):
         :attr content: string
 
         """
-        self.write(fname, anyjson.serialize(content))
+        self.write(fname, json.dumps(content).encode('utf-8'))
 
     def read_json(self, fname, use_environment=False):
         """ read a json file and deserialize
@@ -259,36 +261,18 @@ class UI(object):
             data = string.Template(data).substitute(os.environ)
 
         try:
-            data = anyjson.deserialize(data)
+            data = json.loads(data)
         except ValueError:
             print >>sys.stderr, "Json is invalid, can't load %s" % fname
             return {}
         return data
         
-    def server(self, server_uri): 
-        # init couchdb server
-        if "@" in server_uri:
-            username, password, server_uri = parse_auth(server_uri) 
-            couchdb_server = Server(server_uri)
-            couchdb_server.add_authorization(BasicAuth((username, password)))
-        else:
-            couchdb_server = Server(server_uri)
-        return couchdb_server
-        
-    def db(self, server_uri, dbname, create=False):
-        """ reurn Database object """
-        couchdb_server = self.server(server_uri)
-        if create:
-            db = couchdb_server.get_or_create_db(dbname)
-        else:
-            db = couchdb_server[dbname]
-        return db
        
     def get_db(self, dbstring):
         if not dbstring or not "/" in dbstring:
             env = self.conf.get('env', {})
             if dbstring:
-                db_env = "%s/%s" % (self.DEFAULT_SERVER_URI, dbstring)
+                db_env = "%s%s" % (self.DEFAULT_SERVER_URI, dbstring)
                 if dbstring in env:
                     db_env = env[dbstring].get('db', db_env)
             else: 
@@ -303,15 +287,14 @@ class UI(object):
                 self.db_url = db_env
         else:
             self.db_url = [dbstring]
+          
+        for i, db in enumerate(self.db_url):
+            try:
+                create_db(db)
+            except:
+                pass    
+        return self.db_url
 
-        db = []
-        for s in self.db_url:
-            server_uri, db_name, docid = parse_uri(s)
-            # create dbs if it don't exist
-            _db = self.db(server_uri, db_name, create=True)
-            db.append(_db)
-        return db
-        
     def get_app_name(self, dbstring, default):
         env = self.conf.get('env', {})
         if dbstring and not "/" in dbstring:
@@ -323,23 +306,3 @@ class UI(object):
             if 'default' in env:
                 return env['default'].get('name', default)
         return default
-
-    def get_doc(self, db, docid):
-        return db[docid]
-        
-    def save_doc(self, db, docid, doc):
-        try:
-            db[docid] = doc
-        except Exception, e:
-            if self.verbose >= 2:
-                self.logger.error("%s can't be saved. [%s]" % (docid, doc))
-                
-    def put_attachment(self, db, doc, content, fname,
-            content_length=None):
-        try:
-            db.put_attachment(doc, content, name=fname, 
-                        content_length=content_length)
-        except:
-            if self.verbose >= 2:
-                self.logger.error("%s file not uploaded, sorry." % fname)
-        

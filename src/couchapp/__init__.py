@@ -6,7 +6,7 @@
 # This software is licensed as described in the file LICENSE, which
 # you should have received as part of this distribution.
 
-__version__ = "0.4.1"
+__version__ = "0.5"
 
 from couchapp.ui import UI
 from couchapp.app import CouchApp

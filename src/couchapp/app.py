@@ -17,10 +17,9 @@ import shutil
 import sys
 
 
-from couchdbkit.resource import ResourceNotFound
-
 from couchapp.errors import *
 from couchapp.extensions import Extensions
+from couchapp.http import *
 from couchapp.macros import package_views, package_shows
 from couchapp.utils import *
 
@@ -191,10 +190,10 @@ class CouchApp(object):
        
         server_uri, db_name, docid = parse_uri(app_uri) 
         app_name = get_appname(docid)
-        db = self.ui.db(server_uri, db_name)
+        db_uri = "%s/%s" % (server_uri, db_name)   
             
         try:
-            design_doc = db[docid]
+            design_doc = get_doc(db_uri, docid)
         except ResourceNotFound:
             raise RequestError('cant get couchapp "%s"' % app_name)
 
@@ -202,7 +201,7 @@ class CouchApp(object):
         if not self.app_dir or self.app_dir == ".":
             self.app_dir = self.ui.rjoin(self.app_dir, app_name)
             
-        self.extensions.notify("pre-clone", self.ui, self, db=db, design_doc=design_doc)
+        self.extensions.notify("pre-clone", self.ui, self, db=db_uri, design_doc=design_doc)
         
         
         rc_file = self.ui.rjoin(self.app_dir, '.couchapprc')
@@ -216,16 +215,16 @@ class CouchApp(object):
             self.ui.logger.info("Cloning %s to %s..." % (app_name, self.app_dir))
             
         # clone
-        self.designdoc_to_fs(db, design_doc)
+        self.designdoc_to_fs(db_uri, design_doc)
             
         conf = {}
         conf['env'] = {
             'origin': {
-                'db': db.res.uri
+                'db': db_uri
             }
         }
         self.ui.write_json(rc_file, conf)
-        self.extensions.notify("post-clone", self.ui, self, db=db, design_doc=design_doc)
+        self.extensions.notify("post-clone", self.ui, self, db=db_uri, design_doc=design_doc)
         
         
     def push(self, dbstring, app_name, **kwargs):
@@ -314,16 +313,16 @@ class CouchApp(object):
             elif key not in new_doc['couchapp']:
                 new_doc['couchapp'][key] = value
 
-        for db in self.ui.get_db(dbstring):
+        for db_url in self.ui.get_db(dbstring):
             if self.ui.verbose >= 1:
                 self.ui.logger.info("Pushing CouchApp in %s to design doc:\n%s/%s" % (self.app_dir,
-                    db.res.uri, docid))
+                    db_url, docid))
             
-            index_url = self.index_url(db.res.uri, app_name, attach_dir, index)
+            index_url = self.index_url(db_url, app_name, attach_dir, index)
             
 
-            if docid in db:
-                design = db[docid]
+            if is_doc(db_url, docid):
+                design = get_doc(db_url, docid)
                 _app_meta = design.get('couchapp', {})
 
                 new_doc['couchapp'] ['signatures'] = _app_meta.get('signatures', {})
@@ -336,11 +335,11 @@ class CouchApp(object):
                  new_doc.update({'_attachments': {}})
                  
             if kwargs.get('no_atomic', False):
-                db[docid] = new_doc
-                self.send_attachments(db, design_doc)
+                save_doc(db_url, new_doc)
+                self.send_attachments(db_url, design_doc)
             else:
-                self.encode_attachments(db, design_doc, new_doc)
-                db[docid] = new_doc
+                self.encode_attachments(db_url, design_doc, new_doc)
+                save_doc(db_url, new_doc)
                 
             # send docs maybe we should do bullk update here
             for doc in docs:
@@ -352,8 +351,8 @@ class CouchApp(object):
                         inline_attachments = doc['_attachments']
                 
                 docid = new_doc['_id']
-                if docid in db:
-                    old_doc = db[docid]
+                if is_doc(db_url, docid):
+                    old_doc = get_doc(db_url, docid)
                     doc_meta = old_doc.get('couchapp', {})
                     doc['couchapp']['signatures'] = doc_meta.get('signatures', {})
                     new_doc.update({
@@ -366,29 +365,29 @@ class CouchApp(object):
                      
                 
                 if kwargs.get('no_atomic', False):
-                    db[docid] = new_doc
+                    save_doc(db_url, new_doc)
                     if not inline_attachments:
-                        self.send_attachments(db, doc)
+                        self.send_attachments(db_url, doc)
                 else:
                     
                     if not inline_attachments:
-                        self.encode_attachments(db, doc, new_doc)
-                    db[docid] = new_doc
+                        self.encode_attachments(db_url, doc, new_doc)
+                    save_doc(db_url, new_doc)
                 
-            self.extensions.notify("post-push", self.ui, self, db=db)
+            self.extensions.notify("post-push", self.ui, self, db=db_url)
             if index_url:
                 self.ui.logger.info("Visit your CouchApp here:\n%s" % index_url)
                  
     def push_docs(self, dbstring, docs_dir, **kwargs):
         docs_dir = self.ui.realpath(docs_dir)
         docs = self.fs_to_docs(docs_dir)
-        for db in self.ui.get_db(dbstring):
+        for db_url in self.ui.get_db(dbstring):
             # send docs maybe we should do bullk update here
             for doc in docs:
                 new_doc = copy.deepcopy(doc)
                 docid = new_doc['_id']
-                if docid in db:
-                    old_doc = db[docid]
+                if is_doc(db_url, docid):
+                    old_doc = get_doc(db_url, docid)
                     doc_meta = old_doc.get('couchapp', {})
                     doc['couchapp']['signatures'] = doc_meta.get('signatures', {})
                     new_doc.update({
@@ -400,11 +399,11 @@ class CouchApp(object):
                     new_doc.update({'_attachments': {}})
                     
                 if kwargs.get('no_atomic', False):
-                    db[docid] = new_doc
+                    save_doc(db_url, new_doc)
                     self.send_attachments(db, doc)
                 else:
                     self.encode_attachments(db, doc, new_doc)
-                    db[docid] = new_doc
+                    save_doc(db_url, new_doc)
 
     def send_attachments(self, db, design_doc):
         # init vars
@@ -419,14 +418,14 @@ class CouchApp(object):
         
         # detect attachments to be removed and keep
         # only new version attachments to update.
-        design = db[docid]
+        design = get_doc(db, docid)
         metadata = design.get('couchapp', {})
         attachments = _attachments.copy()
         if 'signatures' in metadata:
             all_signatures = metadata['signatures'].copy()
             for filename in metadata['signatures'].iterkeys():
                 if filename not in _signatures:
-                    db.delete_attachment(design, filename)
+                    delete_attachment(db, design, filename)
                     del all_signatures[filename]
                 elif _signatures[filename] == metadata['signatures'][filename]:
                     del attachments[filename]
@@ -436,11 +435,7 @@ class CouchApp(object):
                 self.ui.logger.info("Attaching %s (%s)" % (filename, content_length))
             
             if isinstance(value, basestring):
-                f = open(value, "rb")
-                # fix issue with httplib that raises BadStatusLine
-                # error because it didn't close the connection
-                self.ui.put_attachment(db, design, f, filename,
-                        content_length=content_length)
+                put_attachment(db, design, open(value, "rb"), filename, content_length=content_length)
                      
         # update signatures
         design = db[docid]
@@ -449,7 +444,7 @@ class CouchApp(object):
 
         all_signatures.update(_signatures)
         design['couchapp'].update({'signatures': _signatures})
-        db[docid] = design
+        save_doc(db, design)
         
     def encode_attachments(self, db, design_doc, new_doc):
         all_signatures = {}                  
@@ -463,7 +458,7 @@ class CouchApp(object):
         attachments = _attachments.copy()
         design = {}
         try:
-            design = db[docid]
+            design = get_doc(db, docid)
         except ResourceNotFound:
             pass
             
@@ -923,7 +918,13 @@ class CouchApp(object):
                     self.ui.makedirs(current_dir)
         
                 if signatures.get(filename) != self.ui.sign(file_path):
-                    self.ui.write(file_path, db.fetch_attachment(docid, filename))
+                    resp = fetch_attachment(db, docid, filename)
+                    f = open(file_path, 'wb')
+                    while 1:
+                        data = resp.read(16384)
+                        if not data: break
+                        f.write(data)
+                    f.close()
                     if self.ui.verbose>=2:
                         self.ui.logger.info("clone attachment: %s" % filename)
                         

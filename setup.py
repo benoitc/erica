@@ -27,7 +27,7 @@ for dir, dirs, files in os.walk('vendor'):
 
 setup(
     name = 'Couchapp',
-    version = '0.4.1',
+    version = '0.5',
     url = 'http://github.com/couchapp/couchapp/tree/master',
     license =  'Apache License 2',
     author = 'Benoit Chesneau',
@@ -51,7 +51,6 @@ setup(
     
     install_requires = [
         'distribute',
-        'couchdbkit>=0.2.2',
         'simplejson'
     ],
     entry_points = {

@@ -23,25 +23,31 @@ except ImportError:
 
 url_parser = urlparse.urlparse
 
-__all__ = ['is_doc', 'get_doc', 'save_doc', 'put_attachment', 'get_attachment'
+__all__ = ['is_doc', 'get_doc', 'save_doc', 'put_attachment', 'fetch_attachment',
             'delete_attachment']
 
+from couchapp import __version__
 from couchapp.errors import *
 from couchapp.utils import to_bytestring
 
 
 http_pool = {}
+USER_AGENT = "couchapp/%s" % __version__
 
+def create_db(dbstring):
+    make_request(dbstring, "PUT")
+    
 
 def is_doc(dbstring, docid):
     """ if a doc with docid exist in db """
-    url = "%s/_all_docs?key=%s" % (dbstring, json.dumps(docid).encode("utf-8"))
-    resp = make_request(url, "GET", headers={"Accept": "application/json"})
-    parse_resp(resp)
-    res = resp.read()
-    if res:
-        return True
-    return False
+    url = "%s/%s" % (dbstring, escape_docid(docid))
+    resp = make_request(url, "GET")
+    try:
+        parse_resp(resp)
+    except:
+        print "ici"
+        return False
+    return True
     
 
 def get_doc(dbstring, docid):
@@ -52,8 +58,7 @@ def get_doc(dbstring, docid):
     
     @return: dict, the document dict
     """
-    resp = make_request("%s/%s" % (dbstring, docid), "GET", 
-                    headers={"Accept": "application/json"})
+    resp = make_request("%s/%s" % (dbstring, escape_docid(docid)), "GET")
     parse_resp(resp)
     data = resp.read()
     return json.loads(data)
@@ -66,11 +71,10 @@ def save_doc(dbstring, doc):
     
     """
     if '_attachments' in doc:
-        doc['_attachments'] = self.encode_attachments(doc['_attachments'])
+        doc['_attachments'] = encode_attachments(doc['_attachments'])
     docid = escape_docid(doc['_id'])
     json_doc = json.dumps(doc).encode("utf-8")
     headers =  {
-        "Accept": "application/json",
         "Content-Type": "application/json",
         "Content-Length": str(len(json_doc))
     }
@@ -78,7 +82,7 @@ def save_doc(dbstring, doc):
     resp = make_request("%s/%s" % (dbstring, docid), "PUT", 
                 body=json_doc, headers=headers)
     parse_resp(resp)
-    res = resp.read()
+    res = json.loads(resp.read())
     doc.update({ '_id': res['id'], '_rev': res['rev']})
     
  
@@ -143,7 +147,7 @@ def fetch_attachment(dbstring, id_or_doc, name):
   
     docid = escape_docid(docid)
     name = url_quote(name, safe="")
-    resp = make_request("%s/%s/%s", (dbstring, docid, name), "GET")
+    resp = make_request("%s/%s/%s" % (dbstring, docid, name), "GET")
     parse_resp(resp)
     return resp
 
@@ -158,7 +162,7 @@ def delete_attachment(dbstring, doc, name):
     """
     docid = escape_docid(doc['_id'])
     name = url_quote(name, safe="")
-    resp = make_request("%s/%s/%s?rev=%s", (dbstring, docid, name, doc['_rev']), "DELETE")
+    resp = make_request("%s/%s/%s?rev=%s" % (dbstring, docid, name, doc['_rev']), "DELETE")
     parse_resp(resp)
     res = resp.read()
     if res['ok']:
@@ -168,18 +172,19 @@ def delete_attachment(dbstring, doc, name):
 
 
 def parse_resp(resp):
-    status_code = resp.status
+    status_code = int(resp.status)
     if status_code >= 400:
+        data = resp.read()
         if status_code == 404:
-            raise ResourceNotFound("%s don't exist on %s" % (docid, dbstring))
+            raise ResourceNotFound(data)
         elif status_code == 401 or status_code == 403:
-            raise Unauthorized("Your not authorized to get %s on %s", (docid, dbstring))
+            raise Unauthorized(data)
         elif status_code == 409:
-            raise ResourceConflict(resp.read())
+            raise ResourceConflict(data)
         elif status_code == 412:
-            raise PreconditionFailed(resp.read())
+            raise PreconditionFailed(data)
         else:
-            raise RequestFailed("Error %s: %s" % (resp.status, resp.read()))
+            raise RequestFailed("Error %s: %s" % (resp.status, data))
 
 def make_request(url, method, body=None, headers=None):
     headers = headers or {}
@@ -199,16 +204,25 @@ def make_request(url, method, body=None, headers=None):
     elif isinstance(body, types.StringTypes):
         body = to_bytestring(body)
         size = len(body)
+      
+    if body is not None:
+        headers.setdefault('Content-Length', size)
         
-    headers.setdefault('Content-Length', size)
+    headers.setdefault('Accept', 'application/json')
+    headers.setdefault('User-Agent', USER_AGENT)
     headers = _normalize_headers(headers)
     
     
     http = _get_connection(uri.netloc)
     for i in range(2):
         try:
+            if http._HTTPConnection__response:
+                http._HTTPConnection__response.read()
             # init connection
-            http.putrequest(method, uri.geturl())
+            if http.host != uri.hostname:
+                http.putrequest(method, uri.geturl())
+            else:
+                http.putrequest(method, _relative_uri(uri))
          
             # Send the HTTP headers.
             for header_name, value in headers.iteritems():
@@ -234,7 +248,6 @@ def make_request(url, method, body=None, headers=None):
         except socket.gaierror:
             http.close()
             raise RequestFailed("Unable to find the server at %s" % http.host)
-        except (socket.error, httplib.HTTPException):
             http.close()
             if i == 0:
                 continue
@@ -248,6 +261,7 @@ def make_request(url, method, body=None, headers=None):
                 continue
             else:
                 raise
+        break
     return response
     
     
@@ -256,17 +270,27 @@ NORMALIZE_SPACE = re.compile(r'(?:\r\n)?[ \t]+')
 def _normalize_headers(headers):
     return dict([ (key.lower(), NORMALIZE_SPACE.sub(str(value), ' ').strip())  for (key, value) in headers.iteritems()])
 
+def _relative_uri(uri):
+    if not uri.path:
+        path = "/"
+    else:
+        path = uri.path
+    if uri.query:
+        return path + "?" + uri.query
+    return path
+
+
 def _get_connection(netloc):
     if netloc in http_pool:
-        http = [netloc]
+        http = http_pool[netloc]
         if http._HTTPConnection__response:
             http._HTTPConnection__response.read()
     else:
-        http = httplib.HTTPConnection(netloc])
+        http = httplib.HTTPConnection(netloc)
         http_pool[netloc] = http
     return http
         
-        
+       
 def _send_body_part(data, connection):
     if isinstance(data, types.StringTypes):
         data = StringIO.StringIO(to_bytestring(data))
