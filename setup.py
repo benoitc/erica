@@ -24,6 +24,11 @@ for dir, dirs, files in os.walk('vendor'):
     data_files.append((os.path.join('couchapp', dir), 
         [os.path.join(dir, file_) for file_ in files]))
     
+install_requires = []
+try:
+    import json
+except ImportError:
+    install_requires = ['simplejson']
 
 setup(
     name = 'Couchapp',
@@ -48,7 +53,8 @@ setup(
     },
     data_files = data_files,
     include_package_data = True,
-
+    
+    install_requires = install_requires,
     entry_points = {
         'console_scripts': [
             'couchapp = couchapp.bin.couchapp_cli:main',
