@@ -15,3 +15,18 @@ class MacroError(Exception):
     
 class VendorError(Exception):
     """ vendor error """
+    
+class ResourceNotFound(Exception):
+    """ raised when a resource not found on CouchDB"""
+   
+class ResourceConflict(Exception):
+    """ raised when a conflict occured"""
+
+class PreconditionFailed(Exception):
+    """ precondition failed error """    
+    
+class RequestFailed(Exception): 
+    """ raised when an http error occurs"""
+    
+class Unauthorized(Exception):
+    """ raised when not authorized to access to CouchDB"""

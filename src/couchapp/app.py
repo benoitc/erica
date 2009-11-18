@@ -25,7 +25,6 @@ from couchapp.macros import package_views, package_shows
 from couchapp.utils import *
 
 
-
 class CouchApp(object):
     """ app object. used to push/clone/init/create a couchapp """
     
