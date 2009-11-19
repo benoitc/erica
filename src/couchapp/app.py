@@ -630,7 +630,7 @@ class CouchApp(object):
             current_dir = self.app_dir
         for name in self.ui.listdir(current_dir):
             current_path = self.ui.rjoin(current_dir, name)
-            rel_path = self.ui.relpath(current_path, self.app_dir)
+            rel_path = self.replace_backslash_in_filepath(self.ui.relpath(current_path, self.app_dir))
             if name.startswith("."):
                 continue
             elif depth == 0 and name.startswith('_'):
@@ -702,7 +702,11 @@ class CouchApp(object):
                     manifest.append(rel_path)
                     fields[name] = content
         return fields
-        
+    
+    def replace_backslash_in_filepath(self, file_name):
+        re_backslash = re.compile('\\\\')
+        return re_backslash.sub('/',file_name)
+    		    
     def vendor_attachments(self, design_doc,  docid):
         vendor_dir = self.ui.rjoin(self.app_dir, 'vendor')
         if not self.ui.isdir(vendor_dir):
@@ -733,11 +737,11 @@ class CouchApp(object):
                         continue
                     else:
                         file_path = self.ui.rjoin(root, filename) 
-                        name = self.ui.relpath(file_path, attach_dir)
+                        name = self.replace_backslash_in_filepath(self.ui.relpath(file_path, attach_dir))
                         if vendor is not None:
-                            name = self.ui.rjoin('vendor', vendor, name)
+                            name = self.replace_backslash_in_filepath(self.ui.rjoin('vendor', vendor, name))
                         _signatures[name] = self.ui.sign(file_path)
-                        _attachments[name] = file_path
+                        _attachments[name] = self.replace_backslash_in_filepath(file_path)
                         _length[name] = int(os.path.getsize(file_path))
         
         for prop in ('couchapp', '_attachments'):
