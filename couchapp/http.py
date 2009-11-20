@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2009 Benoit Chesneau <benoitc@e-engura.org>
+# Copyright 2008,2009 Benoit Chesneau <benoitc@e-engura.org>
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ def is_doc(dbstring, docid):
     return True
     
 
-def get_doc(dbstring, docid):
+def get_doc(dbstring, docid, **params):
     """ get document with docid
     
     @param dbstring: str, db url
@@ -64,7 +64,10 @@ def get_doc(dbstring, docid):
     
     @return: dict, the document dict
     """
-    resp = make_request("%s/%s" % (dbstring, escape_docid(docid)), "GET")
+    params = encode_params(params)
+    uri = "%s/%s?%s" % (dbstring, escape_docid(docid), 
+                        "".join(["%s=%s" % (url_quote(k), url_quote(v)) for k,v in params.items()])) 
+    resp = make_request(uri, "GET")
     parse_resp(resp)
     data = resp.read()
     return json.loads(data)
@@ -90,6 +93,42 @@ def save_doc(dbstring, doc, encode=False):
     parse_resp(resp)
     res = json.loads(resp.read())
     doc.update({ '_id': res['id'], '_rev': res['rev']})
+    
+def save_docs(dbstring, docs):
+    """ bulk save. Modify Multiple Documents With a Single Request
+    @param dbstring: db url
+    @param docs: list of docs
+  
+    .. seealso:: `HTTP Bulk Document API <http://wiki.apache.org/couchdb/HTTP_Bulk_Document_API>`
+    
+    """
+    # we definitely need a list here, not any iterable, or groupby will fail
+    docs = list(docs)
+    
+    for doc in docs:
+        doc['_id'] = escape_docid(doc['_id'])
+        
+    payload = { "docs": docs }
+    json_docs = json.dumps(docs).encode("utf-8")
+    headers =  {
+        "Content-Type": "application/json",
+        "Content-Length": str(len(json_docs))
+    }
+    # update docs
+    resp = make_request("%s/_bulk_docs" % dbstring, "POST", 
+                body=json_docs, headers=headers)
+    parse_resp(resp)
+    results = json.loads(resp.read())
+       
+    errors = []
+    for i, res in enumerate(results):
+        if 'error' in res:
+            errors.append(res)
+        else: 
+            docs[i].update({'_id': res['id'], '_rev': res['rev']})
+    if errors:
+        raise BulkSaveError(errors)
+    
     
  
 def put_attachment(dbstring, doc, content, name=None, 
@@ -309,7 +348,17 @@ def _send_body_part(data, connection):
         binarydata = data.read(16384)
         if binarydata == '': break
         connection.send(binarydata)
-    
+        
+def encode_params(params):
+    """ encode parameters in json if needed """
+    _params = {}
+    if params:
+        for name, value in params.items():
+            if name in ('key', 'startkey', 'endkey') \
+                    or not isinstance(value, basestring):
+                value = json.dumps(value).encode('utf-8')
+            _params[name] = value
+    return _params    
     
 def escape_docid(docid):
     if docid.startswith('/'):

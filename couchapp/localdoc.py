@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2009 Benoit Chesneau <benoitc@e-engura.org>
+# Copyright 2008,2009 Benoit Chesneau <benoitc@e-engura.org>
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -25,16 +25,28 @@ try:
 except ImportError:
     import simplejson as json
     
+from couchapp.errors import *
 from couchapp.macros import *
 from couchapp.utils import relpath
 
 class LocalDoc(object):
     
-    def __init__(self, ui, docid, path):
+    def __init__(self, ui, path, create=False):
         self.ui = ui
-        self.docid = docid
         self.docdir = path
-        self._doc = {"_id": docid}
+        self.docid = self.get_id()
+        self._doc = {'_id': docid}
+        
+    def get_id(self):
+        """
+        if there is an _id file, docid is extracted from it,
+        else we take the current folder name.
+        """
+        idfile = os.path.join(self.path, '_id')
+        if os.path.exists(idfile):
+            docid = self.ui.read_file(idfile)
+            if docid: return docid
+        return os.path.split(self.path)
         
     def __repr__(self):
         return "<%s (%s/%s)>" % (self.__class__.__name__, self.docdir, self.docid)
@@ -42,13 +54,60 @@ class LocalDoc(object):
     def __str__(self):
         return json.dumps(self.doc())
         
-    def doc(self, with_attachments=True):
+    def create(self):
+        if not os.path.isdir(self.docdir) and self.ui.verbose:
+            self.ui.logger.error("%s directory doesn't exist." % self.app_dir)
+            
+        rcfile = os.path.join(self.docdir, '.couchapprc')
+        if not os.path.isfile(rcfile):
+            self.ui.write_json(rc_file, {})
+        elif self.ui.verbose:
+            raise AppError("CouchApp already initialized in %s." % self.app_dir)
+
+    def push(self, dburls, noatomic=False):
+        """Push a doc to a list of database `dburls`. If noatomic is true
+        each attachments will be sent one by one."""
+        
+        for dburl in dburls:
+            if noatomic:
+                doc = self.doc(docid, dburl, with_attachments=False)
+                save_doc(dburl, doc)
+                if 'couchapp' in olddoc:
+                    old_signatures = olddoc['couchapp'].get('signatures', {})
+                else:
+                    old_signarures = {}
+                
+                signatures = doc['couchapp'].get('signatures', {})
+                if old_signatures:
+                    for name, signature in old_signatures.items():
+                        cursign = signatures.get(name)
+                        if cursign is not None and cursign != signature:
+                            del_attachment(dburl, self.docid, name)
+                    
+                for name, filepath in self.attachments():
+                    if name not in old_signatures or old_signatures[name] != signatures[name]:
+                        push_attachment(dburl, doc, open(filepath, r), name=name)
+            else:
+                doc = self.doc()
+                try:
+                    olddoc = get_doc(dburl, self.docid)
+                    doc.update({'_rev', olddoc['_rev']})
+                except ResourceNotFound:
+                    pass
+                save_doc(dburl, doc)   
+            indexurl = self.index(dburl, doc.get('index'))
+            if indexurl:
+                self.ui.logger.info("Visit your CouchApp here:\n%s" % indexurl)
+                        
+    def doc(self, dburl=None, with_attachments=True):
         """ Function to reetrieve document object from
         document directory. If `with_attachments`is True
         attachments will be included and encoded"""
         
         manifest = []
         objects = {}
+        self._doc = {'_id': self.get_id()}
+        
         # get designdoc
         self._doc.update(self.dir_to_fields(self.docdir, manifest=manifest))
         
@@ -106,6 +165,14 @@ class LocalDoc(object):
             'objects': objects,
             'signatures': signatures
         })
+        
+        if dburl is not None:
+            try:
+                olddoc = get_doc(dburl, doc['_id'])
+                self._doc.update({'_rev', olddoc['_rev']})
+            except ResourceNotFound:
+                pass
+            
         return self._doc
                 
     def dir_to_fields(self, current_dir='', depth=0,
@@ -234,4 +301,11 @@ class LocalDoc(object):
                 attachdir = os.path.join(current_path, '_attachments')
                 if os.path.isdir(attach_dir):
                     _process_attachments(attach_dir, vendor=name)
+    
+    def index(self, dburl, index):
+        if index is not None:
+            return "%s/%s/%s/%s" % (db_url, '_design', self.docid, index)
+        return False
         
+def instance(ui, path, create):
+    return LocalDoc(ui, path, create)

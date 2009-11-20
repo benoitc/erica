@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2009 Benoit Chesneau <benoitc@e-engura.org>
+# Copyright 2008,2009  Benoit Chesneau <benoitc@e-engura.org>
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -106,76 +106,7 @@ class UI(object):
         else:
             raise AppError("Can't create a CouchApp in %s: default template not found." % (
                     app_dir))
-                    
-    def find_template_dir(self, directory=''):
-        import couchapp
-        default_locations = [
-                os.path.join(couchapp.__path__[0], 'templates', directory),
-                os.path.join(couchapp.__path__[0], '../../templates', directory)
-        ]
-        
-        if directory:
-            user_locations = []
-            for user_location in user_path():
-                user_locations.append(os.path.join(user_location, 'templates', directory))
-            default_locations = user_locations + default_locations
-
-        found = False
-        for location in default_locations:
-            template_dir = os.path.normpath(location)
-            if os.path.isdir(template_dir):
-                found = True
-                break
-        if found:
-            return template_dir
-        return False
-                   
-    def exists(self, path):
-        return os.path.exists(path)
-        
-    def isfile(self, fpath):
-        return os.path.isfile(fpath)
-        
-    def isdir(self, path):
-        return os.path.isdir(path)
-        
-    def makedirs(self, *args):
-        for a in args:
-            os.makedirs(a)
-            
-    def listdir(self, path):
-        return os.listdir(path)
-        
-    def walk(self, path, **kwargs):
-        return os.walk(path, **kwargs)
-            
-    def realpath(self, path):
-        return os.path.realpath(path)
-        
-    def dirname(self, path):
-        return os.path.dirname(path)
-    
-    def rjoin(self, *args):
-        return os.path.join(*args)
-
-    def unlink(self, path):
-        os.unlink(path)
-        
-    def makedirs(self, path, mode='0777'):
-        os.makedirs(path, mode)
-        
-    def rmdir(self, path):
-        os.rmdir(path)
-        
-    def makedirs(self, path):
-        os.makedirs(path)
-    
-    def copy(self, src, dest):
-        shutil.copy(src, dest)
-        
-    def relpath(self, *args):
-        return relpath(*args)
-    
+                       
     def split_path(self, path):
         parts = []
         while True:
@@ -192,9 +123,6 @@ class UI(object):
             for name in dirs:
                 self.rmdir(self.rjoin(root, name))
                 
-    def copytree(self, src, dest):
-        shutil.copytree(src, dest)
-        
     def execute(cmd):
         return popen3(cmd)
         
@@ -206,8 +134,18 @@ class UI(object):
         :return: string, md5 hexdigest
         """
         if self.isfile(fpath):
-            content = self.read(fpath, force_read=True)
-            return md5(to_bytestring(content)).hexdigest()
+            m = md5()
+            fp = open(fpath, 'rb')
+            try:
+                while 1:
+                    data = fp.read(8096)
+                    if not data: break
+                    m.update(data)
+            except IOError, msg:
+                sys.stderr.write('%s: I/O error: %s\n' % (fpath, msg))
+                return 1
+            fp.close()
+            return m.hexdigest()
         return ''
         
     def read(self, fname, utf8=True, force_read=False):
@@ -275,10 +213,10 @@ class UI(object):
         return data
         
        
-    def get_db(self, dbstring):
-        if not dbstring or not "/" in dbstring:
+    def get_dbs(self, dbstring=None):
+        if dbstring is None or not "/" in dbstring:
             env = self.conf.get('env', {})
-            if dbstring:
+            if dbstring is not None:
                 db_env = "%s%s" % (self.DEFAULT_SERVER_URI, dbstring)
                 if dbstring in env:
                     db_env = env[dbstring].get('db', db_env)

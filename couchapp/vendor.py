@@ -28,21 +28,21 @@ COUCHAPP_VENDOR_SCM = 'git'
 class Vendor(object):
     """ Vendor object to manage vendors in a couchapp """
     
-    def __init__(self, app_dir, ui):
+    def __init__(self, appdir, ui):
         """ Constructor of vendor object 
         
         :attr app_dir: string, path of app_dir
         """
-        vendor_dir = os.path.join(app_dir, "vendor")
-        if not os.path.isdir(vendor_dir):
-            os.makedirs(vendor_dir)
-        self.vendor_dir = vendor_dir
+        vendordir = os.path.join(appdir, "vendor")
+        if not os.path.isdir(vendordir):
+            os.makedirs(vendordir)
+        self.vendordir = vendordir
         self.ui = ui
         self._vendor_handlers = None
         
     def global_vendor_handlers(self):
         return {
-            'git': 'couchapp.vendor_handlers.git'
+            'git': 'couchapp.gitvendor'
         }
         
     def vendor_handlers(self):
@@ -71,9 +71,9 @@ class Vendor(object):
         """
         
         vendors = []
-        for name in self.ui.listdir(self.vendor_dir):
-            current_path = self.ui.rjoin(self.vendor_dir, name)
-            if self.ui.isdir(current_path):
+        for name in os.path.listdir(self.vendordir):
+            current_path = os.path.join(self.vendordir, name)
+            if os.path.isdir(current_path):
                 vendors.append(name)
         return vendors
         
@@ -116,45 +116,45 @@ class Vendor(object):
         installed = self.get_vendors()
                 
         handler = self.vendor_handlers()[scm]
-        handler['install'](self.ui, url, self.vendor_dir)
+        handler['install'](self.ui, url, self.vendordir)
                 
         # detect new vendor application and add url so we could update later
-        for name in self.ui.listdir(self.vendor_dir):
-            current_path = self.ui.rjoin(self.vendor_dir, name)
-            if self.ui.isdir(current_path) and name not in installed:
-                new_file = self.ui.rjoin(current_path, '.new')
-                if self.ui.isfile(new_file):
+        for name in os.path.listdir(self.vendor_dir):
+            current_path = os.path.join(self.vendor_dir, name)
+            if os.path.isdir(current_path) and name not in installed:
+                new_file = os.path.join(current_path, '.new')
+                if os.path.isfile(new_file):
                     new_url = self.ui.read(new_file).strip()
                     if new_url == url:
-                        mfile = self.ui.rjoin(current_path, 'metadata.json')
+                        mfile = os.path.join(current_path, 'metadata.json')
                         self.ui.write_json(mfile, {
                             "scm": scm,
                             "update_url": url
                         })
-                        self.ui.unlink(new_file)
+                        os.unlink(new_file)
                         return
                         
     def _update(self, name):
-        current_path = self.ui.rjoin(self.vendor_dir, name)
-        if self.ui.isdir(current_path):
-            mfile = self.ui.rjoin(current_path, 'metadata.json')
+        currentpath = os.path.join(self.vendordir, name)
+        if os.path.isdir(currentpath):
+            mfile = os.path.join(currentpath, 'metadata.json')
             metadata = self.ui.read_json(mfile)
             if not metadata and name == 'couchapp':
-                update_url = COUCHAPP_VENDOR_URL
+                updateurl = COUCHAPP_VENDOR_URL
                 scm = COUCHAPP_VENDOR_SCM
             elif metadata:
-                update_url = metadata['update_url']
+                updateurl = metadata['update_url']
                 scm = metadata['scm']
                 if not scm in self.vendor_handlers():
                     scm = False
             
-            if update_url and scm:
+            if updateurl and scm:
                 # for now we manage only internal handlers
                 handler = self.vendor_handlers()[scm]
                 if self.ui.verbose >= 1:
                     self.ui.logger.info("Updating %s from %s" % (
                         current_path, update_url)) 
-                handler['update'](self.ui, update_url, current_path, self.vendor_dir)         
+                handler['update'](self.ui, updateurl, currentpath, self.vendordir)         
     
     def update(self, name=None): 
         """
@@ -164,9 +164,9 @@ class Vendor(object):
         :attr verbose: boolean, False by default
         """
         multiple = isinstance(name, (list, tuple,))
-        for vendor_name in self.ui.listdir(self.vendor_dir):
+        for vendorname in os.path.listdir(self.vendordir):
             if (multiple and vendor_name in name) or name is None:
                 self._update(vendor_name)
-            elif name and vendor_name == name:
-                self._update(vendor_name)
+            elif name and vendorname == name:
+                self._update(vendorname)
                 break
