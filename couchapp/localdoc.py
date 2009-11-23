@@ -267,7 +267,6 @@ class LocalDoc(object):
     def _process_attachments(self, path, vendor=None):
         """ the function processing directory to yeld
         attachments. """
-        print "ici"
         if os.path.isdir(path):
             for root, dirs, files in os.walk(path):
                 for dirname in dirs:
@@ -293,7 +292,6 @@ class LocalDoc(object):
         attachments are processed later to allow us to send attachmenrs inline
         or one by one.
         """
-        print "là"
         # process main attachments
         attachdir = os.path.join(self.docdir, "_attachments")
         for attachment in self._process_attachments(attachdir):
