@@ -66,9 +66,18 @@ def get_doc(dbstring, docid, **params):
     
     @return: dict, the document dict
     """
-    params = encode_params(params)
-    uri = "%s/%s?%s" % (dbstring, escape_docid(docid), 
-                        "".join(["%s=%s" % (url_quote(k), url_quote(v)) for k,v in params.items()])) 
+    params_str = ""
+    if params:
+        params = encode_params(params)
+        params_str = "".join(["%s=%s" % (url_quote(k), url_quote(v)) \
+                            for k,v in params.items() \
+                            if v and v is not None])
+                            
+        if params_str: params_str = "?%s" % params_str
+    
+    uri = "%s/%s%s" % (dbstring, escape_docid(docid), params_str)
+    
+    print uri
     resp = make_request(uri, "GET")
     parse_resp(resp)
     data = resp.read()

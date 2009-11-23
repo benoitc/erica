@@ -136,7 +136,7 @@ def pushdocs(ui, source, dest, *args, **opts):
     return 0
     
 def clone(ui, source, *args, **opts):
-    if len(args) > 1:
+    if len(args) >= 1:
         dest = args[0]
     else:
         dest = "."

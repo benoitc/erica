@@ -14,6 +14,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import copy
+from hashlib import md5
 import os
 import os.path
 try:
@@ -22,6 +24,7 @@ except ImportError:
     import simplejson as json
     
 from couchapp.http import get_doc, fetch_attachment
+from couchapp.utils import to_bytestring
 import couchapp.generator as generator
 import couchapp.vendor as vendor
 import couchapp.localdoc as localdoc
@@ -37,16 +40,16 @@ def clone(ui, source, dest=None, rev=None):
     :attr design_doc: dict, the design doc retrieved from couchdb
     if something was wrong.
     """
-    
     try:
-        dburl, docid = docid.split('_design/')
+        dburl, docid = source.split('_design/')
     except ValueError:
         raise AppError("%s isn't a valid source" % source)
       
     if dest is None: dest = docid
+    
     path = os.path.normpath(os.path.join(os.getcwd(), dest))   
 
-    doc = get_doc(dburl, docid, rev=rev)
+    doc = get_doc(dburl, "_design/%s" % docid, rev=rev)
     docid = doc['_id']
         
     
@@ -75,7 +78,7 @@ def clone(ui, source, dest=None, rev=None):
             else:
                 parts = ui.split_path(filename)
                 fname = parts.pop()
-                v = design_doc
+                v = doc
                 while 1:
                     try:
                         for key in parts:
@@ -112,7 +115,7 @@ def clone(ui, source, dest=None, rev=None):
                     ui.write(filepath, content)
 
                     # remove the key from design doc
-                    temp = design_doc
+                    temp = doc
                     for key2 in parts:
                         if key2 == key:
                             if not temp[key2]:
@@ -127,7 +130,7 @@ def clone(ui, source, dest=None, rev=None):
         if key.startswith('_'): 
             continue
         elif key in ('couchapp'):
-            app_meta = copy.deepcopy(design_doc['couchapp'])
+            app_meta = copy.deepcopy(doc['couchapp'])
             if 'signatures' in app_meta:
                 del app_meta['signatures']
             if 'manifest' in app_meta:
