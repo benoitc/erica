@@ -17,6 +17,7 @@
 import base64
 import httplib
 import mimetypes
+import os
 import urllib
 import urlparse
 import re
@@ -104,13 +105,13 @@ def save_docs(dbstring, docs):
     
     """
     # we definitely need a list here, not any iterable, or groupby will fail
-    docs = list(docs)
-    
+    docs = list(docs)    
     for doc in docs:
         doc['_id'] = escape_docid(doc['_id'])
         
+        
     payload = { "docs": docs }
-    json_docs = json.dumps(docs).encode("utf-8")
+    json_docs = json.dumps(payload).encode("utf-8")
     headers =  {
         "Content-Type": "application/json",
         "Content-Length": str(len(json_docs))
@@ -172,7 +173,7 @@ def put_attachment(dbstring, doc, content, name=None,
                 "PUT", body=content, headers=headers)
 
     parse_resp(resp)
-    res = resp.read()
+    res = json.loads(resp.read())
     if res['ok']:
         doc.update({ '_rev': res['rev']})
     return res['ok']

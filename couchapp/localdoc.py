@@ -78,13 +78,14 @@ class LocalDoc(object):
         each attachments will be sent one by one."""
         
         for dburl in dburls:
+            self.olddoc = {}
             if noatomic:
                 doc = self.doc(dburl, with_attachments=False)
                 save_doc(dburl, doc)
-                if 'couchapp' in olddoc:
-                    old_signatures = olddoc['couchapp'].get('signatures', {})
+                if 'couchapp' in self.olddoc:
+                    old_signatures = self.olddoc['couchapp'].get('signatures', {})
                 else:
-                    old_signarures = {}
+                    old_signatures = {}
                 
                 signatures = doc['couchapp'].get('signatures', {})
                 if old_signatures:
@@ -92,10 +93,12 @@ class LocalDoc(object):
                         cursign = signatures.get(name)
                         if cursign is not None and cursign != signature:
                             del_attachment(dburl, self.docid, name)
-                    
+               
                 for name, filepath in self.attachments():
-                    if name not in old_signatures or old_signatures[name] != signatures[name]:
-                        push_attachment(dburl, doc, open(filepath, r), name=name)
+                    if name not in old_signatures and old_signatures.get(name) != signatures[name]:
+                        if self.ui.verbose >= 2:
+                            self.ui.logger.info("attach %s " % name)
+                        put_attachment(dburl, doc, open(filepath, "r"), name=name)
             else:
                 doc = self.doc()
                 try:
@@ -179,11 +182,11 @@ class LocalDoc(object):
         })
         
         
-        
+        self.olddoc = {}
         if dburl is not None:
             try:
-                olddoc = get_doc(dburl, doc['_id'])
-                self._doc.update({'_rev': olddoc['_rev']})
+                self.olddoc = get_doc(dburl, self._doc['_id'])
+                self._doc.update({'_rev': self.olddoc['_rev']})
             except ResourceNotFound:
                 pass
             

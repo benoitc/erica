@@ -57,36 +57,37 @@ def push(ui, path, *args, **opts):
 def pushapps(ui, source, dest, *args, **opts):
     export = opts.get('export', False)
     noatomic = opts.get('no_atomic', False)
-    dburls = self.ui.get_db(dest)
+    dburls = ui.get_dbs(dest)
     apps = []
     for d in os.listdir(source):
         appdir = os.path.join(source, d)
         if os.path.isdir(appdir) and os.path.isfile(os.path.join(appdir, '.couchapprc')):
-            doc = app.document(ui, appdir, True)
+            localdoc = app.document(ui, appdir)
             if export or not noatomic:
-                apps.append(doc)
+                apps.append(localdoc)
             else:
-                doc.push(dburls, True)
+                localdoc.push(dburls, True)
     if apps:
         if export:
             docs = []
-            docs.append([app.doc() for app in apps])
+            docs.append([localdoc.doc() for localdoc in apps])
             jsonobj = {'docs': docs}
             if opts.get('output') is not None:
-                self.ui.write_json(kwargs.get('output'), json.dumps(jsonobj))
+                ui.write_json(kwargs.get('output'), json.dumps(jsonobj))
             else:
                 print json.dumps(jsonobj)
         else:
             for dburl in dburls:
                 docs = []
-                docs.append([app.doc(dburl) for app in apps])
+                docs = [doc.doc(dburl) for doc in apps]
                 save_docs(dburl, docs)
+                
     return 0
   
 def pushdocs(ui, source, dest, *args, **opts):
     export = opts.get('export', False)
     noatomic = opts.get('no_atomic', False)
-    dburls = self.ui.get_db(dest)
+    dburls = ui.get_dbs(dest)
     docs = []
     for d in os.listdir(source):
         docdir = os.path.join(source, d)
@@ -94,7 +95,7 @@ def pushdocs(ui, source, dest, *args, **opts):
             continue
         elif os.path.isfile(docdir):
             if d.endswith(".json"):
-                doc = self.ui.read_json(docdir)
+                doc = ui.read_json(docdir)
                 docid, ext = os.path.splitext(d)
                 
                 doc.setdefault('_id', docid)
@@ -120,7 +121,7 @@ def pushdocs(ui, source, dest, *args, **opts):
                     docs1.append(doc)
             jsonobj = {'docs': docs}
             if opts.get('output') is not None:
-                self.ui.write_json(kwargs.get('output'), json.dumps(jsonobj))
+                ui.write_json(kwargs.get('output'), json.dumps(jsonobj))
             else:
                 print json.dumps(jsonobj)
         else:
