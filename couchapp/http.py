@@ -16,6 +16,7 @@
 
 import base64
 import httplib
+import mimetypes
 import urllib
 import urlparse
 import re
@@ -157,7 +158,7 @@ def put_attachment(dbstring, doc, content, name=None,
             raise InvalidAttachment('You should provid a valid attachment name')
     name = url_quote(name, safe="")
     if content_type is None:
-        content_type = ';'.join(filter(None, guess_type(name)))
+        content_type = ';'.join(filter(None, mimetypes.guess_type(name)))
 
     if content_type:
         headers['Content-Type'] = content_type

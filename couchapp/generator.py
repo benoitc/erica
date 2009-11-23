@@ -74,6 +74,12 @@ def generate_app(ui, path, template=None, create=False):
                     break
             
         copy_helper(appdir, t)
+    fid = os.path.join(appdir, '_id')
+    if not os.path.isfile(fid):
+        f = open(fid, 'wb')
+        f.write('_design/%s' % os.path.split(appdir)[1])
+        f.close()
+    
     if create:
         doc = localdoc.instance(ui, path, create=True)
 

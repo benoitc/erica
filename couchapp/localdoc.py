@@ -15,6 +15,7 @@
 #  limitations under the License.
 
 import base64
+import mimetypes
 import os
 import os.path
 import re
@@ -49,8 +50,11 @@ class LocalDoc(object):
         """
         idfile = os.path.join(self.docdir, '_id')
         if os.path.exists(idfile):
-            docid = self.ui.read_file(idfile)
+            docid = self.ui.read(idfile)
             if docid: return docid
+        elif os.path.exists(os.path.join(self.docdir, '.couchapprc')):
+            return "_design/%s" % os.path.split(self.docdir)[1]
+        
         return os.path.split(self.docdir)[1]
         
     def __repr__(self):
@@ -75,7 +79,7 @@ class LocalDoc(object):
         
         for dburl in dburls:
             if noatomic:
-                doc = self.doc(docid, dburl, with_attachments=False)
+                doc = self.doc(dburl, with_attachments=False)
                 save_doc(dburl, doc)
                 if 'couchapp' in olddoc:
                     old_signatures = olddoc['couchapp'].get('signatures', {})
@@ -143,7 +147,7 @@ class LocalDoc(object):
                             name = name[:-1]
                         dmanifest[name] = i
             
-                for vname, value in design_doc['views'].iteritems():
+                for vname, value in self._doc['views'].iteritems():
                     if value and isinstance(value, dict):
                         views[vname] = value
                     else:
@@ -163,9 +167,10 @@ class LocalDoc(object):
                 re_sp = re.compile('\s')
                 attachments[name]['data'] = re_sp.sub('', base64.b64encode(f.read()))
                 f.close()
+                attachments[name]['content_type'] = ';'.join(filter(None, mimetypes.guess_type(name)))
         
         if with_attachments: 
-            self._doc['attachments'] = attachments
+            self._doc['_attachments'] = attachments
             
         self._doc['couchapp'].update({
             'manifest': manifest,
@@ -302,17 +307,19 @@ class LocalDoc(object):
                 self.ui.logger.info("%s don't exist" % vendordir)
             return
             
-        for name in os.listdir(vendor_dir):
-            current_path = os.path.join(vendor_dir, name)
+        for name in os.listdir(vendordir):
+            current_path = os.path.join(vendordir, name)
             if os.path.isdir(current_path):
                 attachdir = os.path.join(current_path, '_attachments')
                 if os.path.isdir(attachdir):
-                    for attachment in self._process_attachments(attach_dir, vendor=name):
+                    for attachment in self._process_attachments(attachdir, vendor=name):
                         yield attachment
     
     def index(self, dburl, index):
         if index is not None:
-            return "%s/%s/%s/%s" % (db_url, '_design', self.docid, index)
+            return "%s/%s/%s" % (dburl, self.docid, index)
+        else:
+            return  "%s/%s/index.html" % (dburl, self.docid)
         return False
         
 def instance(ui, path, create):
