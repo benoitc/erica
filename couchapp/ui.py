@@ -50,8 +50,7 @@ class UI(object):
     
     DEFAULT_SERVER_URI = 'http://127.0.0.1:5984/'
     
-    # TODO: add possibility to load global conf
-    def __init__(self, verbose=False, logging_handler=None):
+    def __init__(self, verbose=1, logging_handler=None):
         # load user conf
         self.conf = {}
         self.verbose = verbose
@@ -63,6 +62,9 @@ class UI(object):
         self.logger.setLevel(logging.INFO)
         self.logger.addHandler(logging_handler)
         
+    def set_verbose(self, level):
+        self.verbose = level
+        
     def readconfig(self, fn):
         """ Get current configuration of couchapp.
         """
@@ -71,7 +73,7 @@ class UI(object):
             fn = [fn]
         
         for f in fn:
-            if self.isfile(f):
+            if os.path.isfile(f):
                 conf.update(self.read_json(f, use_environment=True))
         self.conf = conf
 
@@ -79,34 +81,7 @@ class UI(object):
         conf_files = [os.path.join(app_dir, 'couchapp.json'),
             os.path.join(app_dir, '.couchapprc')]
         self.readconfig(conf_files)
-        
-    def copy_helper(self, app_dir, directory):
-        """ copy helper used to generate an app"""
-        template_dir = self.find_template_dir(directory)
-        if template_dir:
-            if directory == "vendor":
-                app_dir = os.path.join(app_dir, directory)
-                try:
-                    os.makedirs(app_dir)
-                except:
-                    pass
-            
-            for root, dirs, files in os.walk(template_dir):
-                rel = relpath(root, template_dir)
-                if rel == ".":
-                    rel = ""
-                target_path = os.path.join(app_dir, rel)
-                for d in dirs:
-                    try:
-                        os.makedirs(os.path.join(target_path, d))
-                    except:
-                        continue
-                for f in files:
-                    shutil.copy2(os.path.join(root, f), os.path.join(target_path, f))                
-        else:
-            raise AppError("Can't create a CouchApp in %s: default template not found." % (
-                    app_dir))
-                       
+                        
     def split_path(self, path):
         parts = []
         while True:
@@ -133,7 +108,7 @@ class UI(object):
 
         :return: string, md5 hexdigest
         """
-        if self.isfile(fpath):
+        if os.path.isfile(fpath):
             m = md5()
             fp = open(fpath, 'rb')
             try:

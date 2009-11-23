@@ -37,3 +37,6 @@ class RequestFailed(Exception):
     
 class Unauthorized(Exception):
     """ raised when not authorized to access to CouchDB"""
+
+class CommandLineError(Exception):
+    """ error when a bad command line is passed"""

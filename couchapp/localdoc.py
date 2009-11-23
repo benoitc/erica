@@ -25,6 +25,7 @@ try:
 except ImportError:
     import simplejson as json
     
+from couchapp.http import *
 from couchapp.errors import *
 from couchapp.macros import *
 from couchapp.utils import relpath
@@ -35,18 +36,22 @@ class LocalDoc(object):
         self.ui = ui
         self.docdir = path
         self.docid = self.get_id()
-        self._doc = {'_id': docid}
+        self._doc = {'_id': self.docid}
+        if create: 
+            self.create()
+            
+        print self.docid
         
     def get_id(self):
         """
         if there is an _id file, docid is extracted from it,
         else we take the current folder name.
         """
-        idfile = os.path.join(self.path, '_id')
+        idfile = os.path.join(self.docdir, '_id')
         if os.path.exists(idfile):
             docid = self.ui.read_file(idfile)
             if docid: return docid
-        return os.path.split(self.path)
+        return os.path.split(self.docdir)[1]
         
     def __repr__(self):
         return "<%s (%s/%s)>" % (self.__class__.__name__, self.docdir, self.docid)
@@ -56,13 +61,13 @@ class LocalDoc(object):
         
     def create(self):
         if not os.path.isdir(self.docdir) and self.ui.verbose:
-            self.ui.logger.error("%s directory doesn't exist." % self.app_dir)
+            self.ui.logger.error("%s directory doesn't exist." % self.docdir)
             
         rcfile = os.path.join(self.docdir, '.couchapprc')
         if not os.path.isfile(rcfile):
-            self.ui.write_json(rc_file, {})
+            self.ui.write_json(rcfile, {})
         elif self.ui.verbose:
-            raise AppError("CouchApp already initialized in %s." % self.app_dir)
+            raise AppError("CouchApp already initialized in %s." % self.docdir)
 
     def push(self, dburls, noatomic=False):
         """Push a doc to a list of database `dburls`. If noatomic is true
@@ -91,7 +96,7 @@ class LocalDoc(object):
                 doc = self.doc()
                 try:
                     olddoc = get_doc(dburl, self.docid)
-                    doc.update({'_rev', olddoc['_rev']})
+                    doc.update({'_rev': olddoc['_rev']})
                 except ResourceNotFound:
                     pass
                 save_doc(dburl, doc)   
@@ -123,7 +128,7 @@ class LocalDoc(object):
             if 'validate_doc_update' in self._doc:
                 tmp_dict = dict(validate_doc_update=self._doc["validate_doc_update"])
                 package_shows( self._doc, tmp_dict, self.docdir, objects, self.ui)
-                 self._doc.update(tmp_dict)
+                self._doc.update(tmp_dict)
 
             if 'views' in  self._doc:
                 # clean views
@@ -143,16 +148,18 @@ class LocalDoc(object):
                         views[vname] = value
                     else:
                         del manifest[dmanifest["views/%s" % vname]]
-                 self._doc['views'] = views
-                 package_views(self._doc,self._doc["views"], self.docdir, objects, self.ui)
+                self._doc['views'] = views
+                package_views(self._doc,self._doc["views"], self.docdir, objects, self.ui)
         
         signatures = {}
         attachments = {}
         for name, filepath in self.attachments():
             signatures[name] = self.ui.sign(filepath)
             if with_attachments:
+                if self.ui.verbose >= 2:
+                    self.ui.logger.info("attach %s " % name)
                 attachments[name] = {}
-                f = open(filepath, rb)
+                f = open(filepath, "rb")
                 re_sp = re.compile('\s')
                 attachments[name]['data'] = re_sp.sub('', base64.b64encode(f.read()))
                 f.close()
@@ -169,7 +176,7 @@ class LocalDoc(object):
         if dburl is not None:
             try:
                 olddoc = get_doc(dburl, doc['_id'])
-                self._doc.update({'_rev', olddoc['_rev']})
+                self._doc.update({'_rev': olddoc['_rev']})
             except ResourceNotFound:
                 pass
             
@@ -182,9 +189,9 @@ class LocalDoc(object):
         fields={}
         if not current_dir:
             current_dir = self.docdir
-        for name in os.path.listdir(current_dir):
+        for name in os.listdir(current_dir):
             current_path = os.path.join(current_dir, name)
-            rel_path = relpath(current_path, self.app_dir)
+            rel_path = relpath(current_path, self.docdir)
             if name.startswith("."):
                 continue
             elif depth == 0 and name.startswith('_'):
@@ -219,7 +226,7 @@ class LocalDoc(object):
                     fields['couchapp'].update(content)
                 else:
                     fields['couchapp'] = content
-            elif self.ui.isdir(current_path):
+            elif os.path.isdir(current_path):
                 manifest.append('%s/' % rel_path)
                 fields[name] = self.dir_to_fields(current_path,
                         depth=depth+1, manifest=manifest)
@@ -260,6 +267,7 @@ class LocalDoc(object):
     def _process_attachments(self, path, vendor=None):
         """ the function processing directory to yeld
         attachments. """
+        print "ici"
         if os.path.isdir(path):
             for root, dirs, files in os.walk(path):
                 for dirname in dirs:
@@ -270,10 +278,10 @@ class LocalDoc(object):
                         if filename.startswith('.'):
                             continue
                         else:
-                            filepath = self.ui.rjoin(root, filename) 
+                            filepath = os.path.join(root, filename) 
                             name = relpath(filepath, path)
                             if vendor is not None:
-                                name = self.os.path.join('vendor', vendor, name)
+                                name = os.path.join('vendor', vendor, name)
                             yield (name, filepath)
                 
     def attachments(self):
@@ -285,22 +293,24 @@ class LocalDoc(object):
         attachments are processed later to allow us to send attachmenrs inline
         or one by one.
         """
-        
+        print "là"
         # process main attachments
         attachdir = os.path.join(self.docdir, "_attachments")
-        _process_attachments(attachdir)
+        for attachment in self._process_attachments(attachdir):
+            yield attachment
         vendordir = os.path.join(self.docdir, 'vendor')
-        if not os.path.isdir(vendor_dir):
+        if not os.path.isdir(vendordir):
             if self.ui.verbose >=2:
-                self.ui.logger.info("%s don't exist" % vendor_dir)
+                self.ui.logger.info("%s don't exist" % vendordir)
             return
             
-        for name in os.path.listdir(vendor_dir):
+        for name in os.listdir(vendor_dir):
             current_path = os.path.join(vendor_dir, name)
             if os.path.isdir(current_path):
                 attachdir = os.path.join(current_path, '_attachments')
-                if os.path.isdir(attach_dir):
-                    _process_attachments(attach_dir, vendor=name)
+                if os.path.isdir(attachdir):
+                    for attachment in self._process_attachments(attach_dir, vendor=name):
+                        yield attachment
     
     def index(self, dburl, index):
         if index is not None:

@@ -22,9 +22,9 @@ except ImportError:
     import simplejson as json
     
 from couchapp.http import get_doc, fetch_attachment
-import couchapp.generate as generate
+import couchapp.generator as generator
 import couchapp.vendor as vendor
-
+import couchapp.localdoc as localdoc
 
 def document(ui, path='', create=False):
     doc = localdoc.instance(ui, path, create=create)
@@ -217,16 +217,19 @@ def clone(ui, source, dest=None, rev=None):
                 if ui.verbose>=2:
                     ui.logger.info("clone attachment: %s" % filename)
                     
-def generate(ui, src, kind, name=None, template=None):
+def generate(ui, path, kind, name, **opts):
     if kind not in ["app", "view", "list", "show", 'filter', 'function', 'vendor']:
-        raise AppError("Can't generate %s in your couchapp" % kind)
+        raise AppError("Can't generate %s in your couchapp. generator is unknown" % kind)
+    
+    
     
     if kind == "app":
-        generate.generate_app(template=template)
+        generator.generate_app(ui, path, template=opts.get("template"), 
+                        create=opts.get('create', False))
     else:
         if name is None:
             raise AppError("Can't generate %s function, name is missing" % kind)
-        generate.generate_function(kind, name, template)
+        generator.generate_function(ui, path, kind, name, opts.get("template"))
         
         
 def vendor_install(ui, dest, source):
