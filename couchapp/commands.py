@@ -106,8 +106,8 @@ def pushdocs(ui, source, dest, *args, **opts):
                     for dburl in dburls:
                         save_doc(dburls, doc['_id'])
         else:
-            doc = app.document(ui, appdir, True)
-            if export or not atomic:
+            doc = app.document(ui, docdir)
+            if export or not noatomic:
                 docs.append(doc)
             else:
                 doc.push(dburls, True)
@@ -140,8 +140,6 @@ def clone(ui, source, *args, **opts):
         dest = args[0]
     else:
         dest = "."
-        
-    
     app.clone(ui, source, dest, rev=opts.get('rev'))
     return 0
 
