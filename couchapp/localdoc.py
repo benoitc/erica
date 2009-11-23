@@ -104,7 +104,7 @@ class LocalDoc(object):
                 except ResourceNotFound:
                     pass
                 save_doc(dburl, doc)   
-            indexurl = self.index(dburl, doc.get('index'))
+            indexurl = self.index(dburl, doc['couchapp'].get('index'))
             if indexurl:
                 self.ui.logger.info("Visit your CouchApp here:\n%s" % indexurl)
                         
@@ -177,6 +177,8 @@ class LocalDoc(object):
             'objects': objects,
             'signatures': signatures
         })
+        
+        
         
         if dburl is not None:
             try:
