@@ -16,6 +16,7 @@
 
 import os
 
+from couchapp.extensions import get_extensions
 from couchapp.http import save_docs
 from couchapp.errors import *
 
@@ -236,6 +237,7 @@ def usage(ui, *args, **opts):
         
     print ""
     print "list of commands:"
+    print "-----------------"
     print ""
     for cmd in sorted(table.keys()):
         opts = table[cmd]
@@ -243,10 +245,11 @@ def usage(ui, *args, **opts):
         for opt in opts[1]:
             print_option(opt)
         print ""
-    print "vendor handlers:"
-    print ""    
-    for (name, copyright, help) in ui.vendor.vendors:
-        help = help or ""
+    print "loaded extensions:"
+    print "------------------"
+    print ""
+    for name, mod in get_extensions():
+        name = getattr(mod, '__extension_name__', name)
         print "%s" % name
     print ""
     return 0

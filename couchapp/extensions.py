@@ -14,44 +14,81 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-class Extensions(object):
+
+_extensions = {}
+_extensions_order = []
+
+GLOBAL_EXTENSIONS = [
+    ['couchdb', 'couchapp.couchdbvendor'],
+    ['git', 'couchapp.gitvendor'],
+    ['hg', 'couchapp.hgvendor']
+]
+
+
+def get_extensions():
+    for name in _extensions_order:
+        yield name, _extensions[name]
+
+
+def importp(name, mod_name):
+    try:
+        mod = importm(mod_name)
+    except ImportError:
+        mod = importm(name)
+    return mod
     
-    __state__ = {
-        "_hooks": {},
-    }
+
+def importm(mod_name):
+    if mod_name.startswith('couchappext.'):
+        mod = __import__(mod_name, {}, {}, [''])
+    else:
+        try:
+            mod = __import__("couchappext.%s" % mod_name, {}, {}, [''])
+        except ImportError:
+            mod = __import__(mod_name, {}, {}, [''])
+    return mod
     
-    def __init__(self, app):
-        self.__dict__ = self.__state__
-        self.app = app
+def load_extension(ui, name, mod_name):
+    if mod_name is not None:
+        try:
+            mod = importm(mod_name)
+        except ImportError:
+            mod = importm(name)
+    else:
+        mod = importm(name)
         
-    def load(self):
-        if 'extensions' in self.app.ui.conf:
-            for name, options in self.app.ui.conf['extensions'].items():
-                if 'ext' in options:
-                    mod_name = options['ext']
-                else:
-                    mod_name = name
-                
-                mod = None
-                try:
-                    mod = __import__(mod_name, {}, {}, [''])
-                except ImportError:
-                    mod_name = "couchapp.couchapp_ext.%s" % mod_name
-                    try:
-                        mod = __import__(mod_name, {}, {}, [''])
-                    except ImportError, e:
-                        if self.app.ui.verbose:
-                            self.app.ui.logger.info("%s extension can't be loaded (%s)" % (name, str(e)))
-                        mod = None
-                    
-                if mod is not None and hasattr(mod, 'hook'):
-                    self._hooks[name] = getattr(mod, 'hook')
+    _extensions[name] = mod    
+    _extensions_order.append(name)
     
-    def notify(self, hooktype, ui, app_dir, **kwargs):
-        for fun in self._hooks.values():
-            try:
-                fun(ui, app_dir, hooktype, **kwargs)
-            except Exception, e:
-                self.app.ui.logger.warning(unicode(e))
+    # allow to add parameters to ui
+    uisetup = getattr(mod, 'uisetup', False)
+    if uisetup:
+        uisetup(ui)
+        
+    extsetup = getattr(mod, 'extsetup', False)   
+    if extsetup:
+        extsetup()
+    
+def load_extensions(ui):
+    if not ui.conf:
+        return 
+    
+    if 'extensions' in ui.conf:
+        _extensions = {}
+        for ext in ui.conf['extensions']:
+            name = None
+            mod_name = None
+            if isinstance(ext, basestring):
+                name = ext
+            elif isinstance(ext, list):
+                if len(ext) == 1:
+                    name = ext
+                else:
+                    name, mod_name = ext
+            else:
                 continue
-            
+            try:
+                load_extension(ui, name, mod_name)
+            except Exception, e:
+                if ui.verbose >= 1:
+                    ui.logger.error("failed to import %s extension: %s" % (name, str(e)))

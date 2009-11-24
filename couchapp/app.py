@@ -26,7 +26,7 @@ except ImportError:
 from couchapp.http import get_doc, fetch_attachment
 from couchapp.utils import to_bytestring
 import couchapp.generator as generator
-import couchapp.vendor as vendor
+from couchapp.vendor import Vendor
 import couchapp.localdoc as localdoc
 
 def document(ui, path='', create=False):
@@ -240,8 +240,10 @@ def generate(ui, path, kind, name, **opts):
         
         
 def vendor_install(ui, dest, source, *args, **opts):
-    ui.vendor.install(dest, source, *args, **opts)
+    vendor = Vendor(ui)
+    vendor.install(dest, source, *args, **opts)
     
 def vendor_update(ui, dest, name=None, *args, **opts):
-    ui.vendor.update(dest, name, *args, **opts)
+    vendor = Vendor(ui)
+    vendor.update(dest, name, *args, **opts)
     

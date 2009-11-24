@@ -14,6 +14,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+__extension_name__ = "Git vendor handler"
+__copyright__ = "Copyright 2008,2009  Benoit Chesneau <benoitc@e-engura.org>"
+__doc__ = "couchapp vendor install|update git://somerepo.git (use git+ssh:// for ssh repos)"
 
 from couchapp.errors import VendorError
 from couchapp.utils import locate_program, popen3
@@ -39,7 +42,5 @@ def fetch(ui, url, path, *args, **opts):
         raise VendorError(str(err))    
     return 
 
-name = "Git vendor handler"
-copyright = "Copyright 2008,2009  Benoit Chesneau <benoitc@e-engura.org>"
-help = "couchapp vendor install|update git://somerepo.git (use git+ssh:// for ssh repos)"
+
 scheme = ['git', 'git+ssh']

@@ -20,8 +20,9 @@ import os
 import sys
 
 import couchapp
-from couchapp.errors import *
 import couchapp.commands as commands
+from couchapp.errors import AppError
+from couchapp.extensions import get_extensions, load_extensions
 from couchapp.ui import UI
 
 
@@ -54,6 +55,10 @@ def _dispatch(ui, args):
     path = _findcouchapp(os.getcwd())
     if path is not None:
         ui.updateconfig(path)
+    
+    load_extensions(ui)
+    for name, mod in get_extensions():
+        print name
         
     cmd, globalopts, opts, args = _parse(ui, args)
         

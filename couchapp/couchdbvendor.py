@@ -14,6 +14,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+__extension_name__ = "CouchDB vendor handler"
+__copyright__ = "Copyright 2008,2009  Benoit Chesneau <benoitc@e-engura.org>"
+__doc__ = "couchapp vendor install|update couchdb://someurl/to/vendor (use couchdbs:// for https)"
+
+
 import os
 
 from couchapp.errors import VendorError
@@ -38,7 +43,4 @@ def fetch(ui, url, path, *args, **opts):
     except:
         pass
 
-name = "CouchDB vendor handler"
-copyright = "Copyright 2008,2009  Benoit Chesneau <benoitc@e-engura.org>"
-help = "couchapp vendor install|update couchdb://someurl/to/vendor (use couchdbs:// for https)"
 scheme = ['couchdb', 'couchdbs']

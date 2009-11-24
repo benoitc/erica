@@ -34,6 +34,7 @@ except ImportError:
 
 
 from couchapp import __version__
+from couchapp.extensions import GLOBAL_EXTENSIONS
 from couchapp.http import create_db
 from couchapp.errors import AppError
 from couchapp.utils import *
@@ -54,6 +55,8 @@ class UI(object):
     def __init__(self, verbose=1, logging_handler=None):
         # load user conf
         self.conf = {}
+        # init extensions
+        self.conf['extensions'] = GLOBAL_EXTENSIONS
         self.verbose = verbose
         self.readconfig(rcpath())
         # init logger
@@ -62,7 +65,6 @@ class UI(object):
         self.logger = logging.getLogger("couchapp")
         self.logger.setLevel(logging.INFO)
         self.logger.addHandler(logging_handler)
-        self.vendor = Vendor(self)
         
     def set_verbose(self, level):
         self.verbose = level
@@ -83,6 +85,7 @@ class UI(object):
         conf_files = [os.path.join(app_dir, 'couchapp.json'),
             os.path.join(app_dir, '.couchapprc')]
         self.readconfig(conf_files)
+        
                         
     def split_path(self, path):
         parts = []

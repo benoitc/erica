@@ -19,16 +19,11 @@ import sys
 import shutil
 import tempfile
 
+from couchapp.extensions import get_extensions
 from couchapp.errors import VendorError
 from couchapp.utils import *
 
-__all__ = ['GLOBAL_VENDOR_HANDLERS', 'Vendor']
-
-GLOBAL_VENDOR_HANDLERS = {
-    'couchdb': 'couchapp.couchdbvendor',
-    'git': 'couchapp.gitvendor',
-    'hg': 'couchapp.hgvendor'
-}
+__all__ = ['Vendor']
 
 def _tempdir():
     f, fname = tempfile.mkstemp()
@@ -47,13 +42,6 @@ class Vendor(object):
         self.ui = ui
         
         # load vendor handlers
-        vendor_handlers = GLOBAL_VENDOR_HANDLERS
-        if "vendor_handlers" in self.ui.conf:
-            try:
-                vendor_handlers.update(self.ui.conf['vendor_handlers'])
-            except ValueError:
-                pass
-        self.vendor_handlers = vendor_handlers
         scheme, vendors = self.load_vendors()
         self.scheme = scheme
         self.vendors = vendors
@@ -76,13 +64,13 @@ class Vendor(object):
         """
         scheme = {}
         vendors = []
-        for handler_name, mod_name in self.vendor_handlers.items():
-            mod = __import__(mod_name, {}, {}, [''])
+        for name, mod in get_extensions():
             if not hasattr(mod, 'fetch') or not hasattr(mod, 'scheme'):
                 continue
             else:
-                vendors.append((getattr(mod, 'name', handler_name), getattr(mod, 'copyright'), 
-                            getattr(mod, 'help')))
+                vendors.append((getattr(mod, '__extension_name__', name), 
+                                getattr(mod, '___copyright__', ""), 
+                                getattr(mod, '__doc__', "")))
                 
                 fetchcmd = getattr(mod, 'fetch')
                 for s in getattr(mod, 'scheme'):
