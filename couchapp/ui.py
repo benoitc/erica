@@ -188,11 +188,11 @@ class UI(object):
 
         try:
             data = json.loads(data)
-        except ValueError:
-            print >>sys.stderr, "Json is invalid, can't load %s" % fname
+        except:
+            if self.verbose >= 1:
+                self.logger.error("Json is invalid, can't load %s" % fname)
             return {}
         return data
-        
        
     def get_dbs(self, dbstring=None):
         if dbstring is None or not "/" in dbstring:

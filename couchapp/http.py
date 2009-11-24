@@ -66,6 +66,9 @@ def get_doc(dbstring, docid, **params):
     
     @return: dict, the document dict
     """
+    if docid.endswith("/"):
+        docid[:-1]
+
     params_str = ""
     if params:
         params = encode_params(params)
@@ -77,7 +80,7 @@ def get_doc(dbstring, docid, **params):
     
     uri = "%s/%s%s" % (dbstring, escape_docid(docid), params_str)
     
-    print uri
+
     resp = make_request(uri, "GET")
     parse_resp(resp)
     data = resp.read()

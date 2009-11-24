@@ -49,7 +49,10 @@ def clone(ui, source, dest=None, rev=None):
     
     path = os.path.normpath(os.path.join(os.getcwd(), dest))   
 
-    doc = get_doc(dburl, "_design/%s" % docid, rev=rev)
+    kwargs = {}
+    if rev is not None:
+        kwargs['rev']=rev
+    doc = get_doc(dburl, "_design/%s" % docid, **kwargs)
     docid = doc['_id']
         
     
@@ -93,6 +96,7 @@ def clone(ui, source, dest=None, rev=None):
                         content = v[last_key]
                     except KeyError:
                         break
+                        
 
                     if isinstance(content, basestring):
                         _ref = md5(to_bytestring(content)).hexdigest()

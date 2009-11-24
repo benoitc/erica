@@ -128,10 +128,10 @@ class Vendor(object):
                 continue
             else:
                 meta = self.ui.read_json(metaf)
-                os.unlink(metaf)
                 meta["fetch_uri"] = uri 
                 name = meta.get('name', name)
                 vendors.append((name, vpath, meta))
+                os.unlink(metaf)
                 
         if not vendors:
             self.ui.deltree(path)    

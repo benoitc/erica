@@ -40,8 +40,6 @@ class LocalDoc(object):
         self._doc = {'_id': self.docid}
         if create: 
             self.create()
-            
-        print self.docid
         
     def get_id(self):
         """
@@ -242,26 +240,28 @@ class LocalDoc(object):
                         depth=depth+1, manifest=manifest)
             else:
                 if self.ui.verbose >= 2:
-                    self.ui.logger.info("push %s" % rel_path)               
-                content = ''
-                try:
-                    content = self.ui.read(current_path)
-                except UnicodeDecodeError, e:
-                    self.ui.logger.error("%s isn't encoded in utf8" % current_path)
-                    content = self.ui.read(current_path, utf8=False)
-                    try:
-                        content.encode('utf-8')
-                    except UnicodeError, e:
-                        self.ui.logger.error("plan B didn't work, %s is a binary" % current_path)
-                        self.ui.logger.error("use plan C: encode to base64")   
-                        content = "base64-encoded;%s" % base64.b64encode(content)
-                        
+                    self.ui.logger.info("push %s" % rel_path)
+                  
+                content = ''  
                 if name.endswith('.json'):
                     try:
-                        content = json.dumps(content)
+                        content = self.ui.read_json(current_path)
                     except ValueError:
                         if self.ui.verbose >= 2:
-                            self.ui.logger.error("Json invalid in %s" % current_path)
+                            self.ui.logger.error("Json invalid in %s" % current_path)           
+                else:
+                    try:
+                        content = self.ui.read(current_path)
+                    except UnicodeDecodeError, e:
+                        self.ui.logger.error("%s isn't encoded in utf8" % current_path)
+                        content = self.ui.read(current_path, utf8=False)
+                        try:
+                            content.encode('utf-8')
+                        except UnicodeError, e:
+                            self.ui.logger.error("plan B didn't work, %s is a binary" % current_path)
+                            self.ui.logger.error("use plan C: encode to base64")   
+                            content = "base64-encoded;%s" % base64.b64encode(content)
+
                 
                 # remove extension
                 name, ext = os.path.splitext(name)
