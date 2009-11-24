@@ -32,9 +32,13 @@ def init(ui, path, *args, **opts):
     app.document(ui, dest, True)
 
 def push(ui, path, *args, **opts):
+    export = opts.get('export', False)
     if len(args) < 2:
         doc_path = path
-        dest = args[0]
+        if args:
+            dest = args[0]
+        elif not export:
+            raise AppError("db url is missing")
     else:
         doc_path = os.path.normpath(os.path.join(os.getcwd(), args[0]))
         dest = args[1]
@@ -42,10 +46,12 @@ def push(ui, path, *args, **opts):
         raise AppError("You aren't in a couchapp.")
     
     localdoc = app.document(ui, doc_path, False)
-    if opts.get('export', False):
-        if opts.get('output') is not None:
-            ui.write_json(kwargs.get('output'), str(localdoc))
-        return str(localdoc)
+    if export:
+        if opts.get('output'):
+            ui.write_json(opts.get('output'), str(localdoc))
+        else:
+            print str(localdoc)
+        return 0
     
     dburls = ui.get_dbs(dest)
     localdoc.push(dburls, opts.get('no_atomic', False))
@@ -73,9 +79,10 @@ def pushapps(ui, source, dest, *args, **opts):
             docs.append([localdoc.doc() for localdoc in apps])
             jsonobj = {'docs': docs}
             if opts.get('output') is not None:
-                ui.write_json(kwargs.get('output'), json.dumps(jsonobj))
+                ui.write_json(opts.get('output'), json.dumps(jsonobj))
             else:
                 print json.dumps(jsonobj)
+            return 0
         else:
             for dburl in dburls:
                 docs = []
@@ -121,7 +128,7 @@ def pushdocs(ui, source, dest, *args, **opts):
                     docs1.append(doc)
             jsonobj = {'docs': docs}
             if opts.get('output') is not None:
-                ui.write_json(kwargs.get('output'), json.dumps(jsonobj))
+                ui.write_json(opts.get('output'), json.dumps(jsonobj))
             else:
                 print json.dumps(jsonobj)
         else:
