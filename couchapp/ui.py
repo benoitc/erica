@@ -37,6 +37,7 @@ from couchapp import __version__
 from couchapp.http import create_db
 from couchapp.errors import AppError
 from couchapp.utils import *
+from couchapp.vendor import Vendor
 
 USER_AGENT = 'couchapp/%s' % __version__
 
@@ -61,6 +62,7 @@ class UI(object):
         self.logger = logging.getLogger("couchapp")
         self.logger.setLevel(logging.INFO)
         self.logger.addHandler(logging_handler)
+        self.vendor = Vendor(self)
         
     def set_verbose(self, level):
         self.verbose = level

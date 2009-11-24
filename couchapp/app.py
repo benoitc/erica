@@ -235,12 +235,9 @@ def generate(ui, path, kind, name, **opts):
         generator.generate_function(ui, path, kind, name, opts.get("template"))
         
         
-def vendor_install(ui, dest, source):
-    v = Vendor(ui, dest)
-    v.install(source)
+def vendor_install(ui, dest, source, *args, **opts):
+    ui.vendor.install(dest, source, *args, **opts)
     
-    
-def vendor_update(ui, dest, name=None, *args):
-    v = Vendor(ui, dest)
-    v.update(ui, name)
+def vendor_update(ui, dest, name=None, *args, **opts):
+    ui.vendor.update(dest, name, *args, **opts)
     

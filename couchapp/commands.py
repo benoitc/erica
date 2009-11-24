@@ -185,25 +185,28 @@ def vendor(ui, path, *args, **opts):
         if len(args) < 1:
             raise AppError("missing source")
         if len(args) == 1:
-            souce = args[0]
+            souce = args.pop(0)
             
-        elif len(args) >= 1:
-            dest = args[0]
-            source = args[1]
+        elif len(args) > 1:
+            dest = args.pop(0)
+            source = args.pop(1)
         
         if dest is None:
             raise AppError("You aren't in a couchapp.")
-        app.vendor_install(ui, dest, source)
+        dest = os.path.normpath(os.path.join(os.getcwd(), dest))
+        app.vendor_install(ui, dest, source, *args, **opts)
     else:
         vendorname = None
         if len(args) == 1:
-            vendorname=args[0]
+            vendorname=args.pop(0)
         elif len(args) >= 2:
-            dest = args[0]
-            vendorname=args[0]
+            dest = args.pop(0)
+            vendorname=args.pop(1)
         if dest is None:
             raise AppError("You aren't in a couchapp.")
-        app.vendor_update(ui, dest, vendorname)
+            
+        dest = os.path.normpath(os.path.join(os.getcwd(), dest))
+        app.vendor_update(ui, dest, vendorname, *args, **opts)
     return 0
    
 def version(ui, *args, **opts):
@@ -233,11 +236,18 @@ def usage(ui, *args, **opts):
     print ""
     print "list of commands:"
     print ""
-    for cmd, opts in table.items():
+    for cmd in sorted(table.keys()):
+        opts = table[cmd]
         print "%s\t %s" % (cmd, opts[2])
         for opt in opts[1]:
             print_option(opt)
         print ""
+    print "vendor handlers:"
+    print ""    
+    for (name, copyright, help) in ui.vendor.vendors:
+        help = help or ""
+        print "%s" % name
+    print ""
     return 0
 
 def print_option(opt):
@@ -262,8 +272,6 @@ pushopts = [
     ('', 'export', False, "don't do push, just export doc to stdout"),
     ('', 'output', '', "if export is selected, output to the file")
 ]
-    
-    
     
 table = {
     "init": 
@@ -292,8 +300,8 @@ table = {
         "[OPTION]... [app|view,list,show,filter,function,vendor] [COUCHAPPDIR] NAME"),
     "vendor":
         (vendor,
-        [],
-        "[OPTION]... install|update [COUCHAPPDIR] SOURCE"),
+        [("f", 'force', False, "force install or update")],
+        "[OPTION]...[-f] install|update [COUCHAPPDIR] SOURCE"),
     "help":
         (usage, [], ""),
     "version":
