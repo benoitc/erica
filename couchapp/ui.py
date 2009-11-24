@@ -94,11 +94,15 @@ class UI(object):
         return parts
         
     def deltree(self, path):
-        for root, dirs, files in self.walk(path, topdown=False):
+        for root, dirs, files in os.walk(path, topdown=False):
             for name in files:
-                self.unlink(self.rjoin(root, name))
+                os.unlink(os.path.join(root, name))
             for name in dirs:
-                self.rmdir(self.rjoin(root, name))
+                os.rmdir(os.path.join(root, name))
+        try:
+            os.rmdir(path)
+        except:
+            pass
                 
     def execute(cmd):
         return popen3(cmd)

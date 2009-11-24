@@ -115,14 +115,14 @@ class Vendor(object):
         """ fetch a vendor from uri """
         
         # get fetch cmd
-        fetchfun = self.find_vendor(uri)  
+        fetchfun = self.find_handler(uri)  
         # execute fetch command
         path = _tempdir()
         fetchfun(self.ui, uri, path, *args, **opts)
         
         vendors = []
         for name in os.listdir(path):
-            vpath = os.path.join(path, p)
+            vpath = os.path.join(path, name)
             metaf = os.path.join(vpath, "metadata.json")
             if not os.path.isfile(metaf):
                 continue
@@ -130,6 +130,7 @@ class Vendor(object):
                 meta = self.ui.read_json(metaf)
                 os.unlink(metaf)
                 meta["fetch_uri"] = uri 
+                name = meta.get('name', name)
                 vendors.append((name, vpath, meta))
                 
         if not vendors:
@@ -148,23 +149,22 @@ class Vendor(object):
         
         new_vendors, temppath = self.fetch_vendor(uri, *args, **opts)
         for name, path, meta in new_vendors:
-            name = meta.get('name', name)
             dest = os.path.join(vendordir, name)
             metaf = os.path.join(dest, "metadata.json")
             if os.path.isdir(dest):
                 if should_force:
                     self.ui.deltree(dest)
-                    shutil.copy(path, dest)
+                    shutil.copytree(path, dest)
                     self.ui.write_json(metaf, meta)
                     if self.ui.verbose >= 1:
                         self.ui.logger.info("%s installed in vendors")
                 self.ui.logger.error("vendor: %s already installed" % name)
                 continue
             else:
-                shutil.copy(path, dest)
+                shutil.copytree(path, dest)
                 self.ui.write_json(metaf, meta)
                 if self.ui.verbose >= 1:
-                    self.ui.logger.info("%s installed in vendors")
+                    self.ui.logger.info("%s installed in vendors" % name)
         self.ui.deltree(temppath)
         return 0
     
@@ -189,10 +189,10 @@ class Vendor(object):
                     continue
                 else:
                     self.ui.deltree(dest)
-                    shutil.copy(vpath, dest)
+                    shutil.copytree(vpath, dest)
                     self.ui.write_json(metaf, vmeta)
                     if self.ui.verbose >= 1:
-                        self.ui.logger.info("%s updated in vendors" % name)
+                        self.ui.logger.info("%s updated in vendors" % vname)
                     break
 
             self.ui.deltree(temppath)
@@ -213,18 +213,18 @@ class Vendor(object):
                     else:
                         new_vendors, temppath = self.fetch_vendor(uri, *args, **opts)
                         for vname, vpath, vmeta in new_vendors:
-                            dest1 = os.path.join(vendordir, dest1)
+                            dest1 = os.path.join(vendordir, vname)
                             metaf1 =  os.path.join(dest1, "metadata.json")
-                            if os.path.isdir(dest1):
+                            if os.path.exists(dest1):
                                 self.ui.deltree(dest1)
-                                shutil.copy(vpath, dest1)
+                                shutil.copytree(vpath, dest1)
                                 self.ui.write_json(metaf1, vmeta)
                                 if self.ui.verbose >= 1:
                                     self.ui.logger.info("%s updated in vendors" % vname)
                                 updated.append(vname)
                             elif should_force: 
                                 #install forced
-                                shutil.copy(vpath, dest1)
+                                shutil.copytree(vpath, dest1)
                                 self.ui.write_json(metaf1, vmeta)
                                 if self.ui.verbose >= 1:
                                     self.ui.logger.info("%s installed in vendors" % vname)

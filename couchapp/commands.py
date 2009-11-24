@@ -180,12 +180,13 @@ def vendor(ui, path, *args, **opts):
     if len(args) < 1:
         raise AppError("missing command")
     dest = path
+    args = list(args)
     cmd = args.pop(0)
     if cmd == "install":
         if len(args) < 1:
             raise AppError("missing source")
         if len(args) == 1:
-            souce = args.pop(0)
+            source = args.pop(0)
             
         elif len(args) > 1:
             dest = args.pop(0)

@@ -56,8 +56,7 @@ def _dispatch(ui, args):
         ui.updateconfig(path)
         
     cmd, globalopts, opts, args = _parse(ui, args)
-    print cmd, globalopts, opts, args 
-    
+        
     if globalopts["help"]:
         del globalopts["help"]
         return commands.usage(ui, *args, **globalopts)
