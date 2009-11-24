@@ -19,6 +19,9 @@ from couchapp.errors import VendorError
 from couchapp.utils import locate_program, popen3
 
 def fetch(ui, url, path, *args, **opts):
+    if url.startswith("git+ssh://"):
+        url = url[9:]
+    
     """ return git cmd path """
     try:
         cmd = locate_program("git", raise_error=True)
