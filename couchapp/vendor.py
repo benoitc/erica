@@ -59,20 +59,16 @@ class Vendor(object):
         self.vendors = vendors
 
     def load_vendors(self):
-        """ associate vendor commands (install/update) to their scheme
-        each vendor should contain a scheme list and command table 
-        providing commands they handle. Only 2 commands for now:
-        "update" and "install". 
+        """ associate vendor  to their scheme
+        each vendor should contain a scheme list and a callable that should be named
+        fetch. 
         Scheme is anything before "://" .
         
         ex:
         
-            
-            cmdtable = {
-                "install": install,
-                "update": update
-            }
-
+            def fetch(ui, url, path, *args, **opts):
+                ...
+                
             scheme = ['git', 'git+ssh']
             
         See gitvendor module for more info.
