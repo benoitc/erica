@@ -31,7 +31,6 @@ def run():
     
     
 def dispatch(args):
-
     console = logging.StreamHandler()
     console.setLevel(logging.INFO)
     formatter = logging.Formatter('[%(levelname)s] %(message)s')
@@ -58,6 +57,10 @@ def _dispatch(ui, args):
     
     # load extensions
     load_extensions(ui)
+    # update commands
+    for name, mod in get_extensions():
+        cmdtable = getattr(mod, 'cmdtable', {})
+        commands.table.update(cmdtable)
         
     cmd, globalopts, opts, args = _parse(ui, args)
         

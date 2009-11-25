@@ -32,7 +32,6 @@ try:
 except ImportError:
     import simplejson as json
 
-
 from couchapp import __version__
 from couchapp.extensions import GLOBAL_EXTENSIONS
 from couchapp.http import create_db
@@ -65,6 +64,7 @@ class UI(object):
         self.logger = logging.getLogger("couchapp")
         self.logger.setLevel(logging.INFO)
         self.logger.addHandler(logging_handler)
+        self.hooks = []
         
     def set_verbose(self, level):
         self.verbose = level

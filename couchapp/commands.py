@@ -16,11 +16,17 @@
 
 import os
 
-from couchapp.extensions import get_extensions
+from couchapp.extensions import get_extensions, load_extensions
 from couchapp.http import save_docs
 from couchapp.errors import *
 
 import couchapp.app as app
+
+def _maybe_reload(ui, path, new_path):
+    if path is None:
+        # we reload extensions and updaye confing
+        ui.updateconfig(new_path)
+        load_extensions(ui)
 
 def init(ui, path, *args, **opts):
     if not args:
@@ -46,6 +52,8 @@ def push(ui, path, *args, **opts):
     if doc_path is None:
         raise AppError("You aren't in a couchapp.")
     
+    _maybe_reload(ui, path, doc_path)
+        
     localdoc = app.document(ui, doc_path, False)
     if export:
         if opts.get('output'):
@@ -175,6 +183,9 @@ def generate(ui, path, *args, **opts):
             raise AppError("You aren't in a couchapp.")
         
     app.generate(ui, dest, kind, name, **opts)
+    
+    _maybe_reload(ui, path, dest)
+        
     return 0
     
 def vendor(ui, path, *args, **opts):
@@ -195,7 +206,10 @@ def vendor(ui, path, *args, **opts):
         
         if dest is None:
             raise AppError("You aren't in a couchapp.")
+            
         dest = os.path.normpath(os.path.join(os.getcwd(), dest))
+        _maybe_reload(ui, path, dest)
+        
         app.vendor_install(ui, dest, source, *args, **opts)
     else:
         vendorname = None
