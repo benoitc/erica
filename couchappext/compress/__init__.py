@@ -14,22 +14,23 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+__extension_name__ = "Compress"
+
 import os
 import re
 
 from couchapp.utils import relpath
-from couchapp.couchapp_ext.compress import compress_css
+from couchappext.compress import compress_css
 
 class Compress(object):
     
-    def __init__(self, ui, app_dir):
+    def __init__(self, ui, path):
         self.ui = ui
-        self.app_dir = app_dir
+        self.app_dir = path
         self.attach_dir = self.ui.rjoin(app_dir, '_attachments')
         
     def is_hook(self):
-        hooks = self.ui.conf['hooks']['pre-push']
-        if not hooks.get('compress'):
+        if not 'compress' in self.ui.conf:
             return False
         return True
         
@@ -115,7 +116,7 @@ class Compress(object):
             self.compress_js(backend, actions['js'])
         
 
-def hook(ui, app, hooktype, **kwargs):
+def hook(ui, path, hooktype, **kwargs):
     c = Compress(ui, app.app_dir)
         
     if hooktype == "pre-push":

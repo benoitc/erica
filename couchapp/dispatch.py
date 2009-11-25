@@ -56,9 +56,8 @@ def _dispatch(ui, args):
     if path is not None:
         ui.updateconfig(path)
     
+    # load extensions
     load_extensions(ui)
-    for name, mod in get_extensions():
-        print name
         
     cmd, globalopts, opts, args = _parse(ui, args)
         

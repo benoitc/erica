@@ -72,20 +72,32 @@ class UI(object):
     def readconfig(self, fn):
         """ Get current configuration of couchapp.
         """
-        conf = self.conf or {}
         if isinstance(fn, basestring):
             fn = [fn]
         
         for f in fn:
             if os.path.isfile(f):
-                conf.update(self.read_json(f, use_environment=True))
-        self.conf = conf
-
+                new_conf = self.read_json(f, use_environment=True)
+                self.update_conf(new_conf)
+                
     def updateconfig(self, app_dir):
         conf_files = [os.path.join(app_dir, 'couchapp.json'),
             os.path.join(app_dir, '.couchapprc')]
         self.readconfig(conf_files)
         
+    def update_conf(self, new_conf):
+        conf = self.conf
+        for key, value in new_conf.items():
+            if key in conf:
+                if isinstance(value, dict):
+                    conf[key].update(value)
+                elif isinstance(value, list):
+                    [conf[key].append(v) for v in value if v not in conf[key]]
+                else:
+                    conf[key]=value
+            else:
+                conf[key] = value
+        self.conf = conf
                         
     def split_path(self, path):
         parts = []

@@ -49,6 +49,9 @@ def importm(mod_name):
     return mod
     
 def load_extension(ui, name, mod_name):
+    if name in _extensions:
+        return 
+        
     if mod_name is not None:
         try:
             mod = importm(mod_name)

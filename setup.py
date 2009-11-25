@@ -42,7 +42,7 @@ except ImportError:
     install_requires = ['simplejson']
     
     
-packages = ['couchapp', 'couchappext', 'couchappext.compress']
+packages = ['couchapp', 'couchappext', 'couchappext.compress',]
 
 setup(
     name = 'Couchapp',
