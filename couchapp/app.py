@@ -47,7 +47,7 @@ def clone(ui, source, dest=None, rev=None):
       
     if dest is None: dest = docid
     
-    path = os.path.normpath(os.path.join(os.getcwd(), dest))   
+    path = os.path.normpath(os.path.join(os.getcwd(), dest))
 
     kwargs = {}
     if rev is not None:
@@ -195,6 +195,10 @@ def clone(ui, source, dest=None, rev=None):
                     if not isinstance(value, basestring):
                         value = str(value)
                     ui.write(filedir, value)
+
+    # save id
+    idfile = os.path.join(path, '_id')
+    ui.write(idfile, doc['_id'])
 
     if '_attachments' in doc:  # process attachments
         attachdir = os.path.join(path, '_attachments')

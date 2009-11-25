@@ -16,11 +16,11 @@
 
 import os
 
-from couchapp.extensions import get_extensions, load_extensions
-from couchapp.http import save_docs
-from couchapp.errors import *
-
 import couchapp.app as app
+from couchapp.errors import *
+from couchapp.extensions import get_extensions, load_extensions
+from couchapp import hooks
+from couchapp.http import save_docs
 
 def _maybe_reload(ui, path, new_path):
     if path is None:
@@ -54,6 +54,7 @@ def push(ui, path, *args, **opts):
     
     _maybe_reload(ui, path, doc_path)
         
+    
     localdoc = app.document(ui, doc_path, False)
     if export:
         if opts.get('output'):
@@ -63,7 +64,10 @@ def push(ui, path, *args, **opts):
         return 0
     
     dburls = ui.get_dbs(dest)
+    hooks.hook(ui, doc_path, "pre-push", dburls=dburls)    
     localdoc.push(dburls, opts.get('no_atomic', False))
+    hooks.hook(ui, doc_path, "post-push", dburls=dburls)
+    
     docsdir = os.path.join(localdoc.docdir, '_docs')
     if os.path.exists(docsdir):
         pushdocs(ui, docsdir, dburls, **opts)
@@ -78,10 +82,12 @@ def pushapps(ui, source, dest, *args, **opts):
         appdir = os.path.join(source, d)
         if os.path.isdir(appdir) and os.path.isfile(os.path.join(appdir, '.couchapprc')):
             localdoc = app.document(ui, appdir)
+            hooks.hook(ui, appdir, "pre-push", dburls=dburls, pushapps=True)
             if export or not noatomic:
                 apps.append(localdoc)
             else:
                 localdoc.push(dburls, True)
+            hooks.hook(ui, appdir, "post-push", dburls=dburls, pushapps=True)
     if apps:
         if export:
             docs = []
@@ -156,7 +162,9 @@ def clone(ui, source, *args, **opts):
         dest = args[0]
     else:
         dest = "."
+    hooks.hook(ui, dest, "pre-clone", source=source)
     app.clone(ui, source, dest, rev=opts.get('rev'))
+    hooks.hook(ui, dest, "post-clone", source=source)
     return 0
 
 def generate(ui, path, *args, **opts):
@@ -181,11 +189,12 @@ def generate(ui, path, *args, **opts):
             opts['create'] = True
         else:
             raise AppError("You aren't in a couchapp.")
-        
-    app.generate(ui, dest, kind, name, **opts)
     
+    hooks.hook(ui, dest, "pre-generate")    
+    app.generate(ui, dest, kind, name, **opts)
     _maybe_reload(ui, path, dest)
-        
+    hooks.hook(ui, dest, "post-generate")
+       
     return 0
     
 def vendor(ui, path, *args, **opts):
@@ -209,8 +218,9 @@ def vendor(ui, path, *args, **opts):
             
         dest = os.path.normpath(os.path.join(os.getcwd(), dest))
         _maybe_reload(ui, path, dest)
-        
+        hooks.hook(ui, dest, "pre-vendor", source=source, action="install")
         app.vendor_install(ui, dest, source, *args, **opts)
+        hooks.hook(ui, dest, "post-vendor", source=source, action="install")
     else:
         vendorname = None
         if len(args) == 1:
@@ -222,7 +232,9 @@ def vendor(ui, path, *args, **opts):
             raise AppError("You aren't in a couchapp.")
             
         dest = os.path.normpath(os.path.join(os.getcwd(), dest))
+        hooks.hook(ui, dest, "pre-vendor", name=vendorname, action="update")
         app.vendor_update(ui, dest, vendorname, *args, **opts)
+        hooks.hook(ui, dest, "pre-vendor", name=vendorname, action="update")
     return 0
    
 def version(ui, *args, **opts):

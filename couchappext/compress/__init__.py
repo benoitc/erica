@@ -14,8 +14,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-__extension_name__ = "Compress"
-
 import os
 import re
 
@@ -95,7 +93,7 @@ class Compress(object):
         
     def run(self):
         conf = self.ui.conf
-        actions = conf['hooks']['pre-push']['compress']
+        actions = conf['hooks'].get('compress', {})
         if 'css' in actions:
             self.compress_css(actions['css'])
         
@@ -116,8 +114,8 @@ class Compress(object):
             self.compress_js(backend, actions['js'])
         
 
-def hook(ui, path, hooktype, **kwargs):
-    c = Compress(ui, app.app_dir)
+def hook(ui, path, hooktype, **kwarg):
+    c = Compress(ui, path)
         
     if hooktype == "pre-push":
         if not c.is_hook(): return
