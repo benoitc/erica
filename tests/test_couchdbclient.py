@@ -402,8 +402,6 @@ class ClientDatabaseTestCase(unittest.TestCase):
         db.put_attachment(doc, text_attachment, "test", "text/plain")
         self.assert_(old_rev != doc['_rev'])
         fetch_attachment = db.fetch_attachment(doc, "test")
-        import sys
-        print >> sys.stderr, "attach %s" % fetch_attachment
         self.assert_(text_attachment == fetch_attachment)
         
         

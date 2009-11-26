@@ -148,7 +148,7 @@ class CliTestCase(unittest.TestCase):
         
         design_doc = self.db['_design/my-app']
         
-        app_dir =  os.path.join(self.tempdir, "test_couchapp2")
+        app_dir =  os.path.join(self.tempdir, "couchapp-test")
         
         (child_stdin, child_stdout, child_stderr) = popen3("%s clone %s %s" % (
                     self.cmd, "http://127.0.0.1:5984/couchapp-test/_design/my-app",
