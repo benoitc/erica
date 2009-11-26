@@ -52,6 +52,7 @@ class Server(object):
         if not url or url is None:
             raise ValueError("Server url is missing")
 
+        self.ui = ui
         self.url = url
         self.timeout = timeout
         self.max_connections = max_connections
@@ -89,10 +90,10 @@ class Server(object):
 
         @return: Database instance if it's ok or dict message
         """
-        _dbname = resource.url_quote(dbname, safe=":")
+        _dbname = resource.url_quote(dbname, safe="")
         res = self.res.put('/%s/' % _dbname)
         if res['ok']:
-            dburl = resource.make_uri(self.uri, "/%s" % dbname) 
+            dburl = resource.make_uri(self.url, "/%s" % _dbname) 
             return Database(self.ui, dburl, server=self)
         return res['ok']
 
@@ -134,7 +135,7 @@ class Server(object):
         
     def next_uuid(self, count=None):
         """
-        return an available uuid from couchdbkit
+        return an available uuid from couchapp
         """
         if count is not None:
             self._uuid_batch_count = count
@@ -148,9 +149,9 @@ class Server(object):
         
     def __getitem__(self, dbname):
         if dbname in self:
-            dburl = resource.make_uri(self.uri, "/%s" % dbname) 
+            dburl = resource.make_uri(self.url, "/%s" % dbname) 
             return Database(self.ui, dburl, server=self)
-        raise ResourceNotFound("database %s not found" % dbnale)
+        raise ResourceNotFound("database %s not found" % dbname)
         
     def __delitem__(self, dbname):
         return self.res.delete('/%s/' % resource.url_quote(dbname, safe=":"))
@@ -162,7 +163,7 @@ class Server(object):
         
     def __iter__(self):
         for dbname in self.all_dbs():
-            dburl = resource.make_uri(self.uri, "/%s" % dbname) 
+            dburl = resource.make_uri(self.url, "/%s" % dbname) 
             yield Database(self.ui, dburl, server=self)
 
     def __len__(self):
@@ -196,7 +197,7 @@ class Database(object):
         if server is None:
             server = Server(ui, server_url)
             
-        if create and not self.dbname in server:
+        if create and not self.dbname in server.all_dbs():
             try:
                 res = server.res.put('/%s/' % dbname)
             except PreconditionFailed:
@@ -209,7 +210,7 @@ class Database(object):
         self.res = server.res.clone()
         if "/" in dbname:
             self.res.client.safe = ":/%"
-        self.res.update_uri('/%s' % resource.url_quote(dbname, safe=":"))
+        self.res.update_uri('/%s' % resource.url_quote(dbname, safe="%"))
     
     def __repr__(self):
         return "<%s %s>" % (self.__class__.__name__, self.dbname)
@@ -247,7 +248,7 @@ class Database(object):
         self.server.delete_db(self.dbname)
         self.server.create_db(self.dbname)
         [i.pop("_rev") for i in _design_docs]
-        self.bulk_save( _design_docs)
+        self.save_docs( _design_docs)
         
     def doc_exist(self, docid):
         """Test if document exists in a database
@@ -364,7 +365,7 @@ class Database(object):
         _raw_json = params.get('_raw_json', False)
             
         if '_attachments' in doc and encode_attachments:
-            doc['_attachments'] = encode_attachments(doc['_attachments'])
+            doc['_attachments'] = resource.encode_attachments(doc['_attachments'])
             
         if '_id' in doc:
             docid = resource.escape_docid(doc['_id'])
@@ -477,7 +478,7 @@ class Database(object):
         elif isinstance(doc, basestring): # we get a docid
             docid = resource.escape_docid(doc)
             data = self.res.head(docid)
-            response = self.res.get_response()
+            response = self.res.response
             result = self.res.delete(docid, raw_json=_raw_json, 
                                     rev=response['etag'].strip('"'))
         return result
@@ -585,7 +586,7 @@ class Database(object):
             
             >>> from simplecouchdb import server
             >>> server = server()
-            >>> db = server.create_db('couchdbkit_test')
+            >>> db = server.create_db('couchapp_test')
             >>> doc = { 'string': 'test', 'number': 4 }
             >>> db.save(doc)
             >>> text_attachment = u'un texte attaché'
@@ -596,7 +597,7 @@ class Database(object):
             >>> result['ok']
             True
             >>> db.fetch_attachment(doc, 'test')
-            >>> del server['couchdbkit_test']
+            >>> del server['couchapp_test']
             {u'ok': True}
         """
         headers = {}
@@ -699,7 +700,7 @@ class ViewResults(object):
         """
         Constructor of ViewResults object
         
-        @param view: Object inherited from :mod:`couchdbkit.client.view.ViewInterface
+        @param view: Object inherited from :mod:`couchapp.client.view.ViewInterface
         @param params: params to apply when fetching view.
         
         """
@@ -737,8 +738,8 @@ class ViewResults(object):
         Return exactly one result or raise an exception.
         
         
-        Raises `couchdbkit.exceptions.MultipleResultsFound` if multiple rows are returned.
-        If except_all is True, raises `couchdbkit.exceptions.NoResultFound` 
+        Raises `couchapp.exceptions.MultipleResultsFound` if multiple rows are returned.
+        If except_all is True, raises `couchapp.exceptions.NoResultFound` 
         if the query selects no rows. 
 
         This results in an execution of the underlying query.

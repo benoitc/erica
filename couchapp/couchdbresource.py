@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import base64
 import collections
 import httplib
 import mimetypes
@@ -49,7 +50,7 @@ _http_pool = {}
 
 class CouchDBResource(object):
   
-    def __init__(self, ui, url, headers=None, timeout=DEFAULT_TIMEOUT, 
+    def __init__(self, ui, url="http://127.0.0.1:5984", headers=None, timeout=DEFAULT_TIMEOUT, 
             max_connections=MAX_CONNECTIONS, key_file=None, cert_file=None):
         headers = headers or {}
         uri = url_parser(url)
@@ -211,6 +212,9 @@ class CouchDBResource(object):
         uri = url_parser(make_uri(self.url, path, **encode_params(params)))
         resp, connection = self._request(method, uri, payload=payload, headers=headers)
         status_code = int(resp.status)
+        
+        self.response = HTTPResponse(resp)
+        
         if status_code >= 400:
             data = resp.read()
             self._release_connection(uri, connection)
@@ -224,24 +228,24 @@ class CouchDBResource(object):
                 raise PreconditionFailed(data)
             else:
                 raise RequestFailed("Error %s: %s" % (status_code, data))
- 
+
         if raw_json:
             if stream:
-                return HTTPResponse(resp, uri, connection, self._release_connection)
+                return ResponseStream(resp, uri, connection, self._release_connection)
             data = resp.read()
             self._release_connection(uri, connection)
-            return data
+            return _utf8(data)
         elif stream:
-            return HTTPResponse(resp, uri, connection, self._release_connection)
+            return ResponseStream(resp, uri, connection, self._release_connection)
             
         data = resp.read()
         self._release_connection(uri, connection)
-
+        data = _utf8(data)
         if resp.getheader('content-type') == 'application/json':
             try:
                 data = json.loads(data)
             except ValueError:
-                self.ui.logger.error("can't deserialize response on %s" % uri)
+                self.ui.logger.error("can't deserialize response on %s" % uri.geturl())
                 pass
         return data
     
@@ -310,7 +314,28 @@ class HTTPPool(object):
             connection = self.connections.pop()
             connection.close()
             
-class HTTPResponse(object):
+class HTTPResponse(dict):
+    def __init__(self, response):
+        status = 200
+        reason = "Ok"
+        
+        #populate headers and response info
+        for key, value in response.getheaders():
+            self[key.lower()] = value
+        self.status = response.status
+        self.reason = response.reason
+    
+    def __getattr__(self, name):
+        if name == 'dict':
+            return self 
+        else:  
+            raise AttributeError, name
+
+    def __repr__(self):
+        return "<%s [%s %s]>" % (self.__class__.__name__,
+                                    self.status, self.reason)
+            
+class ResponseStream(object):
 
     def __init__(self, response, uri, connection, release_callback):
         self.resp = response
@@ -318,7 +343,7 @@ class HTTPResponse(object):
         self.conn = connection
         self.release_callback = release_callback
         self.stream_size = STREAM_SIZE
-        
+   
     def read(self, amt=None):
         data = self.resp.read(amt)
         if not data:
@@ -340,6 +365,18 @@ class HTTPResponse(object):
                 yield data
             else:
                 break
+
+
+def _utf8(s):
+    """ return an unicode """
+    try:
+        try:
+            return unicode(s)
+        except UnicodeDecodeError:
+            return unicode(s.decode('utf-8'))
+    except:
+        return s
+
 
 NORMALIZE_SPACE = re.compile(r'(?:\r\n)?[ \t]+')
 def _normalize_headers(headers):

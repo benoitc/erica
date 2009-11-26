@@ -141,11 +141,7 @@ class CliTestCase(unittest.TestCase):
         # deep require macros
         self.assertFalse('"template"' in design_doc['shows']['example-show'])
         self.assert_('Resig' in design_doc['shows']['example-show'])
-        
-        
-        
-        
-        
+          
     def testClone(self):
         self._make_testapp()
         (child_stdin, child_stdout, child_stderr) = popen3("%s push my-app couchapp-test" % self.cmd)
