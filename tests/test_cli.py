@@ -12,7 +12,8 @@ import shutil
 import sys
 import unittest
 
-
+from couchapp.ui import UI
+from couchapp.couchdbclient import Database
 from couchapp.utils import popen3, deltree
 
 couchapp_dir = os.path.join(os.path.dirname(__file__), '../')
@@ -22,8 +23,8 @@ couchapp_cli = os.path.join(os.path.dirname(__file__), '../bin/couchapp')
 class CliTestCase(unittest.TestCase):
     
     def setUp(self):
-        self.server = Server()
-        self.db = self.server.create_db('couchapp-test')
+        self.ui = ui = UI()
+        self.db = Database(ui, 'http://127.0.0.1:5984/couchapp-test', create=True)
         
         f, fname = tempfile.mkstemp()
         os.unlink(fname)
@@ -34,7 +35,7 @@ class CliTestCase(unittest.TestCase):
         self.startdir = os.getcwd()
         
     def tearDown(self):
-        del self.server['couchapp-test']
+        del self.db.server['couchapp-test']
         deltree(self.tempdir)
         os.chdir(self.startdir)
         
