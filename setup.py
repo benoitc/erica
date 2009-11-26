@@ -22,7 +22,7 @@ if not hasattr(sys, 'version_info') or sys.version_info < (2, 5, 0, 'final'):
 
 try:
     from setuptools import setup
-except:
+except ImportError:
     from distribute_setup import use_setuptools
     use_setuptools()
     from setuptools import setup
