@@ -12,15 +12,11 @@ import shutil
 import sys
 import unittest
 
-from couchapp import CouchApp, UI
-from couchapp.utils import popen3, in_couchapp, deltree
 
-from couchdbkit import Server, ResourceNotFound
+from couchapp.utils import popen3, deltree
 
-
-    
-couchapp_dir = os.path.join(os.path.dirname(__file__), '../python')
-couchapp_cli = os.path.join(os.path.dirname(__file__), '../python/couchapp/bin/couchapp_cli.py')
+couchapp_dir = os.path.join(os.path.dirname(__file__), '../')
+couchapp_cli = os.path.join(os.path.dirname(__file__), '../bin/couchapp')
      
             
 class CliTestCase(unittest.TestCase):

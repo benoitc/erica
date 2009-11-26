@@ -1,18 +1,31 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2009 Benoit Chesneau <benoitc@e-engura.org>
+# Copyright 2008,2009  Benoit Chesneau <benoitc@e-engura.org>
 #
-# This software is licensed as described in the file COPYING, which
-# you should have received as part of this distribution.
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at#
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
 
 import os
 import sys
 
-from distribute_setup import use_setuptools
-use_setuptools()
-from setuptools import setup, find_packages
+if not hasattr(sys, 'version_info') or sys.version_info < (2, 5, 0, 'final'):
+    raise SystemExit("Couchapp requires Python 2.5 or later.")
 
+try:
+    from setuptools import setup
+except:
+    from distribute_setup import use_setuptools
+    use_setuptools()
+    from setuptools import setup
 
 data_files = []
 
@@ -25,9 +38,13 @@ for dir, dirs, files in os.walk('vendor'):
         [os.path.join(dir, file_) for file_ in files]))
     
 
+scripts = ['bin/couchapp']    
+    
+packages = ['couchapp', 'couchapp.simplejson', 'couchappext', 'couchappext.compress',]
+
 setup(
     name = 'Couchapp',
-    version = '0.4.1',
+    version = '0.5',
     url = 'http://github.com/couchapp/couchapp/tree/master',
     license =  'Apache License 2',
     author = 'Benoit Chesneau',
@@ -40,25 +57,17 @@ setup(
     keywords = 'couchdb couchapp',
     platforms = ['any'],
 
-    zip_safe = False,
-
-    packages=find_packages('src'),
-    package_dir={
-        '': 'src'
-    },
+    packages=packages,
     data_files = data_files,
     include_package_data = True,
     
-    install_requires = [
-        'distribute',
-        'couchdbkit>=0.2.2',
-        'simplejson'
-    ],
-    entry_points = {
-        'console_scripts': [
-            'couchapp = couchapp.bin.couchapp_cli:main',
-        ]
-    },
+    install_requires = [],
+    scripts = scripts,
+    options = dict(py2exe=dict(packages=['couchappext']),
+                   bdist_mpkg=dict(zipdist=True,
+                                   license='LICENSE',
+                                   readme='contrib/macosx/Readme.html',
+                                   welcome='contrib/macosx/Welcome.html')),
     classifiers = [
         'License :: OSI Approved :: Apache Software License',
         'Intended Audience :: Developers',
