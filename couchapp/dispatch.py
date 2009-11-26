@@ -78,7 +78,7 @@ def _dispatch(ui, args):
         
     ui.set_verbose(verbose)
     if cmd is None:
-        raise CommandLineError("unkown command")
+        raise CommandLineError("unknown command")
 
     fun = commands.table[cmd][0]
     if cmd in commands.incouchapp:
@@ -102,8 +102,8 @@ def _parse(ui, args):
         else:
             cmdopts = []
     else:
-        cmd = None
-        cmdopts = []
+        cmd = "help"
+        cmdopts = list(commands.table[cmd][1])
         
     for opt in commands.globalopts:
         cmdopts.append((opt[0], opt[1], options[opt[1]], opt[3]))
@@ -168,5 +168,4 @@ def _findcouchapp(p):
         oldp, p = p, os.path.dirname(p)
         if p == oldp:
             return None
-
     return p
