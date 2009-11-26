@@ -15,17 +15,11 @@
 #  limitations under the License.
 
 import codecs
-import copy
 from hashlib import md5
-import httplib
 import logging
 import os
-import shutil
-import socket
 import string
 import sys
-import time
-import urllib
 
 try:
     import json
@@ -34,10 +28,9 @@ except ImportError:
 
 from couchapp import __version__
 from couchapp.extensions import GLOBAL_EXTENSIONS
-from couchapp.http import create_db
+import couchapp.couchdbclient as client
 from couchapp.errors import AppError
 from couchapp import utils
-from couchapp.vendor import Vendor
 
 USER_AGENT = 'couchapp/%s' % __version__
 
@@ -112,7 +105,7 @@ class UI(object):
         utils.deltree(path)
                 
     def execute(cmd):
-        return popen3(cmd)
+        return utils.popen3(cmd)
         
     def sign(self, fpath):
         """ return md5 hash from file content
@@ -215,18 +208,12 @@ class UI(object):
                     raise AppError("database isn't specified")
 
             if isinstance(db_env, basestring):
-                self.db_url = [db_env]
+                dburls = [db_env]
             else:
-                self.db_url = db_env
+                dburls = db_env
         else:
-            self.db_url = [dbstring]
-          
-        for i, db in enumerate(self.db_url):
-            try:
-                create_db(db)
-            except:
-                pass    
-        return self.db_url
+            dburls = [dbstring]
+        return [client.Database(self, dburl, create=True) for dburl in dburls]
 
     def get_app_name(self, dbstring, default):
         env = self.conf.get('env', {})

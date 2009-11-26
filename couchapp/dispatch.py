@@ -19,9 +19,8 @@ import getopt
 import os
 import sys
 
-import couchapp
 import couchapp.commands as commands
-from couchapp.errors import AppError
+from couchapp.errors import AppError, CommandLineError
 from couchapp.extensions import get_extensions, load_extensions
 from couchapp.ui import UI
 
@@ -94,7 +93,7 @@ def _parse(ui, args):
     try:
         args = parseopts(args, commands.globalopts, options)
     except getopt.GetoptError, e:
-        raise CommadnLineError(str(e))
+        raise CommandLineError(str(e))
         
     if args:
         cmd, args = args[0], args[1:]

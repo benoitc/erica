@@ -17,7 +17,6 @@
 import os
 import shutil
 
-import couchapp
 from couchapp.errors import AppError
 from couchapp import localdoc
 from couchapp.utils import user_path, relpath

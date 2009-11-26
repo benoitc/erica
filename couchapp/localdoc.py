@@ -26,7 +26,6 @@ try:
 except ImportError:
     import couchapp.simplejson as json
     
-from couchapp.http import *
 from couchapp.errors import *
 from couchapp.macros import *
 from couchapp.utils import relpath
@@ -75,15 +74,15 @@ class LocalDoc(object):
         elif self.ui.verbose:
             raise AppError("CouchApp already initialized in %s." % self.docdir)
 
-    def push(self, dburls, noatomic=False):
+    def push(self, dbs, noatomic=False):
         """Push a doc to a list of database `dburls`. If noatomic is true
         each attachments will be sent one by one."""
         
-        for dburl in dburls:
+        for db in dbs:
             self.olddoc = {}
             if noatomic:
-                doc = self.doc(dburl, with_attachments=False)
-                save_doc(dburl, doc)
+                doc = self.doc(db, with_attachments=False)
+                db.save_doc(doc)
                 if 'couchapp' in self.olddoc:
                     old_signatures = self.olddoc['couchapp'].get('signatures', {})
                 else:
@@ -94,26 +93,30 @@ class LocalDoc(object):
                     for name, signature in old_signatures.items():
                         cursign = signatures.get(name)
                         if cursign is not None and cursign != signature:
-                            del_attachment(dburl, self.docid, name)
+                            db.delete_attachment(doc, name)
+               
                
                 for name, filepath in self.attachments():
-                    if name not in old_signatures and old_signatures.get(name) != signatures[name]:
+                    print name not in old_signatures or old_signatures.get(name) != signatures[name]
+                    if name not in old_signatures or old_signatures.get(name) != signatures[name]:
                         if self.ui.verbose >= 2:
                             self.ui.logger.info("attach %s " % name)
-                        put_attachment(dburl, doc, open(filepath, "r"), name=name)
+                            
+                        print doc['_id']
+                        db.put_attachment(doc, open(filepath, "r"), name=name)
             else:
                 doc = self.doc()
                 try:
-                    olddoc = get_doc(dburl, self.docid)
+                    olddoc = db.get_doc(self.docid)
                     doc.update({'_rev': olddoc['_rev']})
                 except ResourceNotFound:
                     pass
-                save_doc(dburl, doc)   
-            indexurl = self.index(dburl, doc['couchapp'].get('index'))
+                db.save_doc(doc)   
+            indexurl = self.index(db.url, doc['couchapp'].get('index'))
             if indexurl:
                 self.ui.logger.info("Visit your CouchApp here:\n%s" % indexurl)
                         
-    def doc(self, dburl=None, with_attachments=True):
+    def doc(self, db=None, with_attachments=True):
         """ Function to reetrieve document object from
         document directory. If `with_attachments`is True
         attachments will be included and encoded"""
@@ -185,9 +188,9 @@ class LocalDoc(object):
         
         
         self.olddoc = {}
-        if dburl is not None:
+        if db is not None:
             try:
-                self.olddoc = get_doc(dburl, self._doc['_id'])
+                self.olddoc = db.get_doc(self._doc['_id'])
                 self._doc.update({'_rev': self.olddoc['_rev']})
             except ResourceNotFound:
                 pass
