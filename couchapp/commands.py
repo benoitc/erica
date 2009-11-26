@@ -20,7 +20,7 @@ import couchapp.app as app
 from couchapp.errors import *
 from couchapp.extensions import get_extensions, load_extensions
 from couchapp import hooks
-from couchapp.http import save_docs
+from couchapp.http import get_doc, save_docs
 
 def _maybe_reload(ui, path, new_path):
     if path is None:
@@ -68,9 +68,10 @@ def push(ui, path, *args, **opts):
     localdoc.push(dburls, opts.get('no_atomic', False))
     hooks.hook(ui, doc_path, "post-push", dburls=dburls)
     
-    docsdir = os.path.join(localdoc.docdir, '_docs')
-    if os.path.exists(docsdir):
-        pushdocs(ui, docsdir, dburls, **opts)
+    docspath = os.path.join(doc_path, '_docs')
+    if os.path.exists(docspath):
+        for dburl in dburls:
+            pushdocs(ui, docspath, dburl, *args, **opts)
     return 0
 
 def pushapps(ui, source, dest, *args, **opts):
@@ -153,7 +154,13 @@ def pushdocs(ui, source, dest, *args, **opts):
                     if hasattr(doc, 'doc'):
                         docs1.append(doc.doc(dburl))
                     else:
-                        docs1.append(doc)
+                        newdoc = doc.copy()
+                        try:
+                            olddoc = get_doc(dburl, doc['_id'])
+                            newdoc.update({'_rev': olddoc['_rev']})
+                        except ResourceNotFound:
+                            pass
+                        docs1.append(newdoc)
                 save_docs(dburl, docs1)
     return 0
     

@@ -56,7 +56,7 @@ if os.name == 'nt':
         except:
             home = os.path.expanduser('~')
             path.append(os.path.join(home, '.couchapp.conf'))
-        userprofile = [os.environ.get('USERPROFILE')]
+        userprofile = os.environ.get('USERPROFILE')
         if userprofile:
             path.append(os.path.join(userprofile, '.couchapp.conf'))
         return path  
@@ -74,7 +74,7 @@ if os.name == 'nt':
         except:
             home = os.path.expanduser('~')
             path.append(os.path.join(home, '.couchapp'))
-        userprofile = [os.environ.get('USERPROFILE')]
+        userprofile = os.environ.get('USERPROFILE')
         if userprofile:
             path.append(os.path.join(userprofile, '.couchapp'))
         return path

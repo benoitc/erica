@@ -18,6 +18,7 @@ import copy
 from hashlib import md5
 import os
 import os.path
+import re
 try:
     import json
 except ImportError:
@@ -32,6 +33,16 @@ import couchapp.localdoc as localdoc
 def document(ui, path='', create=False):
     doc = localdoc.instance(ui, path, create=create)
     return doc
+
+if os.name == 'nt':
+    def _replace_slash(name):
+        return name.replace("/", "\\")
+else:
+    def _replace_slash(name):
+        return name
+    
+
+
 
 def clone(ui, source, dest=None, rev=None):
     """
@@ -213,6 +224,7 @@ def clone(ui, source, dest=None, rev=None):
                 filepath = os.path.join(vendor_attachdir, *attach_parts)
             else:
                 filepath = os.path.join(attachdir, filename)
+            filepath = _replace_slash(filepath)
             currentdir = os.path.dirname(filepath)
             if not os.path.isdir(currentdir):
                 os.makedirs(currentdir)

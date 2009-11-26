@@ -40,3 +40,6 @@ class Unauthorized(Exception):
 
 class CommandLineError(Exception):
     """ error when a bad command line is passed"""
+    
+class BulkSaveError(Exception):
+    """ error during bulk save"""

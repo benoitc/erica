@@ -31,6 +31,10 @@ from couchapp.errors import *
 from couchapp.macros import *
 from couchapp.utils import relpath
 
+re_backslash = re.compile('\\\\')
+def _replace_backslash(fname):
+    return re_backslash.sub('/', fname)
+
 class LocalDoc(object):
     
     def __init__(self, ui, path, create=False):
@@ -288,7 +292,7 @@ class LocalDoc(object):
                             continue
                         else:
                             filepath = os.path.join(root, filename) 
-                            name = relpath(filepath, path)
+                            name = _replace_backslash(relpath(filepath, path))
                             if vendor is not None:
                                 name = os.path.join('vendor', vendor, name)
                             yield (name, filepath)
