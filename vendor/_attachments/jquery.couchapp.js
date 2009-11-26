@@ -59,7 +59,7 @@
         // {"author":{"email":"quentin@example.com"}}
         function formToDeepJSON(form, fields, doc) {
           var form = $(form);
-          opts.fields.forEach(function(field) {
+          fields.forEach(function(field) {
             var val = form.find("[name="+field+"]").val()
             if (!val) return;
             var parts = field.split('-');
