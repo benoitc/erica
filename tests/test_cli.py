@@ -86,7 +86,7 @@ class CliTestCase(unittest.TestCase):
         self.assert_(design_doc['_attachments']['index.html']['content_type'] == 'text/html')
         
         # should create manifest
-        self.assert_('foo' in design_doc['couchapp']['manifest'][0])
+        self.assert_('foo/' in design_doc['couchapp']['manifest'])
         
         # should push and macro the doc shows
         self.assert_('Generated CouchApp Form Template' in design_doc['shows']['example-show'])
@@ -127,7 +127,7 @@ class CliTestCase(unittest.TestCase):
         self.assert_(design_doc['_attachments']['index.html']['content_type'] == 'text/html')
         
         # should create manifest
-        self.assert_('foo' in design_doc['couchapp']['manifest'][0])
+        self.assert_('foo/' in design_doc['couchapp']['manifest'])
         
         # should push and macro the doc shows
         self.assert_('Generated CouchApp Form Template' in design_doc['shows']['example-show'])

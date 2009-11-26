@@ -160,8 +160,6 @@ def parseopts(args, options, state):
             state[name] = True
         
     return args
-        
-
 
 def _findcouchapp(p):
     while not os.path.isfile(os.path.join(p, ".couchapprc")):
