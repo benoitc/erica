@@ -27,7 +27,6 @@ def hook(ui, path, hooktype, **kwargs):
             except Exception, e:
                 ui.logger.error("%s: invalid hook %s" % (hooktype, hook))    
                 
-                
             try:
                 mod = __import__(mod_name, {}, {}, [''])
             except ImportError, e:

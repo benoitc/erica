@@ -35,14 +35,10 @@ for dir, dirs, files in os.walk('vendor'):
     data_files.append((os.path.join('couchapp', dir), 
         [os.path.join(dir, file_) for file_ in files]))
     
-install_requires = []
-try:
-    import json
-except ImportError:
-    install_requires = ['simplejson']
+
+scripts = ['bin/couchapp']    
     
-    
-packages = ['couchapp', 'couchappext', 'couchappext.compress',]
+packages = ['couchapp', 'couchapp.simplejson', 'couchappext', 'couchappext.compress',]
 
 setup(
     name = 'Couchapp',
@@ -63,12 +59,8 @@ setup(
     data_files = data_files,
     include_package_data = True,
     
-    install_requires = install_requires,
-    entry_points = {
-        'console_scripts': [
-            'couchapp = couchapp.dispatch:run',
-        ]
-    },
+    install_requires = [],
+    scripts = scripts,
     options = dict(py2exe=dict(packages=['couchappext']),
                    bdist_mpkg=dict(zipdist=True,
                                    license='LICENSE',

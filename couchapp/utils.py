@@ -282,9 +282,13 @@ def locate_program(program, use_none=False, raise_error=False):
 def deltree(path):
     for root, dirs, files in os.walk(path, topdown=False):
         for name in files:
-            os.remove(os.path.join(root, name))
+            os.unlink(os.path.join(root, name))
         for name in dirs:
             os.rmdir(os.path.join(root, name))
+    try:
+        os.rmdir(path)
+    except:
+        pass
             
     
 _vendor_dir = None

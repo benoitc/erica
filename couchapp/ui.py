@@ -36,7 +36,7 @@ from couchapp import __version__
 from couchapp.extensions import GLOBAL_EXTENSIONS
 from couchapp.http import create_db
 from couchapp.errors import AppError
-from couchapp.utils import *
+from couchapp import utils
 from couchapp.vendor import Vendor
 
 USER_AGENT = 'couchapp/%s' % __version__
@@ -57,7 +57,7 @@ class UI(object):
         # init extensions
         self.conf['extensions'] = GLOBAL_EXTENSIONS
         self.verbose = verbose
-        self.readconfig(rcpath())
+        self.readconfig(utils.rcpath())
         # init logger
         if logging_handler is None:
             logging_handler = NullHandler()
@@ -109,15 +109,7 @@ class UI(object):
         return parts
         
     def deltree(self, path):
-        for root, dirs, files in os.walk(path, topdown=False):
-            for name in files:
-                os.unlink(os.path.join(root, name))
-            for name in dirs:
-                os.rmdir(os.path.join(root, name))
-        try:
-            os.rmdir(path)
-        except:
-            pass
+        utils.deltree(path)
                 
     def execute(cmd):
         return popen3(cmd)
@@ -169,7 +161,7 @@ class UI(object):
         :attr content: string
         """
         f = open(fname, 'wb')
-        f.write(to_bytestring(content))
+        f.write(utils.to_bytestring(content))
         f.close()
 
     def write_json(self, fname, content):

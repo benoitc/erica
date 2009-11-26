@@ -28,7 +28,7 @@ import types
 try:
     import json
 except ImportError:
-    import simplejson as json 
+    import couchapp.simplejson as json 
 
 url_parser = urlparse.urlparse
 

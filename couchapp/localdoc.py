@@ -24,7 +24,7 @@ import re
 try:
     import json
 except ImportError:
-    import simplejson as json
+    import couchapp.simplejson as json
     
 from couchapp.http import *
 from couchapp.errors import *

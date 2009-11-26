@@ -22,7 +22,7 @@ import re
 try:
     import json
 except ImportError:
-    import simplejson as json
+    import couchapp.simplejson as json
     
 from couchapp.http import get_doc, fetch_attachment
 from couchapp.utils import to_bytestring
@@ -243,9 +243,7 @@ def clone(ui, source, dest=None, rev=None):
 def generate(ui, path, kind, name, **opts):
     if kind not in ["app", "view", "list", "show", 'filter', 'function', 'vendor']:
         raise AppError("Can't generate %s in your couchapp. generator is unknown" % kind)
-    
-    
-    
+
     if kind == "app":
         generator.generate_app(ui, path, template=opts.get("template"), 
                         create=opts.get('create', False))
