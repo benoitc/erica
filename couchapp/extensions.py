@@ -15,6 +15,7 @@
 #  limitations under the License.
 #
 
+from couchapp.utils import import_module
 
 _extensions = {}
 _extensions_order = []
@@ -41,12 +42,12 @@ def importp(name, mod_name):
 
 def importm(mod_name):
     if mod_name.startswith('couchappext.'):
-        mod = __import__(mod_name, {}, {}, [''])
+        mod = import_module(mod_name)
     else:
         try:
-            mod = __import__("couchappext.%s" % mod_name, {}, {}, [''])
+            mod = import_module("couchappext.%s" % mod_name)
         except ImportError:
-            mod = __import__(mod_name, {}, {}, [''])
+            mod = import_module(mod_name)
     return mod
     
 def load_extension(ui, name, mod_name):
