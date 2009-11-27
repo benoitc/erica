@@ -66,7 +66,7 @@ try:
     except ImportError:
         pass
 
-    extra['console'] = ['couchapp']
+    extra['console'] = ['bin/couchapp']
 
 except ImportError:
     pass
