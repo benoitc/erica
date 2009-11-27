@@ -26,7 +26,10 @@ except ImportError:
     from distribute_setup import use_setuptools
     use_setuptools()
     from setuptools import setup
+    
+    
 
+extra = {}
 data_files = []
 
 for dir, dirs, files in os.walk('templates'):
@@ -38,9 +41,35 @@ for dir, dirs, files in os.walk('vendor'):
         [os.path.join(dir, file_) for file_ in files]))
     
 
-scripts = ['bin/couchapp']    
+scripts = ['bin/couchapp']
+if os.name == 'nt':
+    scripts.append('contrib/win32/couchapp.bat')
     
 packages = ['couchapp', 'couchapp.simplejson', 'couchappext', 'couchappext.compress',]
+
+
+# py2exe needs to be installed to work
+try:
+    import py2exe
+
+    # Help py2exe to find win32com.shell
+    try:
+        import modulefinder
+        import win32com
+        for p in win32com.__path__[1:]: # Take the path to win32comext
+            modulefinder.AddPackagePath("win32com", p)
+        pn = "win32com.shell"
+        __import__(pn)
+        m = sys.modules[pn]
+        for p in m.__path__[1:]:
+            modulefinder.AddPackagePath(pn, p)
+    except ImportError:
+        pass
+
+    extra['console'] = ['bin\couchapp']
+
+except ImportError:
+    pass
 
 setup(
     name = 'Couchapp',
@@ -79,4 +108,5 @@ setup(
         'Topic :: Utilities',
     ],
     test_suite='tests',
+    **extra
 )
