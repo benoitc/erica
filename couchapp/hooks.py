@@ -36,7 +36,7 @@ def hook(ui, path, hooktype, **kwargs):
             fun = getattr(mod, funname)
             if fun is not None:
                 try:
-                    fun(ui, path, hooktype, **kwarg)
+                    fun(ui, path, hooktype, **kwargs)
                 except Exception, e:
                     ui.logger.error("%s:%s error while executing %s [%s]" % (hooktype, name, cmd, str(e)))
             else:

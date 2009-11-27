@@ -14,21 +14,23 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import base64
 import copy
 from hashlib import md5
 import os
 import os.path
-import re
 try:
     import json
 except ImportError:
     import couchapp.simplejson as json
     
-from couchapp.http import get_doc, fetch_attachment
+from couchapp.errors import AppError
+import couchapp.couchdbclient as client
 from couchapp.utils import to_bytestring
 import couchapp.generator as generator
 from couchapp.vendor import Vendor
 import couchapp.localdoc as localdoc
+
 
 def document(ui, path='', create=False):
     doc = localdoc.instance(ui, path, create=create)
@@ -59,11 +61,12 @@ def clone(ui, source, dest=None, rev=None):
     if dest is None: dest = docid
     
     path = os.path.normpath(os.path.join(os.getcwd(), dest))
-
-    kwargs = {}
-    if rev is not None:
-        kwargs['rev']=rev
-    doc = get_doc(dburl, "_design/%s" % docid, **kwargs)
+        
+    db = client.Database(ui, dburl)    
+    if not rev:
+        doc = db.get_doc("_design/%s" % docid)
+    else:
+        doc = db.get_doc("_design/%s" % docid, rev=rev)
     docid = doc['_id']
         
     
@@ -210,6 +213,8 @@ def clone(ui, source, dest=None, rev=None):
     # save id
     idfile = os.path.join(path, '_id')
     ui.write(idfile, doc['_id'])
+  
+    ui.write_json(os.path.join(path, '.couchapprc'), {})
 
     if '_attachments' in doc:  # process attachments
         attachdir = os.path.join(path, '_attachments')
@@ -230,7 +235,7 @@ def clone(ui, source, dest=None, rev=None):
                 os.makedirs(currentdir)
     
             if signatures.get(filename) != ui.sign(filepath):
-                resp = fetch_attachment(dburl, docid, filename)
+                resp = db.fetch_attachment(docid, filename, stream=True)
                 f = open(filepath, 'wb')
                 while 1:
                     data = resp.read(16384)

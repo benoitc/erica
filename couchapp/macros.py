@@ -18,7 +18,6 @@ import glob
 from hashlib import md5
 import os
 import re
-import sys
 try:
     import json
 except ImportError:

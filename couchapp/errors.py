@@ -43,3 +43,7 @@ class CommandLineError(Exception):
     
 class BulkSaveError(Exception):
     """ error during bulk save"""
+    
+    def __init__(self, errors, *args, **kwargs):
+        self.errors = errors
+        super(BulkSaveError, self).__init__(*args, **kwargs)

@@ -15,12 +15,15 @@
 #  limitations under the License.
 
 import os
+try:
+    import json
+except ImportError:
+    import couchapp.simplejson as json
 
 import couchapp.app as app
-from couchapp.errors import *
+from couchapp.errors import ResourceNotFound, AppError
 from couchapp.extensions import get_extensions, load_extensions
 from couchapp import hooks
-from couchapp.http import get_doc, save_docs
 
 def _maybe_reload(ui, path, new_path):
     if path is None:
@@ -40,12 +43,11 @@ def init(ui, path, *args, **opts):
 
 def push(ui, path, *args, **opts):
     export = opts.get('export', False)
+    dest = None
     if len(args) < 2:
         doc_path = path
         if args:
             dest = args[0]
-        elif not export:
-            raise AppError("db url is missing")
     else:
         doc_path = os.path.normpath(os.path.join(os.getcwd(), args[0]))
         dest = args[1]
@@ -53,7 +55,6 @@ def push(ui, path, *args, **opts):
         raise AppError("You aren't in a couchapp.")
     
     _maybe_reload(ui, path, doc_path)
-        
     
     localdoc = app.document(ui, doc_path, False)
     if export:
@@ -62,33 +63,33 @@ def push(ui, path, *args, **opts):
         else:
             print str(localdoc)
         return 0
-    
-    dburls = ui.get_dbs(dest)
-    hooks.hook(ui, doc_path, "pre-push", dburls=dburls)    
-    localdoc.push(dburls, opts.get('no_atomic', False))
-    hooks.hook(ui, doc_path, "post-push", dburls=dburls)
+    dbs = ui.get_dbs(dest)
+    hooks.hook(ui, doc_path, "pre-push", dbs=dbs)    
+    localdoc.push(dbs, opts.get('no_atomic', False))
+    hooks.hook(ui, doc_path, "post-push", dbs=dbs)
     
     docspath = os.path.join(doc_path, '_docs')
     if os.path.exists(docspath):
-        for dburl in dburls:
-            pushdocs(ui, docspath, dburl, *args, **opts)
+        pushdocs(ui, docspath, dest, *args, **opts)
     return 0
 
 def pushapps(ui, source, dest, *args, **opts):
     export = opts.get('export', False)
     noatomic = opts.get('no_atomic', False)
-    dburls = ui.get_dbs(dest)
+    dbs = ui.get_dbs(dest)
     apps = []
+    source = os.path.normpath(os.path.join(os.getcwd(), source))
     for d in os.listdir(source):
         appdir = os.path.join(source, d)
+        print appdir
         if os.path.isdir(appdir) and os.path.isfile(os.path.join(appdir, '.couchapprc')):
             localdoc = app.document(ui, appdir)
-            hooks.hook(ui, appdir, "pre-push", dburls=dburls, pushapps=True)
+            hooks.hook(ui, appdir, "pre-push", dbs=dbs, pushapps=True)
             if export or not noatomic:
                 apps.append(localdoc)
             else:
-                localdoc.push(dburls, True)
-            hooks.hook(ui, appdir, "post-push", dburls=dburls, pushapps=True)
+                localdoc.push(dbs, True)
+            hooks.hook(ui, appdir, "post-push", dbs=dbs, pushapps=True)
     if apps:
         if export:
             docs = []
@@ -100,17 +101,16 @@ def pushapps(ui, source, dest, *args, **opts):
                 print json.dumps(jsonobj)
             return 0
         else:
-            for dburl in dburls:
+            for db in dbs:
                 docs = []
-                docs = [doc.doc(dburl) for doc in apps]
-                save_docs(dburl, docs)
-                
+                docs = [doc.doc(db) for doc in apps]
+                db.save_docs(docs)
     return 0
   
 def pushdocs(ui, source, dest, *args, **opts):
     export = opts.get('export', False)
     noatomic = opts.get('no_atomic', False)
-    dburls = ui.get_dbs(dest)
+    dbs = ui.get_dbs(dest)
     docs = []
     for d in os.listdir(source):
         docdir = os.path.join(source, d)
@@ -126,14 +126,14 @@ def pushdocs(ui, source, dest, *args, **opts):
                 if export or not noatomic:
                     docs.append(doc)
                 else:
-                    for dburl in dburls:
-                        save_doc(dburls, doc['_id'])
+                    for db in dbs:
+                        db.save_doc(doc)
         else:
             doc = app.document(ui, docdir)
             if export or not noatomic:
                 docs.append(doc)
             else:
-                doc.push(dburls, True)
+                doc.push(dbs, True)
     if docs:
         if export:
             docs1 = []
@@ -148,20 +148,20 @@ def pushdocs(ui, source, dest, *args, **opts):
             else:
                 print json.dumps(jsonobj)
         else:
-            for dburl in dburls:
+            for db in dbs:
                 docs1 = []
                 for doc in docs:
                     if hasattr(doc, 'doc'):
-                        docs1.append(doc.doc(dburl))
+                        docs1.append(doc.doc(db))
                     else:
                         newdoc = doc.copy()
                         try:
-                            olddoc = get_doc(dburl, doc['_id'])
+                            olddoc = db.get_doc(doc['_id'])
                             newdoc.update({'_rev': olddoc['_rev']})
                         except ResourceNotFound:
                             pass
                         docs1.append(newdoc)
-                save_docs(dburl, docs1)
+                db.save_docs(docs1)
     return 0
     
 def clone(ui, source, *args, **opts):

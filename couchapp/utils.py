@@ -42,11 +42,12 @@ except ImportError:
     popen3 = os.popen3
     
 if os.name == 'nt':
+    from win32com.shell import shell, shellcon
     def user_rcpath():
         path = []
         try:
             home = os.path.expanduser('~')
-            if sys.getwindowsversion()[3] != 2 and userdir == '~':
+            if sys.getwindowsversion()[3] != 2 and home == '~':
                  # We are on win < nt: fetch the APPDATA directory location and use
                     # the parent directory as the user home dir.
                 appdir = shell.SHGetPathFromIDList(
@@ -64,7 +65,7 @@ if os.name == 'nt':
         path = []
         try:
             home = os.path.expanduser('~')
-            if sys.getwindowsversion()[3] != 2 and userdir == '~':
+            if sys.getwindowsversion()[3] != 2 and home == '~':
                  # We are on win < nt: fetch the APPDATA directory location and use
                     # the parent directory as the user home dir.
                 appdir = shell.SHGetPathFromIDList(
@@ -167,7 +168,7 @@ def rcpath():
             for p in os.environ['COUCHAPPCONF_PATH'].split(os.pathsep):
                 if not p: continue
                 if os.path.isdir(p):
-                    for f, kind in osutil.listdir(p):
+                    for f, kind in os.listdir(p):
                         if f == "couchapp.conf":
                             _rcpath.append(os.path.join(p, f))
                 else:
