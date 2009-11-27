@@ -27,8 +27,6 @@ except ImportError:
     use_setuptools()
     from setuptools import setup
     
-    
-
 extra = {}
 data_files = []
 

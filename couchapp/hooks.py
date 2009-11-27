@@ -16,6 +16,9 @@
 
 import re
 
+from utils import import_module, expandpath
+
+
 def hook(ui, path, hooktype, **kwargs):
     if not 'hooks' in ui.conf.items():
         return
@@ -23,14 +26,14 @@ def hook(ui, path, hooktype, **kwargs):
         for hook in ui.conf['hooks'][hooktype]:
             try:
                 name, cmd = re.split('\s*=\s*', hook)
-                mod_name, funname = cmd.spli(':')
+                modname, funname = cmd.spli(':')
             except Exception, e:
                 ui.logger.error("%s: invalid hook %s" % (hooktype, hook))    
                 
             try:
-                mod = __import__(mod_name, {}, {}, [''])
+                mod = import_module(modname)
             except ImportError, e:
-                ui.logger.error("%s:%s, error while importing %s" % (hooktype, name, mod_name))
+                ui.logger.error("%s:%s, error while importing %s" % (hooktype, name, modname))
                 continue
                 
             fun = getattr(mod, funname)

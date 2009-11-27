@@ -24,7 +24,7 @@ import urllib
 __all__ = ['popen3', 'in_couchapp', 'parse_uri', 'parse_auth',
         'get_appname', 'to_bytestring', 'vendor_dir',
         'user_rcpath', 'rcpath', 'locate_program', 'deltree', 
-        'relpath', 'user_path', 'import_module']
+        'relpath', 'user_path', 'import_module', 'expandpath']
 
 try:#python 2.6, use subprocess
     import subprocess
@@ -299,6 +299,10 @@ def vendor_dir():
         _vendor_dir = os.path.join(os.path.dirname(__file__), 'vendor')
     return _vendor_dir
 
+
+def expandpath(path):
+    return os.path.expanduser(os.path.expandvars(path))
+        
 #backported form python2.7
 
 def _resolve_name(name, package, level):
