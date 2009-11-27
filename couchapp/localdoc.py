@@ -295,6 +295,7 @@ class LocalDoc(object):
                             name = _replace_backslash(relpath(filepath, path))
                             if vendor is not None:
                                 name = os.path.join('vendor', vendor, name)
+                            name = _replace_backslash(name)
                             yield (name, filepath)
                 
     def attachments(self):
