@@ -43,12 +43,11 @@ def init(ui, path, *args, **opts):
 
 def push(ui, path, *args, **opts):
     export = opts.get('export', False)
+    dest = None
     if len(args) < 2:
         doc_path = path
         if args:
             dest = args[0]
-        elif not export:
-            raise AppError("db url is missing")
     else:
         doc_path = os.path.normpath(os.path.join(os.getcwd(), args[0]))
         dest = args[1]
