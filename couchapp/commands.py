@@ -55,7 +55,6 @@ def push(ui, path, *args, **opts):
         raise AppError("You aren't in a couchapp.")
     
     _maybe_reload(ui, path, doc_path)
-        
     
     localdoc = app.document(ui, doc_path, False)
     if export:
@@ -106,7 +105,6 @@ def pushapps(ui, source, dest, *args, **opts):
                 docs = []
                 docs = [doc.doc(db) for doc in apps]
                 db.save_docs(docs)
-                
     return 0
   
 def pushdocs(ui, source, dest, *args, **opts):

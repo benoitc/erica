@@ -294,10 +294,11 @@ class LocalDoc(object):
                         if filename.startswith('.'):
                             continue
                         else:
-                            filepath = os.path.join(root, filename) 
-                            name = _replace_backslash(relpath(filepath, path))
+                            filepath = os.path.join(root, filename)
+                            name = relpath(filepath, path)
                             if vendor is not None:
                                 name = os.path.join('vendor', vendor, name)
+                            name = _replace_backslash(name)
                             yield (name, filepath)
                 
     def attachments(self):
