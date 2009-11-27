@@ -15,23 +15,22 @@
 #  limitations under the License.
 #
 
+import re
 from couchapp.utils import import_module
 
 _extensions = {}
 _extensions_order = []
 
 GLOBAL_EXTENSIONS = [
-    ['couchdb', 'couchapp.couchdbvendor'],
-    ['git', 'couchapp.gitvendor'],
-    ['hg', 'couchapp.hgvendor']
+    "couchdb = couchapp.couchdbvendor",
+    "git = couchapp.gitvendor",
+    "hg = couchapp.hgvendor",
 ]
-
 
 def get_extensions():
     for name in _extensions_order:
         yield name, _extensions[name]
-        
-
+    
 def importp(name, mod_name):
     try:
         mod = importm(mod_name)
@@ -40,23 +39,22 @@ def importp(name, mod_name):
     return mod
     
 
-def importm(mod_name):
-    if mod_name.startswith('couchappext.'):
-        mod = import_module(mod_name)
+def importm(path):
+    if "." in path:
+        i = path.rfind('.')
+        pkgpath, modname = path[:i], path[i+1:]
+        mod = import_module(".%s" % modname, pkgpath)
     else:
-        try:
-            mod = import_module("couchappext.%s" % mod_name)
-        except ImportError:
-            mod = import_module(mod_name)
+        mod = import_module(path)
     return mod
     
-def load_extension(ui, name, mod_name):
+def load_extension(ui, name, modname):
     if name in _extensions:
         return 
         
-    if mod_name is not None:
+    if modname is not None:
         try:
-            mod = importm(mod_name)
+            mod = importm(modname)
         except ImportError:
             mod = importm(name)
     else:
@@ -81,19 +79,17 @@ def load_extensions(ui):
     if 'extensions' in ui.conf:
         _extensions = {}
         for ext in ui.conf['extensions']:
-            name = None
-            mod_name = None
-            if isinstance(ext, basestring):
-                name = ext
-            elif isinstance(ext, list):
-                if len(ext) == 1:
-                    name = ext
-                else:
-                    name, mod_name = ext
-            else:
-                continue
             try:
-                load_extension(ui, name, mod_name)
+                name, modname = re.split("\s*=\s*", ext)
+            except ValueError:
+                if isinstance(ext, basestring):
+                    name = ext
+                    modname = None
+                else:
+                    continue
+
+            try:
+                load_extension(ui, name, modname)
             except Exception, e:
                 if ui.verbose >= 1:
                     ui.logger.error("failed to import %s extension: %s" % (name, str(e)))

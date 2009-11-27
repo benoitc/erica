@@ -103,14 +103,14 @@ class Compress(object):
                 if not isinstance(modname, basestring):
                     self.ui.log.warning("Warning: js_compressor settings should be a string")
                     self.ui.log.warning("Selecting default backend (jsmin)")
-                    import couchapp.couchapp_ext.compress.jsmin as backend
+                    import couchappext.compress.jsmin as backend
                 else:
                     try:
                         backend = __import__(modname, {}, {}, [''])
                     except ImportError:
-                         import couchapp.couchapp_ext.compress.jsmin as backend
+                         import couchappext.compress.jsmin as backend
             else:
-                 import couchapp.couchapp_ext.compress.jsmin as backend
+                 import couchappext.compress.jsmin as backend
             self.compress_js(backend, actions['js'])
         
 
