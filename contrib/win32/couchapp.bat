@@ -3,5 +3,5 @@ rem couchapp script for windows
 
 setlocal
 
-%~dp0..\python "%~dp0bin\couchapp" %*
+%~dp0..\python "%~dp0couchapp" %*
 endlocal
