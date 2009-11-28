@@ -57,11 +57,14 @@ def clone(ui, source, dest=None, rev=None):
         dburl, docid = source.split('_design/')
     except ValueError:
         raise AppError("%s isn't a valid source" % source)
-      
-    if dest is None: dest = docid
-    
+
+    if not dest:
+        dest = docid
+   
     path = os.path.normpath(os.path.join(os.getcwd(), dest))
-        
+    if not os.path.exists(path):
+        os.makedirs(path)
+
     db = client.Database(ui, dburl)    
     if not rev:
         doc = db.get_doc("_design/%s" % docid)

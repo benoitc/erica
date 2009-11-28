@@ -66,7 +66,7 @@ def load_extension(ui, name, path):
     
     # allow extensions to do some initial setup
     setup = getattr(mod, 'setup', False)
-    if uisetup:
+    if setup:
         setup(ui)
 
 def load_extensions(ui):

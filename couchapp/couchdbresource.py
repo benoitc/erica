@@ -41,7 +41,7 @@ from couchapp.utils import to_bytestring
 
 
 USER_AGENT = "couchapp/%s" % __version__
-DEFAULT_TIMEOUT = 300
+DEFAULT_TIMEOUT = 150 
 MAX_CONNECTIONS = 4
 DEFAULT_UUID_BATCH_COUNT = 1000
 STREAM_SIZE = 16384
@@ -285,26 +285,28 @@ class HTTPPool(object):
         setattr(connection, "started", time.time())
         return connection
         
-        
+    def do_get(self):
+        if self.connections:
+            connection = self.connections.popleft()
+            return connection
+        else:
+            return self.make_connection()
+
     def get(self):
         while True:
-            if self.connections:
-                connection = self.connections.popleft()
-                since = time.time() - connection.started
-                if since < self.timeout:
-                    if connection._HTTPConnection__response:
-                        connection._HTTPConnection__response.read()
-                    return connection
-                else:
-                    connection.close()
+            connection = self.do_get()
+            since = time.time() - connection.started
+            if since < self.timeout:
+                if connection._HTTPConnection__response:
+                    connection._HTTPConnection__response.read()
+                return connection
             else:
-                return self.make_connection()
+                connection.close()
     
     def put(self, connection):
-        if len(self.connections) > self.max_connections:
+        if len(self.connections) >= self.max_connections:
             connection.close()
             return
-        
         if connection.sock is None:
             connection = self.make_connection()
         self.connections.append(connection)
@@ -343,11 +345,13 @@ class ResponseStream(object):
         self.conn = connection
         self.release_callback = release_callback
         self.stream_size = STREAM_SIZE
+
    
     def read(self, amt=None):
-        data = self.resp.read(amt)
+        data = None
+        if not self.resp.isclosed():
+            data = self.resp.read(amt)
         if not data:
-            self.close()
             self.release_callback(self.uri, self.conn)
         return data
         

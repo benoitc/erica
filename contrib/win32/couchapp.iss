@@ -16,7 +16,7 @@ DefaultDirName={pf}\Couchapp
 DefaultGroupName=Couchapp
 LicenseFile=LICENSE
 InfoAfterFile=contrib\win32\postinstall.txt
-OutputBaseFilename=couchapp-0.5-installer
+OutputBaseFilename=couchapp-0.5
 Compression=lzma
 SolidCompression=yes
 SourceDir=..\..
@@ -65,4 +65,3 @@ Filename: {app}\add_path.exe; Parameters: {app}; Description: Add the installati
 
 [UninstallRun]
 Filename: {app}\add_path.exe; Parameters: /del {app}
-
