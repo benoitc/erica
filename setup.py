@@ -27,8 +27,6 @@ except ImportError:
     use_setuptools()
     from setuptools import setup
     
-    
-
 extra = {}
 data_files = []
 
@@ -66,7 +64,7 @@ try:
     except ImportError:
         pass
 
-    extra['console'] = ['bin\couchapp']
+    extra['console'] = ['bin/couchapp']
 
 except ImportError:
     pass

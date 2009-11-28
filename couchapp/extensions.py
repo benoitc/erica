@@ -15,64 +15,60 @@
 #  limitations under the License.
 #
 
+import imp
+import os
+import re
+
+from couchapp.utils import import_module, expandpath
 
 _extensions = {}
 _extensions_order = []
 
 GLOBAL_EXTENSIONS = [
-    ['couchdb', 'couchapp.couchdbvendor'],
-    ['git', 'couchapp.gitvendor'],
-    ['hg', 'couchapp.hgvendor']
+    "couchdbvendor=",
+    "gitvendor=",
+    "hgvendor="
 ]
-
 
 def get_extensions():
     for name in _extensions_order:
         yield name, _extensions[name]
-        
 
-def importp(name, mod_name):
-    try:
-        mod = importm(mod_name)
-    except ImportError:
-        mod = importm(name)
-    return mod
-    
-
-def importm(mod_name):
-    if mod_name.startswith('couchappext.'):
-        mod = __import__(mod_name, {}, {}, [''])
+def load_path(modname, path):
+    path = expandpath(path)
+    if os.path.isdir(path):
+        d, f = os.path.split(path.rstrip('/'))
+        info = imp.find_module(f, [d])
+        return imp.load_module(modname, *info)
     else:
-        try:
-            mod = __import__("couchappext.%s" % mod_name, {}, {}, [''])
-        except ImportError:
-            mod = __import__(mod_name, {}, {}, [''])
-    return mod
+        return imp.load_source(modname, path)
+
+def load_extension(ui, name, path):
+    if name.startswith('couchappext.'):
+        sname = name[12:]
+    else:
+        sname = name
     
-def load_extension(ui, name, mod_name):
-    if name in _extensions:
+    if sname in _extensions:
         return 
         
-    if mod_name is not None:
-        try:
-            mod = importm(mod_name)
-        except ImportError:
-            mod = importm(name)
+    if path:
+        mod = load_path(name, path)
     else:
-        mod = importm(name)
-        
-    _extensions[name] = mod    
-    _extensions_order.append(name)
+        try:
+            mod = import_module('.%s' % name, 'couchappext')
+        except Exception:
+            mod = import_module(name)
+            
+
+    _extensions[sname] = mod    
+    _extensions_order.append(sname)
     
-    # allow to add parameters to ui
-    uisetup = getattr(mod, 'uisetup', False)
-    if uisetup:
-        uisetup(ui)
-        
-    extsetup = getattr(mod, 'extsetup', False)   
-    if extsetup:
-        extsetup()
-    
+    # allow extensions to do some initial setup
+    setup = getattr(mod, 'setup', False)
+    if setup:
+        setup(ui)
+
 def load_extensions(ui):
     if not ui.conf:
         return 
@@ -80,19 +76,21 @@ def load_extensions(ui):
     if 'extensions' in ui.conf:
         _extensions = {}
         for ext in ui.conf['extensions']:
-            name = None
-            mod_name = None
-            if isinstance(ext, basestring):
-                name = ext
-            elif isinstance(ext, list):
-                if len(ext) == 1:
-                    name = ext
-                else:
-                    name, mod_name = ext
-            else:
-                continue
             try:
-                load_extension(ui, name, mod_name)
+                name, path = re.split("\s*=\s*", ext)
+            except ValueError:
+                if isinstance(ext, basestring):
+                    name = ext
+                    path = ''
+                else:
+                    continue
+                    
+            path = path.strip()
+            if path and path.startswith('!'):
+                continue
+                
+            try:
+                load_extension(ui, name, path)
             except Exception, e:
                 if ui.verbose >= 1:
                     ui.logger.error("failed to import %s extension: %s" % (name, str(e)))

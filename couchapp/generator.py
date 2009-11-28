@@ -16,6 +16,7 @@
 
 import os
 import shutil
+import sys
 
 from couchapp.errors import AppError
 from couchapp import localdoc
@@ -158,11 +159,13 @@ def copy_helper(path, directory):
                 path))
                         
 def find_template_dir(directory=''):
-    import couchapp
-    default_locations = [
-            os.path.join(couchapp.__path__[0], 'templates', directory),
-            os.path.join(couchapp.__path__[0], '../templates', directory)
-    ]
+    paths = ['templates', '../templates']
+    if hasattr(sys, 'frozen'): # py2exe
+        modpath = sys.executable
+    else:
+        modpath = __file__
+        
+    default_locations = [os.path.join(os.path.dirname(modpath), p, directory) for p in paths]
     
     if directory:
         user_locations = []

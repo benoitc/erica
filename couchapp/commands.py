@@ -165,10 +165,10 @@ def pushdocs(ui, source, dest, *args, **opts):
     return 0
     
 def clone(ui, source, *args, **opts):
-    if len(args) >= 1:
+    if len(args) > 0:
         dest = args[0]
     else:
-        dest = "."
+        dest = None 
     hooks.hook(ui, dest, "pre-clone", source=source)
     app.clone(ui, source, dest, rev=opts.get('rev'))
     hooks.hook(ui, dest, "post-clone", source=source)

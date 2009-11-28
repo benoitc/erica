@@ -26,7 +26,7 @@ from couchapp.ui import UI
 
 
 def run():
-    exit(dispatch(sys.argv[1:]))
+    sys.exit(dispatch(sys.argv[1:]))
     
     
 def dispatch(args):
