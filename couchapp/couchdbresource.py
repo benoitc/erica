@@ -189,24 +189,32 @@ class CouchDBResource(object):
         
         headers = headers or {}
         headers.update(self._headers.copy())
+        
 
         size = headers.get('Content-Length', None)
-        if isinstance(payload, file):
-            try:
-                payload.flush()
-            except IOError:
-                pass
-            size = int(os.fstat(payload.fileno())[6])
-        elif isinstance(payload, types.StringTypes):
-            payload = to_bytestring(payload)
-            size = len(payload)
-        elif not hasattr(payload, 'read') and not isinstance(payload, basestring):
-            payload = json.dumps(payload).encode('utf-8')
-            headers.setdefault('Content-Type', 'application/json')
-            size = len(payload)
+        if payload:
+            if isinstance(payload, file):
+                try:
+                    payload.flush()
+                except IOError:
+                    pass
+                size = int(os.fstat(payload.fileno())[6])
+            elif isinstance(payload, types.StringTypes):
+                payload = to_bytestring(payload)
+                size = len(payload)
+            elif not hasattr(payload, 'read') and not isinstance(payload, basestring):
+                payload = json.dumps(payload).encode('utf-8')
+                headers.setdefault('Content-Type', 'application/json')
+                size = len(payload)
             
-        if payload is not None and size is not None:
-            headers.setdefault('Content-Length', size)
+            if payload is not None and size is not None:
+                headers.setdefault('Content-Length', size)
+                
+            if 'Content-Type' not in headers:
+                type_ = None
+                if hasattr(payload, 'name'):
+                    type_ = mimetypes.guess_type(payload.name)[0]
+                headers['Content-Type'] = type_ and type_ or 'application/octet-stream'
             
         headers = _normalize_headers(headers)
         uri = url_parser(make_uri(self.url, path, **encode_params(params)))
