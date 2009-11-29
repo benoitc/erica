@@ -249,7 +249,7 @@ def clone(ui, source, dest=None, rev=None):
                     ui.logger.info("clone attachment: %s" % filename)
                     
 def generate(ui, path, kind, name, **opts):
-    if kind not in ["app", "view", "list", "show", 'filter', 'function', 'vendor']:
+    if kind not in ["app", "view", "list", "show", 'filter', 'function', 'vendor', 'update']:
         raise AppError("Can't generate %s in your couchapp. generator is unknown" % kind)
 
     if kind == "app":
