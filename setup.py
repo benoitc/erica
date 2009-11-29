@@ -69,17 +69,10 @@ try:
 
 except ImportError:
     pass
-
-try:
-    import py2app
-
-    extra['app'] = ['bin/CouchApp.py']
-except ImportError:
-    pass
-    
+ 
 setup(
     name = 'Couchapp',
-    version = '0.5',
+    version = '0.5.1',
     url = 'http://github.com/couchapp/couchapp/tree/master',
     license =  'Apache License 2',
     author = 'Benoit Chesneau',
@@ -102,11 +95,7 @@ setup(
                    bdist_mpkg=dict(zipdist=True,
                                    license='LICENSE',
                                    readme='contrib/macosx/Readme.html',
-                                   welcome='contrib/macosx/Welcome.html'),
-                    py2app=dict(argv_emulation=True,
-                               semi_standalone=False,
-                               includes=['couchappext'],
-                               site_packages=True)),
+                                   welcome='contrib/macosx/Welcome.html')),
     classifiers = [
         'License :: OSI Approved :: Apache Software License',
         'Intended Audience :: Developers',
