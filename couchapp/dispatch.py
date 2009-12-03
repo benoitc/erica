@@ -37,7 +37,7 @@ def dispatch(args):
     ui = UI(logging_handler=console)
     
     try:
-        _dispatch(ui, args)
+        return _dispatch(ui, args)
     except AppError, e:
         ui.logger.error("couchapp error: %s" % str(e))
     except KeyboardInterrupt:
