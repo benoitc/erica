@@ -158,8 +158,8 @@ def clone(ui, source, dest=None, rev=None):
                 del app_meta['manifest']
             if 'objects' in app_meta:
                 del app_meta['objects']
-            if 'lenght' in app_meta:
-                del app_meta['lenght']
+            if 'length' in app_meta:
+                del app_meta['length']
             if app_meta:
                 couchapp_file = os.path.join(path, 'couchapp.json')
                 ui.write_json(couchapp_file, app_meta)
