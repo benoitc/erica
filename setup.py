@@ -65,13 +65,13 @@ try:
         pass
 
     extra['console'] = ['bin/couchapp']
-
+    
 except ImportError:
     pass
-
+ 
 setup(
     name = 'Couchapp',
-    version = '0.5',
+    version = '0.5.1',
     url = 'http://github.com/couchapp/couchapp/tree/master',
     license =  'Apache License 2',
     author = 'Benoit Chesneau',

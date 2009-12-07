@@ -158,8 +158,8 @@ def clone(ui, source, dest=None, rev=None):
                 del app_meta['manifest']
             if 'objects' in app_meta:
                 del app_meta['objects']
-            if 'lenght' in app_meta:
-                del app_meta['lenght']
+            if 'length' in app_meta:
+                del app_meta['length']
             if app_meta:
                 couchapp_file = os.path.join(path, 'couchapp.json')
                 ui.write_json(couchapp_file, app_meta)
@@ -249,7 +249,7 @@ def clone(ui, source, dest=None, rev=None):
                     ui.logger.info("clone attachment: %s" % filename)
                     
 def generate(ui, path, kind, name, **opts):
-    if kind not in ["app", "view", "list", "show", 'filter', 'function', 'vendor']:
+    if kind not in ["app", "view", "list", "show", 'filter', 'function', 'vendor', 'update']:
         raise AppError("Can't generate %s in your couchapp. generator is unknown" % kind)
 
     if kind == "app":

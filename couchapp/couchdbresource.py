@@ -368,15 +368,13 @@ class ResponseStream(object):
             self.resp.close()
         
     def next(self):
-        return self.read(self.stream_size)
+        data = self.read(self.stream_size)
+        if not data:
+            raise StopIteration()
+        return data
         
     def __iter__(self):
-        while True:
-            data = self.next()
-            if data:
-                yield data
-            else:
-                break
+        return self
 
 
 def _utf8(s):
