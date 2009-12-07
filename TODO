@@ -1,8 +1,8 @@
 
-TODO : 0.4
+TODO : 0.5
 ------------
-- replace httplib2 and couchdb contrib by a thin client
 - more unitests
-- new application inheriting feature (bug #6)
-- specify app name in .couchapprc (bug #7)
-- PIP compliant.
+- couchdbdesktop compatibility
+- cleaner hook system
+- instant updates
+- .ignore file.
