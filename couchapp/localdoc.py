@@ -132,6 +132,30 @@ class LocalDoc(object):
         if not 'couchapp' in self._doc:
              self._doc['couchapp'] = {}
             
+        signatures = {}
+        attachments = {}
+        for name, filepath in self.attachments():
+            signatures[name] = self.ui.sign(filepath)
+            if with_attachments:
+                if self.ui.verbose >= 2:
+                    self.ui.logger.info("attach %s " % name)
+                attachments[name] = {}
+                f = open(filepath, "rb")
+                re_sp = re.compile('\s')
+                attachments[name]['data'] = re_sp.sub('', base64.b64encode(f.read()))
+                f.close()
+                attachments[name]['content_type'] = ';'.join(filter(None, mimetypes.guess_type(name)))
+        
+        if with_attachments: 
+            self._doc['_attachments'] = attachments
+            
+        self._doc['couchapp'].update({
+            'manifest': manifest,
+            'objects': objects,
+            'signatures': signatures
+        })
+        
+        
         if self.docid.startswith('_design/'):  # process macros
             for funs in ['shows', 'lists', 'updates', 'filters']:
                 if funs in self._doc:
@@ -162,30 +186,6 @@ class LocalDoc(object):
                         del manifest[dmanifest["views/%s" % vname]]
                 self._doc['views'] = views
                 package_views(self._doc,self._doc["views"], self.docdir, objects, self.ui)
-        
-        signatures = {}
-        attachments = {}
-        for name, filepath in self.attachments():
-            signatures[name] = self.ui.sign(filepath)
-            if with_attachments:
-                if self.ui.verbose >= 2:
-                    self.ui.logger.info("attach %s " % name)
-                attachments[name] = {}
-                f = open(filepath, "rb")
-                re_sp = re.compile('\s')
-                attachments[name]['data'] = re_sp.sub('', base64.b64encode(f.read()))
-                f.close()
-                attachments[name]['content_type'] = ';'.join(filter(None, mimetypes.guess_type(name)))
-        
-        if with_attachments: 
-            self._doc['_attachments'] = attachments
-            
-        self._doc['couchapp'].update({
-            'manifest': manifest,
-            'objects': objects,
-            'signatures': signatures
-        })
-        
         
         self.olddoc = {}
         if db is not None:
