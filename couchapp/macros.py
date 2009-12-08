@@ -51,7 +51,7 @@ def apply_lib(doc, funcs, app_dir, objs, ui):
 def run_code_macros(f_string, app_dir, ui):
    def rreq(mo):
        # just read the file and return it
-       path = os.path.join(app_dir, mo.group(2).strip(' '))
+       path = os.path.join(app_dir, mo.group(2).strip())
        library = ''
        filenum = 0
        for filename in glob.iglob(path):            
@@ -77,7 +77,7 @@ def run_json_macros(doc, f_string, app_dir, ui):
    def rjson(mo):
        if mo.group(2).startswith('_attachments'): 
            # someone  want to include from attachments
-           path = os.path.join(app_dir, mo.group(2).strip(' '))
+           path = os.path.join(app_dir, mo.group(2).strip())
            filenum = 0
            for filename in glob.iglob(path):
                library = ''
