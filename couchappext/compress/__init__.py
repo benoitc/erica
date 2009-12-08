@@ -98,8 +98,8 @@ class Compress(object):
             self.compress_css(actions['css'])
         
         if 'js' in actions:
-            if 'js_compressor' in conf['extensions']['compress']:
-                modname = conf['extensions']['compress']['js_compressor']
+            if 'js_compressor' in conf['compress']:
+                modname = conf['compress']['js_compressor']
                 if not isinstance(modname, basestring):
                     self.ui.log.warning("Warning: js_compressor settings should be a string")
                     self.ui.log.warning("Selecting default backend (jsmin)")

@@ -42,9 +42,6 @@ if os.name == 'nt':
 else:
     def _replace_slash(name):
         return name
-    
-
-
 
 def clone(ui, source, dest=None, rev=None):
     """
