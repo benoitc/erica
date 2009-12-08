@@ -102,7 +102,7 @@ def run_json_macros(doc, f_string, app_dir, ui):
            if not filenum:
                raise MacroError("Processing code: No file matching '%s'" % mo.group(2))
        else:	
-           fields = mo.group(2).split('.')
+           fields = mo.group(2).strip().split('.')
            library = doc
            count = len(fields)
            include_to = included
