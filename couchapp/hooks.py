@@ -23,7 +23,7 @@ except ImportError:
 from couchapp.utils import import_module, expandpath
 
 
-def python_hook(ui, path, hooktype, cmd, **kargs):
+def python_hook(ui, path, hooktype, cmd, **kwargs):
     try:
         modname, funname = cmd.split(":")
     except ValueError:
@@ -48,11 +48,13 @@ def python_hook(ui, path, hooktype, cmd, **kargs):
         if ui.verbose >= 1:
             ui.logger.error("%s: %s don't exist in %s" % (hooktype, funname, modname))
         return
+    else:
+        fun = getattr(mod, funname)
         
     try:
         return fun(ui, path, hooktype, **kwargs)
     except Exception, e:
-        ui.logger.error("%s:%s error while executing %s [%s]" % (hooktype, name, cmd, str(e)))
+        ui.logger.error("%s:%s error while executing %s [%s]" % (hooktype, modname, cmd, str(e)))
         return -1
 
 
@@ -100,8 +102,9 @@ def external_hook(ui, path, hooktype, cmd, **kwargs):
         return -1    
 
 def hook(ui, path, hooktype, **kwargs):
-    if not 'hooks' in ui.conf.items():
+    if not 'hooks' in ui.conf:
         return
+        
     if hooktype in ui.conf['hooks']:
         for hook in ui.conf['hooks'][hooktype]:
             if hook.startswith('python:'):
