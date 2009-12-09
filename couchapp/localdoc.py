@@ -30,9 +30,12 @@ from couchapp.errors import *
 from couchapp.macros import *
 from couchapp.utils import relpath
 
-re_backslash = re.compile('\\\\')
-def _replace_backslash(fname):
-    return re_backslash.sub('/', fname)
+if os.name == 'nt':
+    def _replace_backslash(name):
+        return name.replace("\\", "/")
+else:
+    def _replace_backslash(name):
+        return name
 
 class LocalDoc(object):
     
@@ -118,7 +121,7 @@ class LocalDoc(object):
                         
     def doc(self, db=None, with_attachments=True):
         """ Function to reetrieve document object from
-        document directory. If `with_attachments`is True
+        document directory. If `with_attachments` is True
         attachments will be included and encoded"""
         
         manifest = []
@@ -206,7 +209,7 @@ class LocalDoc(object):
             current_dir = self.docdir
         for name in os.listdir(current_dir):
             current_path = os.path.join(current_dir, name)
-            rel_path = relpath(current_path, self.docdir)
+            rel_path = _replace_backslash(relpath(current_path, self.docdir))
             if name.startswith("."):
                 continue
             elif depth == 0 and name.startswith('_'):
