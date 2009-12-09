@@ -43,11 +43,19 @@ def init(ui, path, *args, **opts):
 
 def push(ui, path, *args, **opts):
     export = opts.get('export', False)
+    print str(args)
     dest = None
+    doc_path = None
     if len(args) < 2:
-        doc_path = path
-        if args:
-            dest = args[0]
+        if export:
+            if path is None and args:
+                doc_path = args[0]
+            else:
+                doc_path = path
+        else:
+            doc_path = path
+            if args:
+                dest = args[0]
     else:
         doc_path = os.path.normpath(os.path.join(os.getcwd(), args[0]))
         dest = args[1]
