@@ -2,7 +2,7 @@ include INSTALLING.md
 include LICENSE
 include README.md
 include THANKS.txt
-include ez_setup.py
+include distribute_setup.py
 recursive-include templates *
 recursive-include vendor *
 recursive-include tests/testapp *
