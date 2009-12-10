@@ -43,7 +43,6 @@ def init(ui, path, *args, **opts):
 
 def push(ui, path, *args, **opts):
     export = opts.get('export', False)
-    print str(args)
     dest = None
     doc_path = None
     if len(args) < 2:
