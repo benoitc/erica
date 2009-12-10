@@ -51,7 +51,7 @@ class LocalDoc(object):
         """
         idfile = os.path.join(self.docdir, '_id')
         if os.path.exists(idfile):
-            docid = self.ui.read(idfile)
+            docid = self.ui.read(idfile).split("\n")[0].strip()
             if docid: return docid
         elif os.path.exists(os.path.join(self.docdir, '.couchapprc')):
             return "_design/%s" % os.path.split(self.docdir)[1]
