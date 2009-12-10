@@ -36,10 +36,12 @@ def _replace_backslash(fname):
 
 class LocalDoc(object):
     
-    def __init__(self, ui, path, create=False):
+    def __init__(self, ui, path, create=False, docid=None):
         self.ui = ui
         self.docdir = path
-        self.docid = self.get_id()
+        if not docid:
+            docid = self.get_id()
+        self.docid = docid
         self._doc = {'_id': self.docid}
         if create: 
             self.create()
@@ -53,10 +55,7 @@ class LocalDoc(object):
         if os.path.exists(idfile):
             docid = self.ui.read(idfile).split("\n")[0].strip()
             if docid: return docid
-        elif os.path.exists(os.path.join(self.docdir, '.couchapprc')):
-            return "_design/%s" % os.path.split(self.docdir)[1]
-        
-        return os.path.split(self.docdir)[1]
+        return "_design/%s" % os.path.split(self.docdir)[1]
         
     def __repr__(self):
         return "<%s (%s/%s)>" % (self.__class__.__name__, self.docdir, self.docid)
@@ -123,7 +122,7 @@ class LocalDoc(object):
         
         manifest = []
         objects = {}
-        self._doc = {'_id': self.get_id()}
+        self._doc = {'_id': self.docid}
         
         # get designdoc
         self._doc.update(self.dir_to_fields(self.docdir, manifest=manifest))
@@ -335,5 +334,5 @@ class LocalDoc(object):
             return  "%s/%s/index.html" % (dburl, self.docid)
         return False
         
-def instance(ui, path, create):
-    return LocalDoc(ui, path, create)
+def instance(ui, path, create=False, docid=None):
+    return LocalDoc(ui, path, create=create, docid=docid)

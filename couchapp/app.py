@@ -32,8 +32,8 @@ from couchapp.vendor import Vendor
 import couchapp.localdoc as localdoc
 
 
-def document(ui, path='', create=False):
-    doc = localdoc.instance(ui, path, create=create)
+def document(ui, path='', create=False, docid=None):
+    doc = localdoc.instance(ui, path, create=create, docid=docid)
     return doc
 
 if os.name == 'nt':

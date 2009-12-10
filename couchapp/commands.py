@@ -63,7 +63,7 @@ def push(ui, path, *args, **opts):
     
     _maybe_reload(ui, path, doc_path)
     
-    localdoc = app.document(ui, doc_path, False)
+    localdoc = app.document(ui, doc_path, create=False, docid=opts.get('docid'))
     if export:
         if opts.get('output'):
             ui.write_json(opts.get('output'), str(localdoc))
@@ -312,7 +312,7 @@ globalopts = [
 ]
 
 pushopts = [
-    ('', 'no-atomic', False, "Send attachments one by one"),
+    ('', 'no-atomic', False, "send attachments one by one"),
     ('', 'export', False, "don't do push, just export doc to stdout"),
     ('', 'output', '', "if export is selected, output to the file")
 ]
@@ -324,7 +324,7 @@ table = {
         "[COUCHAPPDIR]"),
     "push":
         (push,
-        pushopts,
+        pushopts + [('', 'docid', '', "set docid")],
         "[OPTION]... [COUCHAPPDIR] DEST"),
     "clone":
         (clone,
