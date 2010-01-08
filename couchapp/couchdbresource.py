@@ -281,9 +281,9 @@ class HTTPPool(object):
         if hasattr(httplib.HTTPConnection, 'timeout'):
             kwargs['timeout'] = self.timeout
         
-        if self.uri.port:
+        if self.uri.port and self.uri.port is not None:
             kwargs['port'] = self.uri.port
-
+            
         if self.uri.scheme == "https":
             kwargs.update(dict(key_file=self.key_file, cert_file=self.cert_file))
             connection = httplib.HTTPSConnection(self.uri.hostname, **kwargs)

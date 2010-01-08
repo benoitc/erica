@@ -184,7 +184,7 @@ def clone(ui, source, *args, **opts):
 def generate(ui, path, *args, **opts):
     dest = path
     if len(args) < 1:
-        raise AppError("Can't generate function, name or pat is missing")
+        raise AppError("Can't generate function, name or path is missing")
         
     if len(args) == 1:
         kind="app"
