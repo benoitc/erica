@@ -12,6 +12,7 @@ import shutil
 import sys
 import unittest
 
+from couchapp.errors import ResourceNotFound
 from couchapp.ui import UI
 from couchapp.couchdbclient import Database
 from couchapp.utils import popen3, deltree
@@ -144,8 +145,8 @@ class CliTestCase(unittest.TestCase):
           
     def testClone(self):
         self._make_testapp()
-        (child_stdin, child_stdout, child_stderr) = popen3("%s push my-app couchapp-test" % self.cmd)
-        
+        (child_stdin, child_stdout, child_stderr) = popen3("%s push -v my-app couchapp-test" % self.cmd)
+                
         design_doc = self.db['_design/my-app']
         
         app_dir =  os.path.join(self.tempdir, "couchapp-test")

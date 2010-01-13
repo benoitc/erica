@@ -71,7 +71,7 @@ except ImportError:
  
 setup(
     name = 'Couchapp',
-    version = '0.5.2',
+    version = '0.5.3',
     url = 'http://github.com/couchapp/couchapp/tree/master',
     license =  'Apache License 2',
     author = 'Benoit Chesneau',
