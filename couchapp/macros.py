@@ -39,6 +39,8 @@ def apply_lib(doc, funcs, app_dir, objs, ui):
         if not isinstance(v, basestring):
             continue
         else:
+            if ui.verbose>=2:
+                ui.logger.info("process function: %s" % k)
             old_v = v
             try:
                 funcs[k] = run_json_macros(doc, 
@@ -80,6 +82,8 @@ def run_json_macros(doc, f_string, app_dir, ui):
            path = os.path.join(app_dir, mo.group(2).strip())
            filenum = 0
            for filename in glob.iglob(path):
+               if ui.verbose>=2:
+                   ui.logger.info("process json macro: %s" % filename)
                library = ''
                try:
                    if filename.endswith('.json'):
@@ -102,12 +106,16 @@ def run_json_macros(doc, f_string, app_dir, ui):
            if not filenum:
                raise MacroError("Processing code: No file matching '%s'" % mo.group(2))
        else:	
-           fields = mo.group(2).split('.')
+           if ui.verbose>=2:
+               ui.logger.info("process json macro: %s" % mo.group(2))
+           fields = mo.group(2).strip().split('.')
            library = doc
            count = len(fields)
            include_to = included
            for i, field in enumerate(fields):
-               if not field in library: break
+               if not field in library:
+                   ui.logger.warn("process json macro: unknown json source: %s" % mo.group(2))
+                   break
                library = library[field]
                if i+1 < count:
                    include_to[field] = include_to.get(field, {})
