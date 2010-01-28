@@ -1,0 +1,9 @@
+Welcome to Couchapp for Windows!
+---------------------------------
+
+For configuration and usage directions, please read the ReadMe.md
+file that comes with this package.
+
+Also check the release notes at:
+
+ http://benoitc.github.com/couchapp/changelog.html

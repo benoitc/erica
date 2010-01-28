@@ -1,28 +1,33 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2009 Benoit Chesneau <benoitc@e-engura.org>
+# Copyright 2008,2009  Benoit Chesneau <benoitc@e-engura.org>
 #
-# This software is licensed as described in the file COPYING, which
-# you should have received as part of this distribution.
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at#
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
 
 import os
 import sys
 
-from ez_setup import use_setuptools
-if 'cygwin' in sys.platform.lower():
-   min_version='0.6c6'
-else:
-   min_version='0.6a9'
+if not hasattr(sys, 'version_info') or sys.version_info < (2, 5, 0, 'final'):
+    raise SystemExit("Couchapp requires Python 2.5 or later.")
+
 try:
-    use_setuptools(min_version=min_version)
-except TypeError:
-    # If a non-local ez_setup is already imported, it won't be able to
-    # use the min_version kwarg and will bail with TypeError
+    from setuptools import setup
+except ImportError:
+    from distribute_setup import use_setuptools
     use_setuptools()
-
-from setuptools import setup, find_packages
-
+    from setuptools import setup
+    
+extra = {}
 data_files = []
 
 for dir, dirs, files in os.walk('templates'):
@@ -34,9 +39,39 @@ for dir, dirs, files in os.walk('vendor'):
         [os.path.join(dir, file_) for file_ in files]))
     
 
+scripts = ['bin/couchapp']
+if os.name == 'nt':
+    scripts.append('contrib/win32/couchapp.bat')
+    
+packages = ['couchapp', 'couchapp.simplejson', 'couchappext', 'couchappext.compress',]
+
+
+# py2exe needs to be installed to work
+try:
+    import py2exe
+
+    # Help py2exe to find win32com.shell
+    try:
+        import modulefinder
+        import win32com
+        for p in win32com.__path__[1:]: # Take the path to win32comext
+            modulefinder.AddPackagePath("win32com", p)
+        pn = "win32com.shell"
+        __import__(pn)
+        m = sys.modules[pn]
+        for p in m.__path__[1:]:
+            modulefinder.AddPackagePath(pn, p)
+    except ImportError:
+        pass
+
+    extra['console'] = ['bin/couchapp']
+    
+except ImportError:
+    pass
+ 
 setup(
     name = 'Couchapp',
-    version = '0.3.4',
+    version = '0.5.3',
     url = 'http://github.com/couchapp/couchapp/tree/master',
     license =  'Apache License 2',
     author = 'Benoit Chesneau',
@@ -49,19 +84,17 @@ setup(
     keywords = 'couchdb couchapp',
     platforms = ['any'],
 
-    zip_safe = False,
-
-    packages=find_packages('src'),
-    package_dir={
-        '': 'src'
-    },
+    packages=packages,
     data_files = data_files,
     include_package_data = True,
-    entry_points = {
-        'console_scripts': [
-            'couchapp = couchapp.bin.couchapp_cli:main',
-        ]
-    },
+    
+    install_requires = [],
+    scripts = scripts,
+    options = dict(py2exe=dict(packages=['couchappext']),
+                   bdist_mpkg=dict(zipdist=True,
+                                   license='LICENSE',
+                                   readme='contrib/macosx/Readme.html',
+                                   welcome='contrib/macosx/Welcome.html')),
     classifiers = [
         'License :: OSI Approved :: Apache Software License',
         'Intended Audience :: Developers',
@@ -73,5 +106,5 @@ setup(
         'Topic :: Utilities',
     ],
     test_suite='tests',
-
+    **extra
 )

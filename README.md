@@ -134,7 +134,7 @@ In this example, the second usage of the macro is redundant, as the first usage 
 
 #### Sharing Code From Attachments into Views, Lists, and Shows
 
-!json and !code now work agains _attachments/ .
+!json and !code also work for the `_attachments/` directory.
 
     // !json _attachments/file.ext 
 
@@ -142,9 +142,9 @@ will create the variable _attachments['file.ext'].
 
     // !code _attachments/file.ext 
 
-will include content of the file.
+will include the contents of the file.
 
-For anything but _attachments, the include should use ".", so this change don't break the current behaviour. Duplicate property name (two files with same name but different extension) now print an error in verbose level = 2.
+For anything but `_attachments`, the include should use ".". Duplicate property names (two files with the same name but different extensions) will print an error in verbose level = 2.
 
 ### Deployment preferences in `.couchapprc`
 
@@ -163,7 +163,7 @@ The format is like this:
       }
     }
 
-When you've setup `.couchapprc` you can push your app with just `couchapp push` or for non-default environments `couchapp push production`. This also has the advantage of not requiring password use on the command line. The `.couchapprc` file is not pushed with the rest of the design doc, but please be careful not to accidentally check your `.couchapprc` file into Git!
+When you've set up `.couchapprc` you can push your app with just `couchapp push` or for non-default environments `couchapp push production`. This also has the advantage of not requiring password use on the command line. The `.couchapprc` file is not pushed with the rest of the design doc, but please be careful not to accidentally check your `.couchapprc` file into Git!
 
 ## Clone
 
