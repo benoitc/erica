@@ -200,11 +200,11 @@ class Database(object):
         if create and not self.dbname in server.all_dbs():
             try:
                 res = server.res.put('/%s/' % dbname)
+                if ui.verbose >= 1 and res['ok']:
+                    self.ui.logger.info("database %s created." % dbname)
             except PreconditionFailed:
                 if self.ui.verbose >= 1:
                     self.ui.logger.info("database %s not created, already exists" % dbname)
-            if ui.verbose >= 1 and res['ok']:
-                self.ui.logger.info("database %s created." % dbname)
                         
         self.server = server
         self.res = server.res.clone()

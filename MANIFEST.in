@@ -6,3 +6,4 @@ include distribute_setup.py
 recursive-include templates *
 recursive-include vendor *
 recursive-include tests/testapp *
+recursive-include contrib *

@@ -83,6 +83,16 @@ setup(
     document-based approach.""",
     keywords = 'couchdb couchapp',
     platforms = ['any'],
+    classifiers = [
+        'License :: OSI Approved :: Apache Software License',
+        'Intended Audience :: Developers',
+        'Intended Audience :: System Administrators',
+        'Development Status :: 4 - Beta',
+        'Programming Language :: Python',
+        'Operating System :: OS Independent',
+        'Topic :: Database',
+        'Topic :: Utilities',
+    ],
 
     packages=packages,
     data_files = data_files,
@@ -95,16 +105,6 @@ setup(
                                    license='LICENSE',
                                    readme='contrib/macosx/Readme.html',
                                    welcome='contrib/macosx/Welcome.html')),
-    classifiers = [
-        'License :: OSI Approved :: Apache Software License',
-        'Intended Audience :: Developers',
-        'Intended Audience :: System Administrators',
-        'Development Status :: 4 - Beta',
-        'Programming Language :: Python',
-        'Operating System :: OS Independent',
-        'Topic :: Database',
-        'Topic :: Utilities',
-    ],
     test_suite='tests',
     **extra
 )
