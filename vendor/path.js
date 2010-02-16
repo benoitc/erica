@@ -1,11 +1,11 @@
 // from couch.js
-function encodeOptions(options, noJson) {
+function encodeOptions(options) {
   var buf = []
   if (typeof(options) == "object" && options !== null) {
     for (var name in options) {
       if (!options.hasOwnProperty(name)) continue;
       var value = options[name];
-      if (!noJson && (name == "key" || name == "startkey" || name == "endkey")) {
+      if (name == "key" || name == "startkey" || name == "endkey") {
         value = toJSON(value);
       }
       buf.push(encodeURIComponent(name) + "=" + encodeURIComponent(value));
@@ -64,14 +64,4 @@ function olderPath(info) {
 
 function makeAbsolute(req, path) {
   return 'http://' + req.headers.Host + path;
-}
-
-
-function currentPath() {
-  path = req.path.map(function(item) {return encodeURIComponent(item)}).join('/');
-  if (req.query) {
-    return path + encodeOptions(req.query, true);
-  } else {
-    return path;
-  }
 }
