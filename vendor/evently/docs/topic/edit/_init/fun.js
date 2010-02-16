@@ -1,6 +1,6 @@
 function(e, id) {
   var editable = $(this);
-  
+  if ($$(editable)._init_ran) {return false;}
   // add edit link
   var edit = $('<a class="edit" href="#edit">edit code</a>');
   editable.append(edit);
@@ -14,5 +14,6 @@ function(e, id) {
   });
   example.width(s.width()*0.75);
   editable.prepend(example);
+  $$(editable)._init_ran = true;
   return false;
 }
