@@ -4,7 +4,7 @@ function() {
   $("pre", self).each(function() {
     var pre = $(this);
     var js = pre.text();
-    var r = js.match(/\$\(\"\#(.*)\"\)/);
+    var r = js.match(/\$\(\"\#([^\"]*)\"\)/);
     if (r) {
       var id = r[1];
       var code_id = 'code-'+id;

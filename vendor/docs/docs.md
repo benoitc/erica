@@ -6,6 +6,6 @@ Docs automatically make divs based on `$("#foo")` pattern matching. That is, we 
 
 Example Code:
 
-    $("#foo").hide("slow");
+    $("#hide_foo").hide("slow");
 
-That's all it takes. You only get one in each example for now. Have fun!
+That's all it takes. You only get one div in each example for now. Have fun!
