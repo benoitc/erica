@@ -4,7 +4,7 @@ You should use this widget in any CouchApp that allows users to login or signup.
 
 It is easy to install. To use the account widget, just define a `div` in your page and use [CouchApp](#/topic/couchapp) to load it from the design document and [Evently](#/topic/evently) to apply it to the page.
 
-Here's a basic example:
+Here's the most basic usage:
 
     $.couch.app(function(app){
       $("#basic_account").evently(app.ddoc.vendor.couchapp.evently.account);      
