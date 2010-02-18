@@ -1,18 +1,19 @@
 function(e, r) {
   var userCtx = r.userCtx;
-  // todo we need a place to put library functions // application constants
-  // maybe we need to make common.js require available in here
-  var proid = "couch.app.profile:"+userCtx.name, 
-    widget = $(this);
-
-  $$(widget).app.db.openDoc(proid, {
-    success : function(doc) {
-      // todo decide if this is better than passing around
-      $$(widget).profile = doc;
-      widget.trigger("profileReady", [doc]);
-    },
-    error : function() {
-      widget.trigger("noProfile", [userCtx]);
-    }
+  var widget = $(this);
+  // load the profile from the user doc
+  $.couch.userDb(function(db) {
+    var userDocId = "org.couchdb.user:"+userCtx.name;
+    db.openDoc(userDocId, {
+      success : function(userDoc) {
+        var profile = userDoc["couch.app.profile"];
+        if (profile) {
+          $$(widget).profile = profile;
+          widget.trigger("profileReady", [profile]);
+        } else {
+          widget.trigger("noProfile", [userCtx]);
+        }
+      }
+    });
   });
 }

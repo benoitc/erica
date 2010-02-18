@@ -1,18 +1,13 @@
 function() {
   // TODO this can be cleaned up with docForm
-  // todo get the app from somewhere
+
   var name = $("input[name=userCtxName]",this).val();
-  var proid = "couch.app.profile:"+name, 
-  newProfile = {
-    _id : proid,
-    type : "couch.app.profile",
-    rand : Math.random().toString(),
-    name : name, 
+  var newProfile = {
+    rand : Math.random().toString(), 
     nickname : $("input[name=nickname]",this).val(),
     email : $("input[name=email]",this).val(),
     url : $("input[name=url]",this).val()
   }, widget = $(this);
-  var app = $$(widget).app;
 
   // setup gravatar_url
   if (typeof hex_md5 == "undefined") {
@@ -22,14 +17,20 @@ function() {
 
   newProfile.gravatar_url = 'http://www.gravatar.com/avatar/'+hex_md5(newProfile.email || newProfile.rand)+'.jpg?s=40&d=identicon';
 
-  app.db.saveDoc(newProfile, {
-    success : function() {
-      app.db.openDoc(proid, {
-        success : function(doc) {
-          widget.trigger("profileReady", [doc]);
-        }
-      });
-    }
+  // store the user profile on the user account document
+  $.couch.userDb(function(db) {
+    var userDocId = "org.couchdb.user:"+name;
+    db.openDoc(userDocId, {
+      success : function(userDoc) {
+        userDoc["couch.app.profile"] = newProfile;
+        db.saveDoc(userDoc, {
+          success : function() {
+            $$(widget).profile = profile;
+            widget.trigger("profileReady", [newProfile]);
+          }
+        });
+      }
+    });
   });
   return false;
 }
