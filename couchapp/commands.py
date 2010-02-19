@@ -225,7 +225,7 @@ def vendor(ui, path, *args, **opts):
             
         elif len(args) > 1:
             dest = args.pop(0)
-            source = args.pop(1)
+            source = args.pop(0)
         
         if dest is None:
             raise AppError("You aren't in a couchapp.")
@@ -241,7 +241,7 @@ def vendor(ui, path, *args, **opts):
             vendorname=args.pop(0)
         elif len(args) >= 2:
             dest = args.pop(0)
-            vendorname=args.pop(1)
+            vendorname=args.pop(0)
         if dest is None:
             raise AppError("You aren't in a couchapp.")
             
