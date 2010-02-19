@@ -25,7 +25,7 @@ function() {
         userDoc["couch.app.profile"] = newProfile;
         db.saveDoc(userDoc, {
           success : function() {
-            $$(widget).profile = profile;
+            $$(widget).profile = newProfile;
             widget.trigger("profileReady", [newProfile]);
           }
         });
