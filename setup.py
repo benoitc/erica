@@ -21,11 +21,11 @@ if not hasattr(sys, 'version_info') or sys.version_info < (2, 5, 0, 'final'):
     raise SystemExit("Couchapp requires Python 2.5 or later.")
 
 try:
-    from setuptools import setup
+    from setuptools import setup, find_packages
 except ImportError:
     from distribute_setup import use_setuptools
     use_setuptools()
-    from setuptools import setup
+    from setuptools import setup, find_packages
     
 extra = {}
 data_files = []
@@ -38,12 +38,8 @@ for dir, dirs, files in os.walk('vendor'):
     data_files.append((os.path.join('couchapp', dir), 
         [os.path.join(dir, file_) for file_ in files]))
     
-
-scripts = ['bin/couchapp']
-if os.name == 'nt':
-    scripts.append('contrib/win32/couchapp.bat')
-    
-packages = ['couchapp', 'couchapp.simplejson', 'couchappext', 'couchappext.compress',]
+packages = ['couchapp', 'couchapp.simplejson', 'couchappext', 
+          'couchappext.compress',]
 
 
 # py2exe needs to be installed to work
@@ -63,15 +59,15 @@ try:
             modulefinder.AddPackagePath(pn, p)
     except ImportError:
         pass
-
-    extra['console'] = ['bin/couchapp']
     
 except ImportError:
     pass
+    
+from couchapp import __version__ as version
  
 setup(
     name = 'Couchapp',
-    version = '0.5.3',
+    version = version,
     url = 'http://github.com/couchapp/couchapp/tree/master',
     license =  'Apache License 2',
     author = 'Benoit Chesneau',
@@ -94,17 +90,21 @@ setup(
         'Topic :: Utilities',
     ],
 
-    packages=packages,
+    packages= find_packages(exclude=['tests']),
     data_files = data_files,
     include_package_data = True,
     
     install_requires = [],
-    scripts = scripts,
     options = dict(py2exe=dict(packages=['couchappext']),
                    bdist_mpkg=dict(zipdist=True,
                                    license='LICENSE',
                                    readme='contrib/macosx/Readme.html',
                                    welcome='contrib/macosx/Welcome.html')),
+                                   
+    entry_points="""
+    [console_scripts]
+    couchapp=couchapp.dispatch:run
+    """,
     test_suite='tests',
     **extra
 )
