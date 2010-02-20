@@ -33,7 +33,6 @@ def dispatch(args):
         ui.logger.info("keyboard interrupt")
     except Exception, e:
         ui.logger.critical(str(e))
-        raise
     return -1
     
 
