@@ -1,3 +1,0 @@
-function(keys, values, rereduce) {
-  
-}
