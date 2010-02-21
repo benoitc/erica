@@ -1,0 +1,16 @@
+Package: python-couchapp
+Source: couchapp
+Version: 0.6-1
+Architecture: all
+Maintainer: Benoit Chesneau <benoitc@e-engura.org>
+Installed-Size: 768
+Depends: python (<< 2.7), python (>= 2.6), python-support (>= 0.90.0)
+Provides: python2.6-couchapp
+Section: python
+Priority: optional
+Description: Standalone CouchDB Application Development Made Simple.
+ CouchApp is a set of helpers and a jQuery plugin
+     that conspire to get you up and running on CouchDB quickly and
+     correctly. It brings clarity and order to the freedom of CouchDB's
+     document-based approach.
+Python-Version: 2.6

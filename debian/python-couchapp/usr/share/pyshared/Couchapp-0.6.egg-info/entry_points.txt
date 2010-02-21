@@ -1,0 +1,4 @@
+
+    [console_scripts]
+    couchapp=couchapp.dispatch:run
+    

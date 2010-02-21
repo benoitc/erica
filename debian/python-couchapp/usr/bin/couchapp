@@ -1,0 +1,9 @@
+#!/usr/bin/python
+# EASY-INSTALL-ENTRY-SCRIPT: 'Couchapp==0.6','console_scripts','couchapp'
+__requires__ = 'Couchapp==0.6'
+import sys
+from pkg_resources import load_entry_point
+
+sys.exit(
+   load_entry_point('Couchapp==0.6', 'console_scripts', 'couchapp')()
+)
