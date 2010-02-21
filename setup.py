@@ -3,32 +3,25 @@
 # This file is part of couchapp released under the Apache 2 license. 
 # See the NOTICE for more information.
 
+from distutils.command.install_data import install_data
 import os
 import sys
 
 if not hasattr(sys, 'version_info') or sys.version_info < (2, 5, 0, 'final'):
     raise SystemExit("Couchapp requires Python 2.5 or later.")
 
-try:
-    from setuptools import setup, find_packages
-except ImportError:
-    from distribute_setup import use_setuptools
-    use_setuptools()
-    from setuptools import setup, find_packages
+from setuptools import setup, find_packages
+
     
 extra = {}
 data_files = []
+for root in ('templates', 'vendor'):
+    for dir, dirs, files in os.walk(root):
+        dirs[:] = [x for x in dirs if not x.startswith('.')]
+        files = [x for x in files if not x.startswith('.')]
+        data_files.append((os.path.join('couchapp', dir),
+                          [os.path.join(dir, file_) for file_ in files]))
 
-for dir, dirs, files in os.walk('templates'):
-    data_files.append((os.path.join('couchapp', dir), 
-        [os.path.join(dir, file_) for file_ in files]))
-
-for dir, dirs, files in os.walk('vendor'):
-    data_files.append((os.path.join('couchapp', dir), 
-        [os.path.join(dir, file_) for file_ in files]))
-    
-packages = ['couchapp', 'couchapp.simplejson', 'couchappext', 
-          'couchappext.compress',]
 
 
 # py2exe needs to be installed to work
@@ -52,11 +45,20 @@ try:
 except ImportError:
     pass
     
-from couchapp import __version__ as version
+
+class install_package_data(install_data):
+    def finalize_options(self):
+        self.set_undefined_options('install',
+                                   ('install_lib', 'install_dir'))
+        install_data.finalize_options(self)
+ 
+cmdclass = {'install_data': install_package_data }
+
+from couchapp import __version__
  
 setup(
     name = 'Couchapp',
-    version = version,
+    version = __version__,
     url = 'http://github.com/couchapp/couchapp/tree/master',
     license =  'Apache License 2',
     author = 'Benoit Chesneau',
@@ -80,10 +82,14 @@ setup(
     ],
 
     packages= find_packages(exclude=['tests']),
-    data_files = data_files,
+    data_files=data_files,
+
     include_package_data = True,
+    cmdclass=cmdclass,
     
-    install_requires = [],
+    install_requires = [
+        'setuptools>=0.6b1'
+    ],
     options = dict(py2exe=dict(packages=['couchappext']),
                    bdist_mpkg=dict(zipdist=True,
                                    license='LICENSE',
