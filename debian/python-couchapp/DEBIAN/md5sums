@@ -1,7 +1,7 @@
 32efcc0d5e612a47804d8413786a62e9  usr/bin/couchapp
 449d3c3bde86fcffe341bf6283060706  usr/share/python-support/python-couchapp.public
 eff97db2923305be8397e005a296366e  usr/share/doc/python-couchapp/copyright
-82141e192b3758a0b6b2ea793430ab12  usr/share/doc/python-couchapp/changelog.Debian.gz
+136c700582874bdd91f6eb7c6d2deab6  usr/share/doc/python-couchapp/changelog.Debian.gz
 89e5fbcd08a47139dc4d4b43ec1e79da  usr/share/pyshared/couchappext/couchdbvendor.py
 78e122afbd4b723af08b9d2d4e11b125  usr/share/pyshared/couchappext/hgvendor.py
 e5c5028745a89560610e82340ffa6a19  usr/share/pyshared/couchappext/gitvendor.py

@@ -1,6 +1,6 @@
 Package: python-couchapp
 Source: couchapp
-Version: 0.6-1
+Version: 0.6dev-1
 Architecture: all
 Maintainer: Benoit Chesneau <benoitc@e-engura.org>
 Installed-Size: 768
