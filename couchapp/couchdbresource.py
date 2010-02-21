@@ -39,8 +39,9 @@ _http_pool = {}
 
 class CouchDBResource(object):
   
-    def __init__(self, ui, url="http://127.0.0.1:5984", headers=None, timeout=DEFAULT_TIMEOUT, 
-            max_connections=MAX_CONNECTIONS, key_file=None, cert_file=None):
+    def __init__(self, ui, url="http://127.0.0.1:5984", headers=None, 
+            timeout=DEFAULT_TIMEOUT, max_connections=MAX_CONNECTIONS, 
+            key_file=None, cert_file=None):
         headers = headers or {}
         uri = url_parser(url)
         if uri.scheme != "http" and uri.scheme != "https":
@@ -178,7 +179,6 @@ class CouchDBResource(object):
         
         headers = headers or {}
         headers.update(self._headers.copy())
-        
 
         size = headers.get('Content-Length', None)
         if payload:

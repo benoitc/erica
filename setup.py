@@ -23,8 +23,6 @@ for root in ('templates', 'vendor'):
                           [os.path.join(dir, file_) for file_ in files]))
 
 
-
-
 if os.name == "nt":
     # py2exe needs to be installed to work
     try:

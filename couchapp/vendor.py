@@ -126,17 +126,13 @@ class Vendor(object):
             if os.path.isdir(dest):
                 if should_force:
                     self.ui.deltree(dest)
-                    shutil.copytree(path, dest)
-                    self.ui.write_json(metaf, meta)
-                    if self.ui.verbose >= 1:
-                        self.ui.logger.info("%s installed in vendors")
-                self.ui.logger.error("vendor: %s already installed" % name)
-                continue
-            else:
-                shutil.copytree(path, dest)
-                self.ui.write_json(metaf, meta)
-                if self.ui.verbose >= 1:
-                    self.ui.logger.info("%s installed in vendors" % name)
+                else:
+                    self.ui.logger.error("vendor: %s already installed" % name)
+                    continue
+            shutil.copytree(path, dest)
+            self.ui.write_json(metaf, meta)
+            if self.ui.verbose >= 1:
+                self.ui.logger.info("%s installed in vendors" % name)
         self.ui.deltree(temppath)
         return 0
     
