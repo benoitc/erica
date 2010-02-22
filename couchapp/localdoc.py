@@ -200,6 +200,8 @@ class LocalDoc(object):
             rel_path = _replace_backslash(relpath(current_path, self.docdir))
             if name.startswith("."):
                 continue
+           elif name.startswith("CVS"):
+                continue
             elif depth == 0 and name.startswith('_'):
                 # files starting with "_" are always "special"
                 continue
@@ -280,6 +282,8 @@ class LocalDoc(object):
                 for dirname in dirs:
                     if dirname.startswith('.'):
                         dirs.remove(dirname)
+                if root.endswith("CVS"):
+                    continue
                 if files:
                     for filename in files:
                         if filename.startswith('.'):
