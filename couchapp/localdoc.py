@@ -31,6 +31,11 @@ class LocalDoc(object):
     def __init__(self, ui, path, create=False, docid=None):
         self.ui = ui
         self.docdir = path
+        self.ignores = []
+        ignorefile = os.path.join(path, '.couchappignore')
+        if os.path.exists(ignorefile):
+            # A .couchappignore file is a json file containing a list of regexps for things to skip
+            self.ignores = json.load(open(ignorefile, 'r'))
         if not docid:
             docid = self.get_id()
         self.docid = docid
@@ -187,7 +192,16 @@ class LocalDoc(object):
                 pass
             
         return self._doc
-                
+    
+    def check_ignore(self, item):
+        for i in self.ignores:
+            match = re.match(i, item)
+            if match:
+                if self.ui.verbose >= 2:
+                    self.ui.logger.info("ignoring %s" % item)
+                return True
+        return False
+    
     def dir_to_fields(self, current_dir='', depth=0,
                 manifest=[]):
         """ process a directory and get all members """        
@@ -200,7 +214,7 @@ class LocalDoc(object):
             rel_path = _replace_backslash(relpath(current_path, self.docdir))
             if name.startswith("."):
                 continue
-           elif name.startswith("CVS"):
+            elif self.check_ignore(name):
                 continue
             elif depth == 0 and name.startswith('_'):
                 # files starting with "_" are always "special"
@@ -282,11 +296,13 @@ class LocalDoc(object):
                 for dirname in dirs:
                     if dirname.startswith('.'):
                         dirs.remove(dirname)
-                if root.endswith("CVS"):
-                    continue
+                    elif self.check_ignore(dirname):
+                        dirs.remove(dirname)
                 if files:
                     for filename in files:
                         if filename.startswith('.'):
+                            continue
+                        elif self.check_ignore(filename):
                             continue
                         else:
                             filepath = os.path.join(root, filename)
