@@ -28,6 +28,9 @@ class IgnoresTests(unittest.TestCase):
     def setUp(self):
         # Create a temp dir for the tests to run in
         self.tmp_dir = tempfile.mkdtemp()
+        # Define some test data
+        self.testdata = {'CVS': True, "dontignorethisCVS": False, 
+                        "ignore_me": True, "but_don't_ignore_me": False}
         # Create the ignores file
         self.ignores = ["^CVS", "ignore_me"]
         f = open(os.path.join(self.tmp_dir, '.couchappignore'), 'w')
@@ -38,8 +41,6 @@ class IgnoresTests(unittest.TestCase):
         ui = UI()
         self.doc = doc(ui, self.tmp_dir)
 
-        self.testdata = {'CVS': True, "dontignorethisCVS": False, 
-                        "ignore_me": True, "but_don't_ignore_me": False}
         # I could write these files to the temp area, but that seems unnecessary
         # since the unit test doesn't interact with the file system other than 
         # to make the .couchappignore file.
