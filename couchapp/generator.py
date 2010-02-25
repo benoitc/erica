@@ -1,18 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2008,2009 Benoit Chesneau <benoitc@e-engura.org>
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at#
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+# This file is part of couchapp released under the Apache 2 license. 
+# See the NOTICE for more information.
 
 import os
 import shutil
@@ -39,7 +28,7 @@ def generate_app(ui, path, template=None, create=False):
         'views'
     ]
     
-    TEMPLATES = ['app', 'vendor']
+    TEMPLATES = ['app']
     prefix = ''
     if template is not None:
         prefix = os.path.join(*template.split('/'))
@@ -64,16 +53,16 @@ def generate_app(ui, path, template=None, create=False):
             for user_location in user_path():
                 location = os.path.join(user_location, 'templates', prefix, t)
                 if os.path.exists(location):
-                    if t == "vendor":
-                        vendordir = os.path.join(appdir, "vendor")
-                        try:
-                            os.makedirs(vendordir)
-                        except:
-                            pass
                     t = os.path.join(prefix, t)
                     break
             
         copy_helper(appdir, t)
+        
+    # add vendor
+    vendor_dir = os.path.join(appdir, 'vendor', 'couchapp')
+    os.makedirs(vendor_dir)
+    copy_helper(vendor_dir, '', tname="vendor")
+    
     fid = os.path.join(appdir, '_id')
     if not os.path.isfile(fid):
         f = open(fid, 'wb')
@@ -90,9 +79,9 @@ def generate_function(ui, path, kind, name, template=None):
     if template:
         functions_path = []
         _relpath = os.path.join(*template.split('/'))
-        template_dir = find_template_dir(_relpath)
+        template_dir = find_template_dir("templates", _relpath)
     else:
-        template_dir = find_template_dir()
+        template_dir = find_template_dir("templates")
     if template_dir:
         functions = []
         if kind == "view":
@@ -131,9 +120,9 @@ def generate_function(ui, path, kind, name, template=None):
         raise AppError("Defaults templates not found. Check your install.")
         
 
-def copy_helper(path, directory):
+def copy_helper(path, directory, tname="templates"):
     """ copy helper used to generate an app"""
-    templatedir = find_template_dir(directory)
+    templatedir = find_template_dir(tname, directory)
     if templatedir:
         if directory == "vendor":
             path = os.path.join(path, directory)
@@ -158,8 +147,8 @@ def copy_helper(path, directory):
         raise AppError("Can't create a CouchApp in %s: default template not found." % (
                 path))
                         
-def find_template_dir(directory=''):
-    paths = ['templates', '../templates']
+def find_template_dir(name, directory=''):
+    paths = ['%s' % name, '../%s' % name]
     if hasattr(sys, 'frozen'): # py2exe
         modpath = sys.executable
     else:
@@ -170,7 +159,7 @@ def find_template_dir(directory=''):
     if directory:
         user_locations = []
         for user_location in user_path():
-            user_locations.append(os.path.join(user_location, 'templates', directory))
+            user_locations.append(os.path.join(user_location, name, directory))
         default_locations = user_locations + default_locations
 
     found = False
