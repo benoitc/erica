@@ -1,3 +1,9 @@
+$.log = function() {
+  if (window && window.console && window.console.log) {
+    window.console.log(arguments);
+  }
+};
+
 // todo remove this crap
 function escapeHTML(st) {                                       
   return(                                                                 
