@@ -77,8 +77,8 @@ def pushapps(ui, source, dest, *args, **opts):
     source = os.path.normpath(os.path.join(os.getcwd(), source))
     for d in os.listdir(source):
         appdir = os.path.join(source, d)
-        print appdir
-        if os.path.isdir(appdir) and os.path.isfile(os.path.join(appdir, '.couchapprc')):
+        if os.path.isdir(appdir) and os.path.isfile(os.path.join(appdir, 
+                                        '.couchapprc')):
             localdoc = app.document(ui, appdir)
             hooks.hook(ui, appdir, "pre-push", dbs=dbs, pushapps=True)
             if export or not noatomic:
