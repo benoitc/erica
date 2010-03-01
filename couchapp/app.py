@@ -3,6 +3,8 @@
 # This file is part of couchapp released under the Apache 2 license. 
 # See the NOTICE for more information.
 
+from __future__ import with_statement
+
 import base64
 import copy
 from hashlib import md5
@@ -14,7 +16,7 @@ except ImportError:
     import couchapp.simplejson as json
     
 from couchapp.errors import AppError
-import couchapp.couchdbclient as client
+from couchapp import client
 from couchapp.utils import to_bytestring
 import couchapp.generator as generator
 from couchapp.vendor import Vendor
@@ -44,6 +46,7 @@ def clone(ui, source, dest=None, rev=None):
     except ValueError:
         raise AppError("%s isn't a valid source" % source)
 
+
     if not dest:
         dest = docid
    
@@ -51,11 +54,11 @@ def clone(ui, source, dest=None, rev=None):
     if not os.path.exists(path):
         os.makedirs(path)
 
-    db = client.Database(ui, dburl)    
+    db = client.Database(ui, dburl[:-1])    
     if not rev:
-        doc = db.get_doc("_design/%s" % docid)
+        doc = db.open_doc("_design/%s" % docid).json_body
     else:
-        doc = db.get_doc("_design/%s" % docid, rev=rev)
+        doc = db.open_doc("_design/%s" % docid, rev=rev).json_body
     docid = doc['_id']
         
     
@@ -162,7 +165,8 @@ def clone(ui, source, dest=None, rev=None):
                             func_name)
                     ui.write(filename, func)
                     if ui.verbose >=2:
-                        ui.logger.info("clone view not in manifest: %s" % filename)
+                        ui.logger.info(
+                            "clone view not in manifest: %s" % filename)
         elif key in ('shows', 'lists', 'filter', 'update'):
             showpath = os.path.join(path, key)
             if not os.path.isdir(showpath):
@@ -172,7 +176,8 @@ def clone(ui, source, dest=None, rev=None):
                         func_name)
                 ui.write(filename, func)
                 if ui.verbose >=2:
-                    ui.logger.info("clone show or list not in manifest: %s" % filename)
+                    ui.logger.info(
+                        "clone show or list not in manifest: %s" % filename)
         else:
             filedir = os.path.join(path, key)
             if os.path.exists(filedir):
@@ -224,19 +229,18 @@ def clone(ui, source, dest=None, rev=None):
                 os.makedirs(currentdir)
     
             if signatures.get(filename) != ui.sign(filepath):
-                resp = db.fetch_attachment(docid, filename, stream=True)
-                f = open(filepath, 'wb')
-                while 1:
-                    data = resp.read(16384)
-                    if not data: break
-                    f.write(data)
-                f.close()
+                resp = db.fetch_attachment(docid, filename)
+                with open(filepath, 'wb') as f:
+                    for chunk in resp.body_file:
+                        f.write(chunk)
                 if ui.verbose>=2:
                     ui.logger.info("clone attachment: %s" % filename)
                     
 def generate(ui, path, kind, name, **opts):
-    if kind not in ["app", "view", "list", "show", 'filter', 'function', 'vendor', 'update']:
-        raise AppError("Can't generate %s in your couchapp. generator is unknown" % kind)
+    if kind not in ["app", "view", "list", "show", 'filter', 'function', 
+                    'vendor', 'update']:
+        raise AppError(
+            "Can't generate %s in your couchapp. generator is unknown" % kind)
 
     if kind == "app":
         generator.generate_app(ui, path, template=opts.get("template"), 

@@ -32,7 +32,9 @@ def dispatch(args):
     except KeyboardInterrupt:
         ui.logger.info("keyboard interrupt")
     except Exception, e:
-        ui.logger.critical(str(e))
+        import traceback
+        
+        ui.logger.critical("%s\n\n%s" % (str(e), traceback.format_exc()))
     return -1
     
 

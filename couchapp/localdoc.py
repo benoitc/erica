@@ -3,6 +3,8 @@
 # This file is part of couchapp released under the Apache 2 license. 
 # See the NOTICE for more information.
 
+
+from __future__ import with_statement
 import base64
 import mimetypes
 import os
@@ -15,6 +17,7 @@ try:
 except ImportError:
     import couchapp.simplejson as json
     
+from couchapp.client import update_doc
 from couchapp.errors import *
 from couchapp.macros import *
 from couchapp.utils import relpath
@@ -77,7 +80,7 @@ class LocalDoc(object):
             self.olddoc = {}
             if noatomic:
                 doc = self.doc(db, with_attachments=False)
-                db.save_doc(doc)
+                doc = update_doc(db.save_doc(doc).json_body, doc)
                 if 'couchapp' in self.olddoc:
                     old_signatures = self.olddoc['couchapp'].get('signatures', {})
                 else:
@@ -88,26 +91,27 @@ class LocalDoc(object):
                     for name, signature in old_signatures.items():
                         cursign = signatures.get(name)
                         if cursign is not None and cursign != signature:
-                            db.delete_attachment(doc, name)
+                            update_doc(db.delete_attachment(doc, 
+                                name).json_body, doc)
+                            
                
                
                 for name, filepath in self.attachments():
-                    print name not in old_signatures or old_signatures.get(name) != signatures[name]
-                    if name not in old_signatures or old_signatures.get(name) != signatures[name]:
+                    if name not in old_signatures or \
+                            old_signatures.get(name) != signatures[name]:
                         if self.ui.verbose >= 2:
                             self.ui.logger.info("attach %s " % name)
-                            
-                        print doc['_id']
-                        db.put_attachment(doc, open(filepath, "r"), name=name)
+                        update_doc(db.put_attachment(doc, open(filepath, "r"), 
+                            name=name).json_body, doc)    
             else:
                 doc = self.doc()
                 try:
-                    olddoc = db.get_doc(self.docid)
+                    olddoc = db.open_doc(self.docid).json_body
                     doc.update({'_rev': olddoc['_rev']})
                 except ResourceNotFound:
                     pass
-                db.save_doc(doc)   
-            indexurl = self.index(db.url, doc['couchapp'].get('index'))
+                doc = update_doc(db.save_doc(doc).json_body, doc)   
+            indexurl = self.index(db.uri, doc['couchapp'].get('index'))
             if indexurl:
                 if browser:
                     webbrowser.open_new_tab(indexurl)
@@ -139,11 +143,12 @@ class LocalDoc(object):
                 if self.ui.verbose >= 2:
                     self.ui.logger.info("attach %s " % name)
                 attachments[name] = {}
-                f = open(filepath, "rb")
-                re_sp = re.compile('\s')
-                attachments[name]['data'] = re_sp.sub('', base64.b64encode(f.read()))
-                f.close()
-                attachments[name]['content_type'] = ';'.join(filter(None, mimetypes.guess_type(name)))
+                with open(filepath, "rb") as f:
+                    re_sp = re.compile('\s')
+                    attachments[name]['data'] = re_sp.sub('', 
+                                        base64.b64encode(f.read()))
+                attachments[name]['content_type'] = ';'.join(filter(None, 
+                                            mimetypes.guess_type(name)))
         
         if with_attachments: 
             self._doc['_attachments'] = attachments
@@ -158,11 +163,14 @@ class LocalDoc(object):
         if self.docid.startswith('_design/'):  # process macros
             for funs in ['shows', 'lists', 'updates', 'filters']:
                 if funs in self._doc:
-                    package_shows(self._doc, self._doc[funs], self.docdir, objects, self.ui)
+                    package_shows(self._doc, self._doc[funs], self.docdir, 
+                            objects, self.ui)
             
             if 'validate_doc_update' in self._doc:
-                tmp_dict = dict(validate_doc_update=self._doc["validate_doc_update"])
-                package_shows( self._doc, tmp_dict, self.docdir, objects, self.ui)
+                tmp_dict = dict(validate_doc_update=self._doc[
+                                                    "validate_doc_update"])
+                package_shows( self._doc, tmp_dict, self.docdir, 
+                    objects, self.ui)
                 self._doc.update(tmp_dict)
 
             if 'views' in  self._doc:
@@ -184,7 +192,8 @@ class LocalDoc(object):
                     else:
                         del manifest[dmanifest["views/%s" % vname]]
                 self._doc['views'] = views
-                package_views(self._doc,self._doc["views"], self.docdir, objects, self.ui)
+                package_views(self._doc,self._doc["views"], self.docdir, 
+                        objects, self.ui)
         
         self.olddoc = {}
         if db is not None:
@@ -265,26 +274,31 @@ class LocalDoc(object):
                         content = self.ui.read_json(current_path)
                     except ValueError:
                         if self.ui.verbose >= 2:
-                            self.ui.logger.error("Json invalid in %s" % current_path)           
+                            self.ui.logger.error(
+                                    "Json invalid in %s" % current_path)           
                 else:
                     try:
                         content = self.ui.read(current_path)
                     except UnicodeDecodeError, e:
-                        self.ui.logger.error("%s isn't encoded in utf8" % current_path)
+                        self.ui.logger.error(
+                            "%s isn't encoded in utf8" % current_path)
                         content = self.ui.read(current_path, utf8=False)
                         try:
                             content.encode('utf-8')
                         except UnicodeError, e:
-                            self.ui.logger.error("plan B didn't work, %s is a binary" % current_path)
+                            self.ui.logger.error(
+                            "plan B didn't work, %s is a binary" % current_path)
                             self.ui.logger.error("use plan C: encode to base64")   
-                            content = "base64-encoded;%s" % base64.b64encode(content)
+                            content = "base64-encoded;%s" % base64.b64encode(
+                                                                        content)
 
                 
                 # remove extension
                 name, ext = os.path.splitext(name)
                 if name in fields and ext in ('.txt'):
                     if self.ui.verbose >= 2:
-                        self.ui.logger.error("%(name)s is already in properties. Can't add (%(name)s%(ext)s)" % {
+                        self.ui.logger.error(
+        "%(name)s is already in properties. Can't add (%(name)s%(ext)s)" % {
                             "name": name, "ext": ext })
                 else:
                     manifest.append(rel_path)
@@ -339,7 +353,8 @@ class LocalDoc(object):
             if os.path.isdir(current_path):
                 attachdir = os.path.join(current_path, '_attachments')
                 if os.path.isdir(attachdir):
-                    for attachment in self._process_attachments(attachdir, vendor=name):
+                    for attachment in self._process_attachments(attachdir, 
+                                                        vendor=name):
                         yield attachment
     
     def index(self, dburl, index):
