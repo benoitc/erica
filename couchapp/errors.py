@@ -3,6 +3,9 @@
 # This file is part of couchapp released under the Apache 2 license. 
 # See the NOTICE for more information.
 
+
+from couchapp.restkit import ResourceError
+
 class AppError(Exception):
     """ raised when a application error appear """
     
@@ -12,13 +15,13 @@ class MacroError(Exception):
 class VendorError(Exception):
     """ vendor error """
     
-class ResourceNotFound(Exception):
+class ResourceNotFound(ResourceError):
     """ raised when a resource not found on CouchDB"""
    
-class ResourceConflict(Exception):
+class ResourceConflict(ResourceError):
     """ raised when a conflict occured"""
 
-class PreconditionFailed(Exception):
+class PreconditionFailed(ResourceError):
     """ precondition failed error """    
     
 class RequestFailed(Exception): 
@@ -29,10 +32,3 @@ class Unauthorized(Exception):
 
 class CommandLineError(Exception):
     """ error when a bad command line is passed"""
-    
-class BulkSaveError(Exception):
-    """ error during bulk save"""
-    
-    def __init__(self, errors, *args, **kwargs):
-        self.errors = errors
-        super(BulkSaveError, self).__init__(*args, **kwargs)

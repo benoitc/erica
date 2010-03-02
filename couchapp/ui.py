@@ -17,7 +17,7 @@ except ImportError:
 
 from couchapp import __version__
 from couchapp.extensions import GLOBAL_EXTENSIONS
-import couchapp.couchdbclient as client
+from couchapp.client import Database
 from couchapp.errors import AppError
 from couchapp import utils
 
@@ -202,7 +202,7 @@ class UI(object):
                 dburls = db_env
         else:
             dburls = [dbstring]
-        return [client.Database(self, dburl, create=True) for dburl in dburls]
+        return [Database(self, dburl) for dburl in dburls]
 
     def get_app_name(self, dbstring, default):
         env = self.conf.get('env', {})
