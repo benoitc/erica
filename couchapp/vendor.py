@@ -176,7 +176,7 @@ class Vendor(object):
                     uri = meta.get("fetch_uri", "")
                     if not uri:
                         if self.ui.verbose >= 1:
-                            self.ui.logget.error("Can't update vendor `%s`: fetch_uri undefined." % vendor)
+                            self.ui.logger.error("Can't update vendor `%s`: fetch_uri undefined." % vendor)
                         continue
                     else:
                         new_vendors, temppath = self.fetch_vendor(uri, *args, **opts)
