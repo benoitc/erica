@@ -32,6 +32,8 @@ def init(ui, path, *args, **opts):
 
 def push(ui, path, *args, **opts):
     export = opts.get('export', False)
+    atomic = opts.get('no_atomic', False)
+    browse = opts.get('browse', False)
     dest = None
     doc_path = None
     if len(args) < 2:
@@ -61,7 +63,7 @@ def push(ui, path, *args, **opts):
         return 0
     dbs = ui.get_dbs(dest)
     hooks.hook(ui, doc_path, "pre-push", dbs=dbs)    
-    localdoc.push(dbs, opts.get('no_atomic', False))
+    localdoc.push(dbs, atomic, browse)
     hooks.hook(ui, doc_path, "post-push", dbs=dbs)
     
     docspath = os.path.join(doc_path, '_docs')
@@ -72,6 +74,7 @@ def push(ui, path, *args, **opts):
 def pushapps(ui, source, dest, *args, **opts):
     export = opts.get('export', False)
     noatomic = opts.get('no_atomic', False)
+    browse = opts.get('browse', False)
     dbs = ui.get_dbs(dest)
     apps = []
     source = os.path.normpath(os.path.join(os.getcwd(), source))
@@ -84,7 +87,7 @@ def pushapps(ui, source, dest, *args, **opts):
             if export or not noatomic:
                 apps.append(localdoc)
             else:
-                localdoc.push(dbs, True)
+                localdoc.push(dbs, True, browse)
             hooks.hook(ui, appdir, "post-push", dbs=dbs, pushapps=True)
     if apps:
         if export:
@@ -106,6 +109,7 @@ def pushapps(ui, source, dest, *args, **opts):
 def pushdocs(ui, source, dest, *args, **opts):
     export = opts.get('export', False)
     noatomic = opts.get('no_atomic', False)
+    browse = opts.get('browse', False)
     dbs = ui.get_dbs(dest)
     docs = []
     for d in os.listdir(source):
@@ -129,7 +133,7 @@ def pushdocs(ui, source, dest, *args, **opts):
             if export or not noatomic:
                 docs.append(doc)
             else:
-                doc.push(dbs, True)
+                doc.push(dbs, True, browse)
     if docs:
         if export:
             docs1 = []
@@ -303,7 +307,8 @@ globalopts = [
 pushopts = [
     ('', 'no-atomic', False, "send attachments one by one"),
     ('', 'export', False, "don't do push, just export doc to stdout"),
-    ('', 'output', '', "if export is selected, output to the file")
+    ('', 'output', '', "if export is selected, output to the file"),
+    ('b', 'browse', False, "open the couchapp in the browser")
 ]
     
 table = {

@@ -8,7 +8,7 @@ import mimetypes
 import os
 import os.path
 import re
-
+import webbrowser
 # import json
 try:
     import json
@@ -70,10 +70,9 @@ class LocalDoc(object):
         elif self.ui.verbose:
             raise AppError("CouchApp already initialized in %s." % self.docdir)
 
-    def push(self, dbs, noatomic=False):
+    def push(self, dbs, noatomic=False, browser=False):
         """Push a doc to a list of database `dburls`. If noatomic is true
         each attachments will be sent one by one."""
-        
         for db in dbs:
             self.olddoc = {}
             if noatomic:
@@ -110,7 +109,11 @@ class LocalDoc(object):
                 db.save_doc(doc)   
             indexurl = self.index(db.url, doc['couchapp'].get('index'))
             if indexurl:
-                self.ui.logger.info("Visit your CouchApp here:\n%s" % indexurl)
+                if browser:
+                    webbrowser.open_new_tab(indexurl)
+                else:
+                    self.ui.logger.info("Visit your CouchApp here:\n%s" % indexurl)
+            
                         
     def doc(self, db=None, with_attachments=True):
         """ Function to reetrieve document object from
