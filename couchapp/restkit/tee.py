@@ -11,52 +11,57 @@ read or restart etc ... It's based on TeeInput from Gunicorn.
 
 """
 import os
-import StringIO
+from StringIO import StringIO
 import tempfile
 
-from couchapp.restkit.sock import MAX_BODY, CHUNK_SIZE, recv
+from couchapp.restkit import sock
 
 class TeeInput(object):
     
+    CHUNK_SIZE = sock.CHUNK_SIZE
+    
     def __init__(self, socket, parser, buf, maybe_close=None):
-        self.buf = buf
+        self.buf = StringIO()
         self.parser = parser
-        self.socket = socket
+        self._sock = socket
         self.maybe_close = maybe_close
         self._is_socket = True
         self._len = parser.content_len
         
-        if self._len and self._len < MAX_BODY:
-            self.tmp = StringIO.StringIO()
+        if self._len and self._len < sock.MAX_BODY:
+            self.tmp = StringIO()
         else:
             self.tmp = tempfile.TemporaryFile()
-            
-        if len(buf) > 0:
+        
+        if buf.len > 0:
             chunk, self.buf = parser.filter_body(buf)
             if chunk:
                 self.tmp.write(chunk)
+                self.tmp.flush()
             self._finalize()
             self.tmp.seek(0)
-        
+            del buf
+                    
     @property
     def len(self):
         if self._len: return self._len
         
         if self._is_socket:
             pos = self.tmp.tell()
+            self.tmp.seek(0, 2)
             while True:
-                self.tmp.seek(self._tmp_size())
-                if not self._tee(CHUNK_SIZE):
+                if not self._tee(self.CHUNK_SIZE):
                     break
             self.tmp.seek(pos)
         self._len = self._tmp_size()
         return self._len
         
     def seek(self, offset, whence=0):
+        """ naive implementation of seek """
         if self._is_socket:
+            self.tmp.seek(0, 2)
             while True:
-                self.tmp.seek(self._tmp_size())
-                if not self._tee(CHUNK_SIZE):
+                if not self._tee(self.CHUNK_SIZE):
                     break
         self.tmp.seek(offset, whence)
 
@@ -67,47 +72,54 @@ class TeeInput(object):
         """ read """
         if not self._is_socket:
             return self.tmp.read(length)
-        
+            
         if length < 0:
-            r = self.tmp.read() or ""
+            buf = StringIO()
+            buf.write(self.tmp.read())
             while True:
-                chunk = self._tee(CHUNK_SIZE)
-                if not chunk: break
-                r += chunk
-            return r
+                chunk = self._tee(self.CHUNK_SIZE)
+                if not chunk: 
+                    break
+                buf.write(chunk)
+            return buf.getvalue()
         else:
+            dest = StringIO()
             diff = self._tmp_size() - self.tmp.tell()
             if not diff:
-                return self._ensure_length(self._tee(length), length)
+                dest.write(self._tee(length))
+                return self._ensure_length(dest, length)
             else:
                 l = min(diff, length)
-                return self._ensure_length(self.tmp.read(l), length)
+                dest.write(self.tmp.read(l))
+                return self._ensure_length(dest, length)
                 
     def readline(self, size=-1):
         if not self._is_socket:
-            return self.tmp.readline(size)
+            return self.tmp.readline()
         
         orig_size = self._tmp_size()
         if self.tmp.tell() == orig_size:
-            if not self._tee(CHUNK_SIZE):
+            if not self._tee(self.CHUNK_SIZE):
                 return ''
             self.tmp.seek(orig_size)
         
         # now we can get line
         line = self.tmp.readline()
-        i = line.find("\n")
-        if i == -1:
-            while True:
-                orig_size = self.tmp.tell()
-                if not self._tee(CHUNK_SIZE):
-                    break
-                self.tmp.seek(orig_size)
-                line = self.tmp.readline()
-                i = line.find("\n")
-                if i != -1: 
-                    break
-                    
-        return line
+        if line.find("\n") >=0:
+            return line
+
+        buf = StringIO()
+        buf.write(line)
+        while True:
+            orig_size = self.tmp.tell()
+            data = self._tee(self.CHUNK_SIZE)
+            if not data:
+                break
+            self.tmp.seek(orig_size)
+            buf.write(self.tmp.readline())
+            if data.find("\n") >= 0:
+                break
+        return buf.getvalue()
        
     def readlines(self, sizehint=0):
         total = 0
@@ -133,18 +145,24 @@ class TeeInput(object):
 
     def _tee(self, length):
         """ fetch partial body"""
+        buf2 = self.buf
+        buf2.seek(0, 2) 
         while True:
-            chunk, self.buf = self.parser.filter_body(self.buf)
+            chunk, buf2 = self.parser.filter_body(buf2)
             if chunk:
                 self.tmp.write(chunk)
                 self.tmp.flush()
-                self.tmp.seek(0, os.SEEK_END)
+                self.tmp.seek(0, 2)
+                self.buf = StringIO()
+                self.buf.write(buf2.getvalue())
                 return chunk
-            
-            if self.parser.body_eof():
-                break       
 
-            self.buf = recv(self.socket, length, self.buf)
+            if self.parser.body_eof():
+                break
+
+            data = self._sock.recv(length)
+            buf2.write(data)
+        
         self._finalize()
         return ""
         
@@ -156,22 +174,23 @@ class TeeInput(object):
             if callable(self.maybe_close):
                 self.maybe_close()
             
-            del self.buf
+            self.buf = StringIO()
             self._is_socket = False
 
     def _tmp_size(self):
-        if isinstance(self.tmp, StringIO.StringIO):
+        if isinstance(self.tmp, StringIO):
             return self.tmp.len
         else:
             return int(os.fstat(self.tmp.fileno())[6])
             
-    def _ensure_length(self, buf, length):
-        if not buf or not self._len:
-            return buf
+    def _ensure_length(self, dest, length):
+        if not dest.len or not self._len:
+            return dest.getvalue()
         while True:
-            if len(buf) >= length: 
+            if dest.len >= length: 
                 break
-            data = self._tee(length - len(buf))
-            if not data: break
-            buf += data
-        return buf
+            data = self._tee(length - dest.len)
+            if not data: 
+                break
+            dest.write(data)
+        return dest.getvalue()

@@ -40,6 +40,7 @@ class Resource(object):
     encode_keys = True
     safe = "/:"
     pool_class = pool.ConnectionPool
+    keepalive = True
     max_connections = 4
     basic_auth_url = True
     
@@ -55,7 +56,7 @@ class Resource(object):
         """
 
         pool_instance = client_opts.get('pool_instance')
-        if not pool_instance:
+        if not pool_instance and self.keepalive:
             pool = self.pool_class(max_connections=self.max_connections)
             client_opts['pool_instance'] = pool
             
@@ -82,12 +83,11 @@ class Resource(object):
     def __repr__(self):
         return '<%s %s>' % (self.__class__.__name__, self.uri)
         
-    def add_authorization(self, obj_auth):
-        self.transport.add_filter(obj_auth)
-        
     def add_filter(self, f):
         """ add an htt filter """
-        self.transport.add_filter(f)
+        filters = self.client_opts.get('filters', [])
+        filters.append(f)
+        self.client_opts['filters'] = filters
 
     add_authorization = util.deprecated_property(
         add_filter, 'add_authorization', 'use add_filter() instead',
@@ -95,9 +95,11 @@ class Resource(object):
         
     def remmove_filter(self, f):
         """ remove an http filter """
-        self.transport.remmove_filter(f)
+        filters = self.client_opts.get('filters', [])
+        for i, f1 in enumerate(filters):
+            if f == f1: del filters[i]
+        self.client_opts['filters'] = filters
     
-
     def clone(self):
         """if you want to add a path to resource uri, you can do:
 
@@ -108,6 +110,10 @@ class Resource(object):
         """
         obj = self.__class__(self.uri, headers=self._headers, 
                         **self.client_opts)
+             
+        for attr in ('charset', 'encode_keys', 'safe', 'pool_class',
+                'keepalive', 'max_connections', 'basic_auth_url'):
+            setattr(obj, attr, getattr(self, attr))           
         return obj
    
     def __call__(self, path):
@@ -119,7 +125,11 @@ class Resource(object):
         """
 
         new_uri = self._make_uri(self.uri, path)
-        return type(self)(new_uri, headers=self._headers, **self.client_opts)
+        obj = type(self)(new_uri, headers=self._headers, **self.client_opts)
+        for attr in ('charset', 'encode_keys', 'safe', 'pool_class',
+                'keepalive', 'max_connections', 'basic_auth_url'):
+            setattr(obj, attr, getattr(self, attr))
+        return obj
  
     def get(self, path=None, headers=None, **params):
         """ HTTP GET         
@@ -218,13 +228,18 @@ class Resource(object):
                 
     
         uri = self._make_uri(self.uri, path, **params)
+        
         try:
             resp = self.do_request(uri, method=method, payload=payload, 
                                 headers=headers)
         except ParserError:
             raise
         except Exception, e:
-            raise RequestError(str(e))
+            raise RequestError(e)
+            
+        if resp is None:
+            # race condition
+            raise RequestError("unkown error")
 
         if resp.status_int >= 400:
             if resp.status_int == 404:

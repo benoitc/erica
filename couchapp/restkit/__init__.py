@@ -5,7 +5,7 @@
 
 
 
-version_info = (1, 1, 0)
+version_info = (1, 2, 0)
 __version__ =  ".".join(map(str, version_info))
 
 try:
@@ -20,8 +20,34 @@ ProxyError, ResourceError
 except ImportError:
     import traceback
     traceback.print_exc()
-    
+
 import urlparse
+import logging    
+
+LOG_LEVELS = {
+    "critical": logging.CRITICAL,
+    "error": logging.ERROR,
+    "warning": logging.WARNING,
+    "info": logging.INFO,
+    "debug": logging.DEBUG
+}
+
+def set_logging(level, handler=None):
+    """
+    Set level of logging, and choose where to display/save logs 
+    (file or standard output).
+    """
+    if not handler:
+        handler = logging.StreamHandler()
+
+    loglevel = LOG_LEVELS.get(level, logging.INFO)
+    logger = logging.getLogger('restkit')
+    logger.setLevel(loglevel)
+    format = r"%(asctime)s [%(process)d] [%(levelname)s] %(message)s"
+    datefmt = r"%Y-%m-%d %H:%M:%S"
+    
+    handler.setFormatter(logging.Formatter(format, datefmt))
+    logger.addHandler(handler)
     
 def request(url, method='GET', body=None, headers=None, pool_instance=None, 
         follow_redirect=False, filters=None, key_file=None, cert_file=None):
@@ -31,7 +57,7 @@ def request(url, method='GET', body=None, headers=None, pool_instance=None,
     :param method: str, by default GET. http verbs
     :param body: the body, could be a string, an iterator or a file-like object
     :param headers: dict or list of tupple, http headers
-    :pool intance: instance inherited from `couchapp.restkit.pool.PoolInterface`. 
+    :pool intance: instance inherited from `restkit.pool.PoolInterface`. 
     It allows you to share and reuse connections connections.
     :param follow_redirect: boolean, by default is false. If true, 
     if the HTTP status is 301, 302 or 303 the client will follow

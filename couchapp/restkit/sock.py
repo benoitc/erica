@@ -3,11 +3,10 @@
 # This file is part of restkit released under the MIT license. 
 # See the NOTICE for more information.
 
-import array
 import socket
 
 CHUNK_SIZE = (16 * 1024)
-MAX_BODY = 1024 * (80 + 32)
+MAX_BODY = 1024 * 112
 
 try:
     import ssl # python 2.6
@@ -42,19 +41,10 @@ def connect(address, timeout=_GLOBAL_DEFAULT_TIMEOUT, ssl=False,
                 sock.close()
     raise socket.error, msg
     
-        
-def recv(sock, length, buf=None):
-    tmp_buf = array.array("c", '\0' * length)
-    l = sock.recv_into(tmp_buf, length)
-    
-    if not buf:
-        return tmp_buf[:l]
-        
-    return buf + tmp_buf[:l]
-    
-def close(sock):
+def close(skt):
+    if not skt: return
     try:
-        sock.close()
+        skt.close()
     except socket.error:
         pass  
         
@@ -66,7 +56,6 @@ def send(sock, data, chunked=False):
     if chunked:
         return send_chunk(sock, data)
     sock.sendall(data)
-    
         
 def send_nonblock(sock, data, chunked=False):
     timeout = sock.gettimeout()

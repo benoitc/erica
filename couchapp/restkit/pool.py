@@ -8,6 +8,8 @@ Threadsafe Pool class
 """
 
 import collections
+import threading
+
 from couchapp.restkit import sock
 
 class PoolInterface(object):
@@ -26,7 +28,15 @@ class PoolInterface(object):
     def clear(self):
         """ method used to release all connections """
         raise NotImplementedError
+        
+        
+class _Host(object):
+    """ An host entry """
     
+    def __init__(self, addr):
+        object.__init__(self)
+        self._addr = addr
+        self.pool = collections.deque()    
 
 class ConnectionPool(PoolInterface):
     def __init__(self, max_connections=4):
@@ -36,32 +46,44 @@ class ConnectionPool(PoolInterface):
         """
         self.max_connections = max_connections
         self.hosts = {}
+        self._lock = threading.Lock()
+        
         
     def get(self, address):
-        connections = self.hosts.get(address)
-        if connections:
-            socket = connections.popleft()
-            self.hosts[address] = connections
-            return socket
-        return None
+        self._lock.acquire()
+        try:
+            host = self.hosts.get(address)
+            if not host:
+                return None
+                
+            if host.pool:
+                return host.pool.popleft()
+                
+            return None
+        finally:
+            self._lock.release()
         
     def put(self, address, socket):
-        connections = self.hosts.get(address)
-        if not connections: 
-            connections = collections.deque()
-        
-        # do we have already enough connections opened ?
-        if len(connections) > self.max_connections:
-            sock.close(socket)
-            return
-            
-        connections.append(socket)
-        self.hosts[address] = connections
-        
-    def clear(self, address):
-        connections = self.hosts.get(address)
-        while True:
-            if not connections: break
-            socket = connections.popleft()
-            sock.close(socket)
-            socket.close()
+        self._lock.acquire()
+        try:
+            host = self.hosts.get(address)
+            if not host:
+                host = _Host(address)
+                
+            if len(host.pool) > self.max_connections:
+                sock.close(socket)
+                return
+            host.pool.append(socket) 
+        finally:
+            self._lock.release()
+
+    def clean(self, address):
+        self._lock.acquire()
+        try:
+            host = self.hosts.get(address)
+            if not host: return
+            while host.pool:
+                socket = host.pool.popleft()
+                sock.close(socket)
+        finally:
+            self._lock.release()

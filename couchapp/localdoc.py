@@ -113,11 +113,9 @@ class LocalDoc(object):
                 doc = update_doc(db.save_doc(doc).json_body, doc)   
             indexurl = self.index(db.uri, doc['couchapp'].get('index'))
             if indexurl:
+                self.ui.logger.info("Visit your CouchApp here:\n%s" % indexurl)
                 if browser:
-                    webbrowser.open_new_tab(indexurl)
-                else:
-                    self.ui.logger.info("Visit your CouchApp here:\n%s" % indexurl)
-            
+                    webbrowser.open_new_tab(indexurl)            
                         
     def doc(self, db=None, with_attachments=True):
         """ Function to reetrieve document object from
