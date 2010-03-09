@@ -12,12 +12,17 @@ import tempfile
 
 from couchapp import __version__
 from couchapp.errors import ResourceNotFound, ResourceConflict,\
-PreconditionFailed, RequestFailed
+PreconditionFailed, RequestFailed, BulkSaveError
 from couchapp.restkit import Resource, HttpResponse, ResourceError, request
 from couchapp.restkit import util
 import couchapp.simplejson as json
 
 USER_AGENT = "couchapp/%s" % __version__
+
+aliases = {
+    'id': '_id',
+    'rev': '_rev' 
+}
 
 class CouchDBResponse(HttpResponse):
     
@@ -64,7 +69,7 @@ class Uuids(Resource):
 
 class Database(Resource):
     
-    def __init__(self, ui, uri):
+    def __init__(self, ui, uri, create=True):
         Resource.__init__(self, uri=uri, response_class=CouchDBResponse)
 
         self.ui = ui
@@ -76,14 +81,16 @@ class Database(Resource):
         try:
             self.head()
         except ResourceNotFound:
+            if not create:
+                raise
             self.put()
-            
-    def __call__(self, path):
-        new_uri = self._make_uri(self.uri, path)
-        return type(self)(self.ui, new_uri)
         
-    def all_docs(self):
-        return self.get('_all_docs')
+    def info(self):
+        return self.get().json_body
+        
+    def all_docs(self, **params):
+        res = self.get('_all_docs', **params)
+        return res.json_body
             
     def open_doc(self, docid=None, wrapper=None, *params):
         docid = docid or self.uuids.next()
@@ -93,9 +100,9 @@ class Database(Resource):
             if not callable(wrapper):
                 raise TypeError("wrapper isn't a callable")
             return wrapper(resp)
-        return resp
+        return resp.json_body
         
-    def save_doc(self, doc=None, encode=False, **params):
+    def save_doc(self, doc=None, encode=False, force=False, **params):
         doc = doc or {}
         if '_attachments' in doc and (encode and self.version < (0, 11)):
             doc['_attachments'] = encode_attachments(doc['_attachments'])
@@ -108,7 +115,15 @@ class Database(Resource):
             res = None
             if '_id' in doc:
                 docid = escape_docid(doc['_id'])
-                res = self.put(docid, payload=json_stream, **params)
+                try:
+                    res = self.put(docid, payload=json_stream, **params)
+                except ResourceConflict:
+                    if force:
+                        rev = self.last_rev(doc['_id'])
+                        doc['_rev'] = rev
+                        res = self.put(docid, payload=json_stream, **params)
+                    else:
+                        raise
             else:
                 try:
                     doc['_id'] = self.uuids.next()
@@ -116,9 +131,31 @@ class Database(Resource):
                 except ResourceConflict:
                     res = self.post(payload=json_stream, **params)
                 
-            return res
+            json_res = res.json_body
+            doc1 = doc
+            for a, n in aliases.items():
+                if a in json_res:
+                    doc1[n] = json_res[a]
+                    
+            return doc1
+   
+    def last_rev(self, docid):
+        r = self.head(escape_docid(docid))
+        return r.headers['etag'].strip('"')
         
-    def save_docs(sef, docs, all_or_nothing=False):       
+    def delete_doc(self, id_or_doc):
+        if isinstance(id_or_doc, types.StringType):
+            docid = id_or_doc
+            self.delete(escape_docid(id_or_doc), rev=self.last_rev(id_or_doc))
+            
+        else:
+            docid = id_or_doc.get('_id')
+            if not docid:
+                raise ValueError('Not valid doc to delete (no doc id)')
+            rev = id_or_doc.get('_rev', self.last_rev(docid))
+            self.delete(escape_docid(docid), rev=rev)
+            
+    def save_docs(self, docs, all_or_nothing=False, use_uuids=True):       
         def is_id(doc):
             return '_id' in doc
             
@@ -143,7 +180,20 @@ class Database(Resource):
         # update docs
         with tempfile.TemporaryFile() as json_stream:
             json.dump(payload, json_stream)
-            return self.post('/_bulk_docs', payload=json_stream)
+            res = self.post('/_bulk_docs', payload=json_stream)
+            
+        json_res = res.json_body
+        errors = []
+        docs1 = docs
+        for i, r in enumerate(json_res):
+            if 'error' in r:
+                errors.append(s)
+            else:
+                docs1[i].update({'_id': r['id'], 
+                                '_rev': r['rev']})
+        if errors:
+            raise BulkSaveError(docs1, errors)
+        return docs1
             
     def delete_docs(self, docs, all_or_nothing=False):
         for doc in docs:
@@ -185,13 +235,20 @@ class Database(Resource):
         if content_length and content_length is not None:
             headers['Content-Length'] = content_length
 
-        return self.put("%s/%s" % (escape_docid(doc['_id']), name), 
+        res = self.put("%s/%s" % (escape_docid(doc['_id']), name), 
                     payload=content, headers=headers, rev=doc['_rev'])
+        json_res = res.json_body
+        
+        if 'ok' in json_res:
+            return self.open_doc(doc['_id'])
+        return False
+        
                     
     def delete_attachment(self, doc, name):
-         name = resource.url_quote(name, safe="")
-         return self.delete("%s/%s" % (escape_docid(doc['_id']), name), 
-                        rev=doc['_rev'])
+        name = resource.url_quote(name, safe="")
+        json_res = self.delete("%s/%s" % (escape_docid(doc['_id']), name), 
+                        rev=doc['_rev']).json_body
+        return self.open_doc(doc['_id'])
          
     def request(self, *args, **params):
         headers = params.get('headers') or {}
@@ -231,7 +288,27 @@ class Database(Resource):
                 RequestFailed(str(e))
         except Exception, e:
             raise RequestFailed(str(e))
+            
+    
+    def __getitem__(self, docid):
+        return self.open_doc(docid)
         
+    def __delitem__(self, docid):
+        return self.delete_doc(docid)
+
+    def __setitem__(self, docid, doc):
+        doc['_id'] = doc
+        self.save_doc(doc)
+        
+    def __contains__(self, docid):
+        self.head(escape_docid(docid))
+        
+    def __len__(self):
+        return self.info()['doc_count']
+        
+    def __nonzero__(self):
+        return (len(self) > 0)
+                
 
 def encode_params(params):
     """ encode parameters in json if needed """

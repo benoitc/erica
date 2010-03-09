@@ -56,9 +56,9 @@ def clone(ui, source, dest=None, rev=None):
 
     db = client.Database(ui, dburl[:-1])    
     if not rev:
-        doc = db.open_doc("_design/%s" % docid).json_body
+        doc = db.open_doc("_design/%s" % docid)
     else:
-        doc = db.open_doc("_design/%s" % docid, rev=rev).json_body
+        doc = db.open_doc("_design/%s" % docid, rev=rev)
     docid = doc['_id']
         
     

@@ -71,7 +71,7 @@ class CliTestCase(unittest.TestCase):
         # any design doc created ?
         design_doc = None
         try:
-            design_doc = self.db.open_doc('_design/my-app').json_body
+            design_doc = self.db.open_doc('_design/my-app')
         except ResourceNotFound:
             pass
         self.assert_(design_doc is not None)
@@ -110,7 +110,7 @@ class CliTestCase(unittest.TestCase):
         # any design doc created ?
         design_doc = None
         try:
-            design_doc = self.db.open_doc('_design/my-app').json_body
+            design_doc = self.db.open_doc('_design/my-app')
         except ResourceNotFound:
             pass
         self.assert_(design_doc is not None)
@@ -148,7 +148,7 @@ class CliTestCase(unittest.TestCase):
         self._make_testapp()
         (child_stdin, child_stdout, child_stderr) = popen3("%s push -v my-app couchapp-test" % self.cmd)
                 
-        design_doc = self.db.open_doc('_design/my-app').json_body
+        design_doc = self.db.open_doc('_design/my-app')
         
         app_dir =  os.path.join(self.tempdir, "couchapp-test")
         
@@ -171,10 +171,9 @@ class CliTestCase(unittest.TestCase):
         
         # should work when design doc is edited manually
         design_doc['test.txt'] = "essai"
-        self.db.save_doc(design_doc)
         
-        design_doc = self.db.open_doc('_design/my-app').json_body
-        
+        design_doc = self.db.save_doc(design_doc)
+                
         deltree(app_dir)
         (child_stdin, child_stdout, child_stderr) = popen3("%s clone %s %s" % (self.cmd, 
                     "http://127.0.0.1:5984/couchapp-test/_design/my-app",
@@ -183,9 +182,8 @@ class CliTestCase(unittest.TestCase):
         
         # should work when a view is added manually
         design_doc["views"]["more"] = { "map": "function(doc) { emit(null, doc); }" }
-        self.db.save_doc(design_doc)
-        design_doc = self.db.open_doc('_design/my-app').json_body
         
+        design_doc = self.db.save_doc(design_doc)        
         
         deltree(app_dir)
         (child_stdin, child_stdout, child_stderr) = popen3("%s clone %s %s" % (
@@ -195,8 +193,7 @@ class CliTestCase(unittest.TestCase):
         
         # should work without manifest
         del design_doc['couchapp']['manifest']
-        self.db.save_doc(design_doc)
-        design_doc = self.db.open_doc('_design/my-app').json_body
+        design_doc = self.db.save_doc(design_doc)   
         deltree(app_dir)
         (child_stdin, child_stdout, child_stderr) = popen3("%s clone %s %s" % (
                     self.cmd, "http://127.0.0.1:5984/couchapp-test/_design/my-app",
@@ -213,18 +210,20 @@ class CliTestCase(unittest.TestCase):
         os.chdir(self.tempdir)
         docsdir = os.path.join(self.tempdir, 'docs')
         os.makedirs(docsdir)
-        
+
         # create 2 apps
-        (child_stdin, child_stdout, child_stderr) = popen3("%s generate docs/app1" % self.cmd)
-        (child_stdin, child_stdout, child_stderr) = popen3("%s generate docs/app2" % self.cmd)
+        (child_stdin, child_stdout, child_stderr) = popen3(
+                                            "%s generate docs/app1" % self.cmd)
+        (child_stdin, child_stdout, child_stderr) = popen3(
+                                            "%s generate docs/app2" % self.cmd)
 
         
-        (child_stdin, child_stdout, child_stderr) = popen3("%s pushapps docs/ http://127.0.0.1:5984/couchapp-test" % self.cmd)
+        (child_stdin, child_stdout, child_stderr) = popen3(
+            "%s pushapps docs/ http://127.0.0.1:5984/couchapp-test" % self.cmd)
         
-        alldocs = self.db.all_docs().json_body['rows']
+        alldocs = self.db.all_docs()['rows']
         self.assert_(len(alldocs) == 2)
-        
-        self.assert_('_design/app1' == alldocs.first()['id'])
+        self.assert_('_design/app1' == alldocs[0]['id'])
         
     def testPushDocs(self):
         os.chdir(self.tempdir)
@@ -238,10 +237,10 @@ class CliTestCase(unittest.TestCase):
         
         (child_stdin, child_stdout, child_stderr) = popen3("%s pushdocs docs/ http://127.0.0.1:5984/couchapp-test" % self.cmd)
         
-        alldocs = self.db.all_docs().json_body['rows']
+        alldocs = self.db.all_docs()['rows']
         self.assert_(len(alldocs) == 2)
         
-        self.assert_('_design/app1' == alldocs.first()['id'])
+        self.assert_('_design/app1' == alldocs[0]['id'])
         
     def _make_testapp(self):
         testapp_path = os.path.join(os.path.dirname(__file__), 'testapp')
