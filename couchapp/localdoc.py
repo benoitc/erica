@@ -16,8 +16,7 @@ try:
     import json
 except ImportError:
     import couchapp.simplejson as json
-    
-from couchapp.client import update_doc
+
 from couchapp.errors import *
 from couchapp.macros import *
 from couchapp.utils import relpath

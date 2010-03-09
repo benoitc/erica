@@ -35,7 +35,6 @@ class CouchDBResponse(HttpResponse):
    
 def couchdb_version(server_uri):
     resp = request(server_uri, headers=[("Accept", "application/json")])
-    print resp.body
     version = json.load(resp.body_file)["version"]
     t = []
     for p in version.split("."):
@@ -289,7 +288,6 @@ class Database(Resource):
         except Exception, e:
             raise RequestFailed(str(e))
             
-    
     def __getitem__(self, docid):
         return self.open_doc(docid)
         
@@ -331,14 +329,6 @@ def escape_docid(docid):
     else:
         docid = util.url_quote(docid, safe='')
     return docid
-    
-def update_doc(res, doc):
-    """ quick shortcut to update a doc"""
-    if 'id' in res and not '_id' in doc:
-        doc['_id'] = res['id']
-    if 'rev' in res:
-        doc['_rev'] = res['rev']
-    return doc
     
 def encode_attachments(attachments):
     for k, v in attachments.iteritems():
