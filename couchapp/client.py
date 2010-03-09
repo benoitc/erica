@@ -81,6 +81,9 @@ class Database(Resource):
     def __call__(self, path):
         new_uri = self._make_uri(self.uri, path)
         return type(self)(self.ui, new_uri)
+        
+    def all_docs(self):
+        return self.get('_all_docs')
             
     def open_doc(self, docid=None, wrapper=None, *params):
         docid = docid or self.uuids.next()

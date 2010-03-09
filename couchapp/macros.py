@@ -49,7 +49,10 @@ def run_code_macros(f_string, app_dir, ui):
            if ui.verbose>=2:
                ui.logger.info("process code macro: %s" % filename)
            try:
-               library += ui.read(filename)
+               cnt = ui.read(filename)
+               if cnt.find("!code") >= 0:
+                   cnt = run_code_macros(cnt, app_dir, ui)
+               library += cnt
            except IOError, e:
                raise MacroError(str(e))
            filenum += 1
