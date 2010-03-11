@@ -5,13 +5,12 @@
 
 
 
-version_info = (1, 2, 0)
+version_info = (1, 2, 1)
 __version__ =  ".".join(map(str, version_info))
 
 try:
-    from couchapp.restkit.errors import ResourceNotFound, Unauthorized,\
-RequestFailed, RedirectLimit, RequestError, InvalidUrl, ResponseError,\
-ProxyError, ResourceError
+    from couchapp.restkit.errors import ResourceNotFound, Unauthorized, RequestFailed,\
+RedirectLimit, RequestError, InvalidUrl, ResponseError, ProxyError, ResourceError
     from couchapp.restkit.client import HttpConnection, HttpResponse
     from couchapp.restkit.resource import Resource
     from couchapp.restkit.pool import ConnectionPool

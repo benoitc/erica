@@ -79,7 +79,7 @@ class LocalDoc(object):
             self.olddoc = {}
             if noatomic:
                 doc = self.doc(db, with_attachments=False)
-                doc = db.save_doc(doc)
+                db.save_doc(doc, force_update=True)
                 if 'couchapp' in self.olddoc:
                     old_signatures = self.olddoc['couchapp'].get('signatures', {})
                 else:
@@ -90,25 +90,18 @@ class LocalDoc(object):
                     for name, signature in old_signatures.items():
                         cursign = signatures.get(name)
                         if cursign is not None and cursign != signature:
-                            doc = db.delete_attachment(doc, name)
-                            
-               
-               
+                            db.delete_attachment(doc, name)
+                                           
                 for name, filepath in self.attachments():
                     if name not in old_signatures or \
                             old_signatures.get(name) != signatures[name]:
                         if self.ui.verbose >= 2:
                             self.ui.logger.info("attach %s " % name)
-                        doc = db.put_attachment(doc, open(filepath, "r"), 
+                        db.put_attachment(doc, open(filepath, "r"), 
                                             name=name)
             else:
                 doc = self.doc()
-                try:
-                    rev = db.head(self.docid)
-                    doc.update({'_rev': rev})
-                except ResourceNotFound:
-                    pass
-                doc = db.save_doc(doc)
+                db.save_doc(doc, force_update=True)
             indexurl = self.index(db.uri, doc['couchapp'].get('index'))
             if indexurl:
                 self.ui.logger.info("Visit your CouchApp here:\n%s" % indexurl)

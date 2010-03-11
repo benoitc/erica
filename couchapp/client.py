@@ -24,7 +24,7 @@ aliases = {
     'rev': '_rev' 
 }
 
-class CouchDBResponse(HttpResponse):
+class CouchdbResponse(HttpResponse):
     
     @property
     def json_body(self):
@@ -32,236 +32,67 @@ class CouchDBResponse(HttpResponse):
             return json.load(self.body_file)
         except ValueError:
             return self.body
-   
-def couchdb_version(server_uri):
-    resp = request(server_uri, headers=[("Accept", "application/json")])
-    version = json.load(resp.body_file)["version"]
-    t = []
-    for p in version.split("."):
-        try:
-            t.append(int(p))
-        except ValueError:
-            continue
-    
-    return tuple(t)   
 
-class Uuids(Resource):
-    
-    def __init__(self, uri, max_uuids=1000):
-        Resource.__init__(self, uri=uri, response_class=CouchDBResponse)
-        self._uuids = []
-        self.max_uuids = max_uuids
-        
-    def next(self):
-        if not self._uuids:
-            self.fetch_uuids()
-        self._uuids, res = self._uuids[:-1], self._uuids[-1]
-        return res
-        
-    def __iter__(self):
-        return self
-        
-    def fetch_uuids(self):
-        count = self.max_uuids - len(self._uuids)
-        resp = self.get('/_uuids', count=count)
-        self._uuids += resp.json_body['uuids']
+class CouchdbResource(Resource):
 
-class Database(Resource):
-    
-    def __init__(self, ui, uri, create=True):
-        Resource.__init__(self, uri=uri, response_class=CouchDBResponse)
+    def __init__(self, uri="http://127.0.0.1:5984", **client_opts):
+        """Constructor for a `CouchdbResource` object.
 
-        self.ui = ui
-        self.server_uri = uri.rsplit('/', 1)[0]
-        self.uuids = Uuids(self.server_uri)
-        self.version = couchdb_version(self.server_uri)
-        
-        # create the db
-        try:
-            self.head()
-        except ResourceNotFound:
-            if not create:
-                raise
-            self.put()
-        
-    def info(self):
-        return self.get().json_body
-        
-    def all_docs(self, **params):
-        res = self.get('_all_docs', **params)
-        return res.json_body
-            
-    def open_doc(self, docid=None, wrapper=None, *params):
-        docid = docid or self.uuids.next()
-        resp = self.get(escape_docid(docid), *params)
-        
-        if wrapper is not None:
-            if not callable(wrapper):
-                raise TypeError("wrapper isn't a callable")
-            return wrapper(resp)
-        return resp.json_body
-        
-    def save_doc(self, doc=None, encode=False, force=False, **params):
-        doc = doc or {}
-        if '_attachments' in doc and (encode and self.version < (0, 11)):
-            doc['_attachments'] = encode_attachments(doc['_attachments'])
-         
-        with tempfile.TemporaryFile() as json_stream:
-            # we use a temporary file to send docs to reduce 
-            # memory usage
-            json.dump(doc, json_stream)
-            
-            res = None
-            if '_id' in doc:
-                docid = escape_docid(doc['_id'])
-                try:
-                    res = self.put(docid, payload=json_stream, **params)
-                except ResourceConflict:
-                    if force:
-                        rev = self.last_rev(doc['_id'])
-                        doc['_rev'] = rev
-                        res = self.put(docid, payload=json_stream, **params)
-                    else:
-                        raise
-            else:
-                try:
-                    doc['_id'] = self.uuids.next()
-                    res = self.put(doc['_id'], payload=json_stream, **params)
-                except ResourceConflict:
-                    res = self.post(payload=json_stream, **params)
-                
-            json_res = res.json_body
-            doc1 = doc
-            for a, n in aliases.items():
-                if a in json_res:
-                    doc1[n] = json_res[a]
-                    
-            return doc1
-   
-    def last_rev(self, docid):
-        r = self.head(escape_docid(docid))
-        return r.headers['etag'].strip('"')
-        
-    def delete_doc(self, id_or_doc):
-        if isinstance(id_or_doc, types.StringType):
-            docid = id_or_doc
-            self.delete(escape_docid(id_or_doc), rev=self.last_rev(id_or_doc))
-            
-        else:
-            docid = id_or_doc.get('_id')
-            if not docid:
-                raise ValueError('Not valid doc to delete (no doc id)')
-            rev = id_or_doc.get('_rev', self.last_rev(docid))
-            self.delete(escape_docid(docid), rev=rev)
-            
-    def save_docs(self, docs, all_or_nothing=False, use_uuids=True):       
-        def is_id(doc):
-            return '_id' in doc
-            
-        if use_uuids:
-            ids = []
-            noids = []
-            for k, g in itertools.groupby(docs, is_id):
-                if not k:
-                    noids = list(g)
-                else:
-                    ids = list(g)
-                    
-            for doc in noids:
-                nextid = self.uuids.next()
-                if nextid:
-                    doc['_id'] = nextid
-                    
-        payload = { "docs": docs }
-        if all_or_nothing:
-            payload["all-or-nothing"] = True
-            
-        # update docs
-        with tempfile.TemporaryFile() as json_stream:
-            json.dump(payload, json_stream)
-            res = self.post('/_bulk_docs', payload=json_stream)
-            
-        json_res = res.json_body
-        errors = []
-        docs1 = docs
-        for i, r in enumerate(json_res):
-            if 'error' in r:
-                errors.append(s)
-            else:
-                docs1[i].update({'_id': r['id'], 
-                                '_rev': r['rev']})
-        if errors:
-            raise BulkSaveError(docs1, errors)
-        return docs1
-            
-    def delete_docs(self, docs, all_or_nothing=False):
-        for doc in docs:
-            doc['_deleted'] = True
-        return self.save_docs(docs, all_or_nothing=all_or_nothing)
+        CouchdbResource represent an HTTP resource to CouchDB.
 
-    def fetch_attachment(self, id_or_doc, name):
-        if isinstance(id_or_doc, basestring):
-            docid = id_or_doc
-        else:
-            docid = id_or_doc['_id']
-      
-        return self.get("%s/%s" % (escape_docid(docid), name))
+        @param uri: str, full uri to the server.
+        """
+        client_opts['response_class'] = CouchdbResponse
         
-    def put_attachment(self, doc, content=None, name=None, content_type=None, 
-            content_length=None):
-            
-        headers = {}
+        Resource.__init__(self, uri=uri, **client_opts)
+        self.safe = ":/%"
         
-        if not content:
-            content = ""
-            content_length = 0
-            
-        if name is None:
-            if hasattr(content, "name"):
-                name = content.name
-            else:
-                raise InvalidAttachment(
-                            'You should provid a valid attachment name')
-        name = util.url_quote(name, safe="")
+    def copy(self, path=None, headers=None, **params):
+        """ add copy to HTTP verbs """
+        return self.request('COPY', path=path, headers=headers, **params)
         
-        if content_type is None:
-            content_type = ';'.join(filter(None, mimetypes.guess_type(name)))
+    def request(self, method, path=None, payload=None, headers=None, **params):
+        """ Perform HTTP call to the couchdb server and manage 
+        JSON conversions, support GET, POST, PUT and DELETE.
+        
+        Usage example, get infos of a couchdb server on 
+        http://127.0.0.1:5984 :
 
-        if content_type:
-            headers['Content-Type'] = content_type
-            
-        # add appropriate headers    
-        if content_length and content_length is not None:
-            headers['Content-Length'] = content_length
 
-        res = self.put("%s/%s" % (escape_docid(doc['_id']), name), 
-                    payload=content, headers=headers, rev=doc['_rev'])
-        json_res = res.json_body
+            import couchdbkit.CouchdbResource
+            resource = couchdbkit.CouchdbResource()
+            infos = resource.request('GET')
+
+        @param method: str, the HTTP action to be performed: 
+            'GET', 'HEAD', 'POST', 'PUT', or 'DELETE'
+        @param path: str or list, path to add to the uri
+        @param data: str or string or any object that could be
+            converted to JSON.
+        @param headers: dict, optional headers that will
+            be added to HTTP request.
+        @param raw: boolean, response return a Response object
+        @param params: Optional parameterss added to the request. 
+            Parameterss are for example the parameters for a view. See 
+            `CouchDB View API reference 
+            <http://wiki.apache.org/couchdb/HTTP_view_API>`_ for example.
         
-        if 'ok' in json_res:
-            return self.open_doc(doc['_id'])
-        return False
+        @return: tuple (data, resp), where resp is an `httplib2.Response` 
+            object and data a python object (often a dict).
+        """
         
-                    
-    def delete_attachment(self, doc, name):
-        name = resource.url_quote(name, safe="")
-        json_res = self.delete("%s/%s" % (escape_docid(doc['_id']), name), 
-                        rev=doc['_rev']).json_body
-        return self.open_doc(doc['_id'])
-         
-    def request(self, *args, **params):
-        headers = params.get('headers') or {}
+        headers = headers or {}
         headers.setdefault('Accept', 'application/json')
         headers.setdefault('User-Agent', USER_AGENT)
-        params['headers'] = headers
+
         try:
-            return Resource.request(self, *args, **params)
-        except  ResourceError, e:
+            return Resource.request(self, method, path=path,
+                             payload=payload, headers=headers, **params)           
+        except ResourceError, e:
             msg = getattr(e, 'msg', '')
             if e.response and msg:
                 if e.response.headers.get('content-type') == 'application/json':
                     try:
-                        msg = json.loads(msg)
+                        msg = json.loads(str(msg))
                     except ValueError:
                         pass
                     
@@ -282,30 +113,291 @@ class Database(Resource):
                         response=e.response)
                         
             elif e.status_int in (401, 403):
-                raise Unauthorized(str(error))
+                raise Unauthorized(e)
             else:
                 RequestFailed(str(e))
         except Exception, e:
-            raise RequestFailed(str(e))
-            
-    def __getitem__(self, docid):
-        return self.open_doc(docid)
-        
-    def __delitem__(self, docid):
-        return self.delete_doc(docid)
+            raise RequestFailed("unknown error [%s]" % str(e))
+               
+def couchdb_version(server_uri):
+    resp = request(server_uri, headers=[("Accept", "application/json")])
+    version = json.load(resp.body_file)["version"]
+    t = []
+    for p in version.split("."):
+        try:
+            t.append(int(p))
+        except ValueError:
+            continue
+    
+    return tuple(t)   
 
-    def __setitem__(self, docid, doc):
-        doc['_id'] = doc
-        self.save_doc(doc)
+class Uuids(CouchdbResource):
+    
+    def __init__(self, uri, max_uuids=1000, **client_opts):
+        CouchdbResource.__init__(self, uri=uri, **client_opts)
+        self._uuids = []
+        self.max_uuids = max_uuids
         
-    def __contains__(self, docid):
-        self.head(escape_docid(docid))
+    def next(self):
+        if not self._uuids:
+            self.fetch_uuids()
+        self._uuids, res = self._uuids[:-1], self._uuids[-1]
+        return res
         
-    def __len__(self):
-        return self.info()['doc_count']
+    def __iter__(self):
+        return self
         
-    def __nonzero__(self):
-        return (len(self) > 0)
+    def fetch_uuids(self):
+        count = self.max_uuids - len(self._uuids)
+        resp = self.get('/_uuids', count=count)
+        self._uuids += resp.json_body['uuids']
+
+class Database(CouchdbResource):
+    """ Object that abstract access to a CouchDB database
+    A Database object can act as a Dict object.
+    """
+    
+    def __init__(self, ui, uri, create=True, **client_opts):
+        CouchdbResource.__init__(self, uri=uri, **client_opts)
+        self.ui = ui
+        self.server_uri, self.dbname = uri.rsplit('/', 1)
+        
+        self.uuids = Uuids(self.server_uri)
+        self.version = couchdb_version(self.server_uri)
+        
+        if self.uri.endswith("/"):
+            self.uri = self.uri[:-1]
+        
+        # create the db
+        try:
+            self.head()
+        except ResourceNotFound:
+            self.put()
+        
+    def info(self):
+        """
+        Get database information
+
+        @param _raw_json: return raw json instead deserializing it
+
+        @return: dict
+        """
+        return self.get().json_body
+        
+    def all_docs(self, **params):
+        """
+        return all_docs
+        """
+        return self.view('_all_docs', **params)
+            
+    def open_doc(self, docid, wrapper=None, **params):
+        """Open document from database
+
+        Args:
+        @param docid: str, document id to retrieve
+        @param rev: if specified, allows you to retrieve
+        a specific revision of document
+        @param wrapper: callable. function that takes dict as a param.
+        Used to wrap an object.
+        @params params: Other params to pass to the uri (or headers)
+        
+        @return: dict, representation of CouchDB document as
+         a dict.
+        """
+        resp = self.get(escape_docid(docid), **params)
+        
+        if wrapper is not None:
+            if not callable(wrapper):
+                raise TypeError("wrapper isn't a callable")
+            return wrapper(resp.json_body)
+        return resp.json_body
+        
+    def save_doc(self, doc, encode=False, force_update=False, **params):
+        """ Save a document. It will use the `_id` member of the document
+        or request a new uuid from CouchDB. IDs are attached to
+        documents on the client side because POST has the curious property of
+        being automatically retried by proxies in the event of network
+        segmentation and lost responses. 
+
+        @param doc: dict.  doc is updated
+        with doc '_id' and '_rev' properties returned
+        by CouchDB server when you save.
+        @param force_update: boolean, if there is conlict, try to update
+        with latest revision
+        @param encode: Encode attachments if needed (depends on couchdb version)
+
+        @return: new doc with updated revision an id
+        """  
+        if '_attachments' in doc and encode:
+            doc['_attachments'] = encode_attachments(doc['_attachments'])
+            
+        if '_id' in doc:
+            docid = escape_docid(doc['_id'])
+            try:
+                resp = self.put(docid, payload=json.dumps(doc), **params)
+            except ResourceConflict:
+                if not force_update:
+                    raise
+                rev = self.last_rev(doc['_id'])
+                doc['_rev'] = rev
+                resp = self.put(docid, payload=json.dumps(doc), **params)
+        else:
+            json_doc = json.dumps(doc)
+            try:
+                doc['_id'] = self.uuids.next()
+                resp = self.put(doc['_id'], payload=json_doc, **params)
+            except ResourceConflict:
+                resp = self.post(payload=json_doc, **params)
+            
+        json_res = resp.json_body
+        doc1 = {}
+        for a, n in aliases.items():
+            if a in json_res:
+                doc1[n] = json_res[a]
+        doc.update(doc1)
+        
+    def last_rev(self, docid):
+        """ Get last revision from docid (the '_rev' member)
+        @param docid: str, undecoded document id.
+
+        @return rev: str, the last revision of document.
+        """
+        r = self.head(escape_docid(docid))
+        print r.headers
+        return r.headers['etag'].strip('"')
+        
+    def delete_doc(self, id_or_doc):
+        """ Delete a document
+        @param id_or_doc: docid string or document dict
+        
+        """
+        if isinstance(id_or_doc, types.StringType):
+            docid = id_or_doc
+            resp = self.delete(escape_docid(id_or_doc), 
+                        rev=self.last_rev(id_or_doc))    
+        else:
+            docid = id_or_doc.get('_id')
+            if not docid:
+                raise ValueError('Not valid doc to delete (no doc id)')
+            rev = id_or_doc.get('_rev', self.last_rev(docid))
+            resp = self.delete(escape_docid(docid), rev=rev)
+        return resp.json_body
+        
+    def save_docs(self, docs, all_or_nothing=False, use_uuids=True):
+        """ Bulk save. Modify Multiple Documents With a Single Request
+
+        @param docs: list of docs
+        @param use_uuids: add _id in doc who don't have it already set.
+        @param all_or_nothing: In the case of a power failure, when the database 
+        restarts either all the changes will have been saved or none of them.
+        However, it does not do conflict checking, so the documents will
+
+
+        @return doc lists updated with new revision or raise BulkSaveError 
+        exception. You can access to doc created and docs in error as properties
+        of this exception.
+        """
+            
+        def is_id(doc):
+            return '_id' in doc
+            
+        if use_uuids:
+            noids = []
+            for k, g in itertools.groupby(docs, is_id):
+                if not k:
+                    noids = list(g)
+                    
+            for doc in noids:
+                nextid = self.uuids.next()
+                if nextid:
+                    doc['_id'] = nextid
+                    
+        payload = { "docs": docs }
+        if all_or_nothing:
+            payload["all-or-nothing"] = True
+            
+        # update docs
+        res = self.post('/_bulk_docs', payload=json.dumps(payload))
+            
+        json_res = res.json_body
+        errors = []
+        for i, r in enumerate(json_res):
+            if 'error' in r:
+                doc1 = docs[u]
+                doc1.update({'_id': r['id'], 
+                                '_rev': r['rev']})
+                errors.append(doc1)
+            else:
+                docs[i].update({'_id': r['id'], 
+                                '_rev': r['rev']})
+                                
+        if errors:
+            raise BulkSaveError(docs, errors)
+            
+    def delete_docs(self, docs, all_or_nothing=False, use_uuids=True):
+        """ multiple doc delete."""
+        for doc in docs:
+            doc['_deleted'] = True
+        return self.save_docs(docs, all_or_nothing=all_or_nothing, 
+                            use_uuids=use_uuids)
+
+    def fetch_attachment(self, id_or_doc, name, headers=None):
+        """ get attachment in a document
+
+        @param id_or_doc: str or dict, doc id or document dict
+        @param name: name of attachment default: default result
+        @param header: optionnal headers (like range)
+        
+        @return: `couchdbkit.resource.CouchDBResponse` object
+        """
+        if isinstance(id_or_doc, basestring):
+            docid = id_or_doc
+        else:
+            docid = id_or_doc['_id']
+      
+        return self.get("%s/%s" % (escape_docid(docid), name), headers=headers)
+        
+    def put_attachment(self, doc, content=None, name=None, headers=None):
+        """ Add attachement to a document. All attachments are streamed.
+
+        @param doc: dict, document object
+        @param content: string, iterator,  fileobj
+        @param name: name or attachment (file name).
+        @param headers: optionnal headers like `Content-Length` 
+        or `Content-Type`
+
+        @return: updated document object
+        """
+        headers = {}
+        content = content or ""
+            
+        if name is None:
+            if hasattr(content, "name"):
+                name = content.name
+            else:
+                raise InvalidAttachment(
+                            'You should provid a valid attachment name')
+        name = util.url_quote(name, safe="")
+        res = self.put("%s/%s" % (escape_docid(doc['_id']), name), 
+                    payload=content, headers=headers, rev=doc['_rev'])
+        json_res = res.json_body
+        
+        if 'ok' in json_res:
+            return doc.update(self.open_doc(doc['_id']))
+        return False
+        
+    def delete_attachment(self, doc, name):
+        """ delete attachement to the document
+        
+        @param doc: dict, document object in python
+        @param name: name of attachement
+
+        @return: updated document object
+        """
+        name = util.url_quote(name, safe="")
+        self.delete("%s/%s" % (escape_docid(doc['_id']), name), 
+                        rev=doc['_rev']).json_body
+        return doc.update(self.open_doc(doc['_id']))
                 
 
 def encode_params(params):

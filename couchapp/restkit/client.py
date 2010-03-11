@@ -9,7 +9,10 @@ import logging
 import os
 import socket
 import time
-from StringIO import StringIO
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
 import types
 import urlparse
 
@@ -292,9 +295,9 @@ class HttpConnection(object):
                     except IOError:
                         pass
                     content_len = str(os.fstat(body.fileno())[6])
-                elif hasattr(body, 'len'):
+                elif hasattr(body, 'getvalue'):
                     try:
-                        content_len = str(body.len)
+                        content_len = str(len(body.getvalue()))
                     except AttributeError:
                         pass
                 elif isinstance(body, types.StringTypes):
@@ -339,7 +342,7 @@ class HttpConnection(object):
             "User-Agent: %s\r\n" % self.ua,
             "Accept-Encoding: %s\r\n" % self.accept_encoding
         ]
-        req_headers.extend(["%s:%s\r\n" % (k, v) for k, v in self.headers])
+        req_headers.extend(["%s: %s\r\n" % (k, v) for k, v in self.headers])
         req_headers.append('\r\n')
         return req_headers
                

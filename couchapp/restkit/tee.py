@@ -11,10 +11,14 @@ read or restart etc ... It's based on TeeInput from Gunicorn.
 
 """
 import os
-from StringIO import StringIO
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
 import tempfile
 
 from couchapp.restkit import sock
+from couchapp.restkit.errors import UnexpectedEOF
 
 class TeeInput(object):
     
@@ -33,7 +37,7 @@ class TeeInput(object):
         else:
             self.tmp = tempfile.TemporaryFile()
         
-        if buf.len > 0:
+        if len(buf.getvalue()) > 0:
             chunk, self.buf = parser.filter_body(buf)
             if chunk:
                 self.tmp.write(chunk)
@@ -133,6 +137,13 @@ class TeeInput(object):
             line = self.readline()
         return lines
     
+    def close(self):
+        if callable(self.maybe_close):
+            self.maybe_close()
+        
+        self.buf = StringIO()
+        self._is_socket = False
+    
     def next(self):
         r = self.readline()
         if not r:
@@ -159,8 +170,17 @@ class TeeInput(object):
 
             if self.parser.body_eof():
                 break
+                
+            if not self._is_socket:
+                if self.parser.is_chunked:
+                    data = buf2.getvalue()
+                    if data.find("\r\n") >= 0:
+                        continue
+                raise UnexpectedEOF("remote closed the connection")
 
             data = self._sock.recv(length)
+            if not data:
+                self._is_socket = False
             buf2.write(data)
         
         self._finalize()
@@ -171,25 +191,21 @@ class TeeInput(object):
         if any."""
 
         if self.parser.body_eof():
-            if callable(self.maybe_close):
-                self.maybe_close()
-            
-            self.buf = StringIO()
-            self._is_socket = False
+            self.close()
 
     def _tmp_size(self):
-        if isinstance(self.tmp, StringIO):
-            return self.tmp.len
-        else:
+        if hasattr(self.tmp, 'fileno'):
             return int(os.fstat(self.tmp.fileno())[6])
+        else:
+            return len(self.tmp.getvalue())
             
     def _ensure_length(self, dest, length):
-        if not dest.len or not self._len:
+        if not len(dest.getvalue()) or not self._len:
             return dest.getvalue()
         while True:
             if dest.len >= length: 
                 break
-            data = self._tee(length - dest.len)
+            data = self._tee(length - len(dest.getvalue()))
             if not data: 
                 break
             dest.write(data)

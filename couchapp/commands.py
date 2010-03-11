@@ -10,7 +10,7 @@ except ImportError:
     import couchapp.simplejson as json
 
 import couchapp.app as app
-from couchapp.errors import ResourceNotFound, AppError
+from couchapp.errors import ResourceNotFound, AppError, BulkSaveError
 from couchapp.extensions import get_extensions, load_extensions
 from couchapp import hooks
 
@@ -103,7 +103,18 @@ def pushapps(ui, source, dest, *args, **opts):
             for db in dbs:
                 docs = []
                 docs = [doc.doc(db) for doc in apps]
-                db.save_docs(docs)
+                try:
+                    db.save_docs(docs)
+                except BulkSaveError, e:
+                    docs1 = []
+                    for doc in e.errors:
+                        try:
+                            doc['_rev'] = db.last_rev(doc['_id'])
+                            docs1.append(doc)
+                        except ResourceNotFound:
+                            pass 
+                if docs1:
+                    db.save_docs(docs1)
     return 0
   
 def pushdocs(ui, source, dest, *args, **opts):
@@ -127,7 +138,7 @@ def pushdocs(ui, source, dest, *args, **opts):
                     docs.append(doc)
                 else:
                     for db in dbs:
-                        db.save_doc(doc, force=True)
+                        db.save_doc(doc, force_update=True)
         else:
             doc = app.document(ui, docdir)
             if export or not noatomic:
@@ -161,7 +172,19 @@ def pushdocs(ui, source, dest, *args, **opts):
                         except ResourceNotFound:
                             pass
                         docs1.append(newdoc)
-                db.save_docs(docs1)
+                try:
+                    db.save_docs(docs1)
+                except BulkSaveError, e:
+                    # resolve conflicts
+                    docs1 = []
+                    for doc in e.errors:
+                        try:
+                            doc['_rev'] = db.last_rev(doc['_id'])
+                            docs1.append(doc)
+                        except ResourceNotFound:
+                            pass 
+                if docs1:
+                    db.save_docs(docs1)
     return 0
     
 def clone(ui, source, *args, **opts):
