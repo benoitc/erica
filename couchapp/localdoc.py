@@ -16,8 +16,7 @@ try:
     import json
 except ImportError:
     import couchapp.simplejson as json
-    
-from couchapp.client import update_doc
+
 from couchapp.errors import *
 from couchapp.macros import *
 from couchapp.utils import relpath
@@ -80,7 +79,7 @@ class LocalDoc(object):
             self.olddoc = {}
             if noatomic:
                 doc = self.doc(db, with_attachments=False)
-                doc = update_doc(db.save_doc(doc).json_body, doc)
+                doc = db.save_doc(doc)
                 if 'couchapp' in self.olddoc:
                     old_signatures = self.olddoc['couchapp'].get('signatures', {})
                 else:
@@ -91,8 +90,7 @@ class LocalDoc(object):
                     for name, signature in old_signatures.items():
                         cursign = signatures.get(name)
                         if cursign is not None and cursign != signature:
-                            update_doc(db.delete_attachment(doc, 
-                                name).json_body, doc)
+                            doc = db.delete_attachment(doc, name)
                             
                
                
@@ -101,16 +99,16 @@ class LocalDoc(object):
                             old_signatures.get(name) != signatures[name]:
                         if self.ui.verbose >= 2:
                             self.ui.logger.info("attach %s " % name)
-                        update_doc(db.put_attachment(doc, open(filepath, "r"), 
-                            name=name).json_body, doc)    
+                        doc = db.put_attachment(doc, open(filepath, "r"), 
+                                            name=name)
             else:
                 doc = self.doc()
                 try:
-                    olddoc = db.open_doc(self.docid).json_body
-                    doc.update({'_rev': olddoc['_rev']})
+                    rev = db.head(self.docid)
+                    doc.update({'_rev': rev})
                 except ResourceNotFound:
                     pass
-                doc = update_doc(db.save_doc(doc).json_body, doc)   
+                doc = db.save_doc(doc)
             indexurl = self.index(db.uri, doc['couchapp'].get('index'))
             if indexurl:
                 self.ui.logger.info("Visit your CouchApp here:\n%s" % indexurl)
@@ -196,7 +194,7 @@ class LocalDoc(object):
         self.olddoc = {}
         if db is not None:
             try:
-                self.olddoc = db.get_doc(self._doc['_id'])
+                self.olddoc = db.open_doc(self._doc['_id'])
                 self._doc.update({'_rev': self.olddoc['_rev']})
             except ResourceNotFound:
                 pass

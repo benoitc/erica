@@ -127,7 +127,7 @@ def pushdocs(ui, source, dest, *args, **opts):
                     docs.append(doc)
                 else:
                     for db in dbs:
-                        db.save_doc(doc)
+                        db.save_doc(doc, force=True)
         else:
             doc = app.document(ui, docdir)
             if export or not noatomic:
@@ -156,8 +156,8 @@ def pushdocs(ui, source, dest, *args, **opts):
                     else:
                         newdoc = doc.copy()
                         try:
-                            olddoc = db.get_doc(doc['_id'])
-                            newdoc.update({'_rev': olddoc['_rev']})
+                            rev = db.last_rev(doc['_id'])
+                            newdoc.update({'_rev': rev})
                         except ResourceNotFound:
                             pass
                         docs1.append(newdoc)

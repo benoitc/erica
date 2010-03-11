@@ -32,3 +32,11 @@ class Unauthorized(Exception):
 
 class CommandLineError(Exception):
     """ error when a bad command line is passed"""
+    
+class BulkSaveError(Exception):
+    """ error raised when therer are conflicts in bulk save"""
+    
+    def ___init__(self, docs, errors):
+        self.docs = docs
+        self.errors = errors
+        super(BulkSaveError, self).__init__((docs, errors))
