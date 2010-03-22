@@ -62,7 +62,7 @@ class Vendor(object):
                     not hasattr(vendor_obj, 'scheme'):
                 continue
             for s in getattr(vendor_obj, 'scheme'):
-                scheme[s] = vendor_obj
+                scheme[s] = vendor_obj()
         return scheme
         
     def find_handler(self, uri):

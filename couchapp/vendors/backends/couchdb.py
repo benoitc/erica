@@ -19,7 +19,7 @@ couchdb://someurl/to/vendor (use couchdbs:// for https)"""
 
     scheme = ['couchdb', 'couchdbs']
     
-    def fetch(url, path, *args, **opts):
+    def fetch(self, url, path, *args, **opts):
         if url.startswith("couchdb://"):
             url = url.replace("couchdb://", "http://")
         else:

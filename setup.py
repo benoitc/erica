@@ -99,9 +99,9 @@ setup(
                                    
     entry_points="""
     [couchapp.vendor]
-    git=couchapp.vendor.backend.git:GitVendor
-    hg=couchapp.vendor.backend.hg:HgVendor
-    couchdb=couchapp.vendor.backend.couchdb:CouchdbVendor
+    git=couchapp.vendors.backends.git:GitVendor
+    hg=couchapp.vendors.backends.hg:HgVendor
+    couchdb=couchapp.vendors.backends.couchdb:CouchdbVendor
     
     [couchapp.hook]
     compress=couchapp.hooks.compress:hook

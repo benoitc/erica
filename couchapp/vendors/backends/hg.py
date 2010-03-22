@@ -23,7 +23,7 @@ class HgVendor(BackendVendor):
     
     scheme = ['hg', 'hg+ssh']
 
-    def fetch(url, path, *args, **opts):
+    def fetch(self, url, path, *args, **opts):
         """ return git cmd path """
         if url.startswith("hg+ssh://"):
             url = url[8:]
@@ -42,5 +42,5 @@ class HgVendor(BackendVendor):
         if err:
             raise VendorError(str(err))
             
-        logger.info(child_stdout.read())
+        logger.debug(child_stdout.read())
 

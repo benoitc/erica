@@ -23,7 +23,7 @@ class GitVendor(BackendVendor):
     
     scheme = ['git', 'git+ssh']
 
-    def fetch(url, path, *args, **opts):
+    def fetch(self, url, path, *args, **opts):
         if url.startswith("git+ssh://"):
             url = url[9:]
     
@@ -40,5 +40,5 @@ class GitVendor(BackendVendor):
         err = child_stderr.read()
         if err:
             raise VendorError(str(err))
-        logger.info(child_stdout.read())
+        logger.debug(child_stdout.read())
             
