@@ -13,8 +13,6 @@ from couchapp.config import Config
 
 logger = logging.getLogger(__name__)
 
-print "__name__"
-
 class NullHandler(logging.Handler):
     """ null log handler """
     def emit(self, record):
@@ -33,6 +31,10 @@ def set_logging(level=2):
     
     handler.setFormatter(logging.Formatter(format, datefmt))
     logger_.addHandler(handler)
+    
+def set_logging_level(level=2):
+    logger_ = logging.getLogger('couchapp')
+    logger_.setLevel(level * 10)
     
 
 def run():
@@ -77,7 +79,7 @@ def _dispatch(args):
     elif globalopts["quiet"]:
         verbose = 0
         
-    set_logging(verbose)
+    set_logging_level(verbose)
     if cmd is None:
         raise CommandLineError("unknown command")
 

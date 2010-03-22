@@ -74,6 +74,8 @@ def generate_app(path, template=None, create=False):
     if create:
         doc = localdoc.document(path, create=True)
     
+    logger.info("%s generated." % path)
+    
 def generate_function(path, kind, name, template=None):
     functions_path = ['functions']
     if template:
