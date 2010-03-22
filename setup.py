@@ -90,13 +90,22 @@ setup(
     install_requires = [
         'setuptools>=0.6b1'
     ],
-    options = dict(py2exe=dict(packages=['couchappext']),
+    
+    options = dict(py2exe={},
                    bdist_mpkg=dict(zipdist=True,
                                    license='LICENSE',
                                    readme='contrib/macosx/Readme.html',
                                    welcome='contrib/macosx/Welcome.html')),
                                    
     entry_points="""
+    [couchapp.vendor]
+    git=couchapp.vendor.backend.git:GitVendor
+    hg=couchapp.vendor.backend.hg:HgVendor
+    couchdb=couchapp.vendor.backend.couchdb:CouchdbVendor
+    
+    [couchapp.hook]
+    compress=couchapp.hooks.compress:hook
+    
     [console_scripts]
     couchapp=couchapp.dispatch:run
     """,

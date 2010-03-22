@@ -6,13 +6,13 @@
 from __future__ import with_statement
 import base64
 import itertools
-import mimetypes
 import re
-import tempfile
+import types
 
 from couchapp import __version__
 from couchapp.errors import ResourceNotFound, ResourceConflict,\
-PreconditionFailed, RequestFailed, BulkSaveError
+PreconditionFailed, RequestFailed, BulkSaveError, Unauthorized, \
+InvalidAttachment
 from couchapp.restkit import Resource, HttpResponse, ResourceError, request
 from couchapp.restkit import util
 import couchapp.simplejson as json
@@ -157,9 +157,8 @@ class Database(CouchdbResource):
     A Database object can act as a Dict object.
     """
     
-    def __init__(self, ui, uri, create=True, **client_opts):
+    def __init__(self, uri, **client_opts):
         CouchdbResource.__init__(self, uri=uri, **client_opts)
-        self.ui = ui
         self.server_uri, self.dbname = uri.rsplit('/', 1)
         
         self.uuids = Uuids(self.server_uri)
@@ -323,7 +322,7 @@ class Database(CouchdbResource):
         errors = []
         for i, r in enumerate(json_res):
             if 'error' in r:
-                doc1 = docs[u]
+                doc1 = docs[i]
                 doc1.update({'_id': r['id'], 
                                 '_rev': r['rev']})
                 errors.append(doc1)

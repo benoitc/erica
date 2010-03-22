@@ -8,6 +8,7 @@ from __future__ import with_statement
 import base64
 import copy
 from hashlib import md5
+import logging
 import os
 import os.path
 try:
@@ -17,15 +18,10 @@ except ImportError:
     
 from couchapp.errors import AppError
 from couchapp import client
-from couchapp.utils import to_bytestring
-import couchapp.generator as generator
-from couchapp.vendor import Vendor
-import couchapp.localdoc as localdoc
+from couchapp import util
 
+logger = logging.getLogger(__name__)
 
-def document(ui, path='', create=False, docid=None):
-    doc = localdoc.instance(ui, path, create=create, docid=docid)
-    return doc
 
 if os.name == 'nt':
     def _replace_slash(name):
@@ -34,7 +30,7 @@ else:
     def _replace_slash(name):
         return name
 
-def clone(ui, source, dest=None, rev=None):
+def clone(source, dest=None, rev=None):
     """
     Clone an application from a design_doc given.
     
@@ -54,7 +50,7 @@ def clone(ui, source, dest=None, rev=None):
     if not os.path.exists(path):
         os.makedirs(path)
 
-    db = client.Database(ui, dburl[:-1])    
+    db = client.Database(dburl[:-1])    
     if not rev:
         doc = db.open_doc("_design/%s" % docid)
     else:
@@ -76,8 +72,7 @@ def clone(ui, source, dest=None, rev=None):
     # create files from manifest
     if manifest:
         for filename in manifest:
-            if ui.verbose >=2:
-                ui.logger.info("clone property: %s" % filename)
+            logger.info("clone property: %s" % filename)
             filepath = os.path.join(path, filename)
             if filename.endswith('/'): 
                 if not os.path.isdir(filepath):
@@ -85,7 +80,7 @@ def clone(ui, source, dest=None, rev=None):
             elif filename == "couchapp.json":
                 continue
             else:
-                parts = ui.split_path(filename)
+                parts = util.split_path(filename)
                 fname = parts.pop()
                 v = doc
                 while 1:
@@ -105,7 +100,7 @@ def clone(ui, source, dest=None, rev=None):
                         
 
                     if isinstance(content, basestring):
-                        _ref = md5(to_bytestring(content)).hexdigest()
+                        _ref = md5(util.to_bytestring(content)).hexdigest()
                         if objects and _ref in objects:
                             content = objects[_ref]
                             
@@ -122,7 +117,7 @@ def clone(ui, source, dest=None, rev=None):
                     if not os.path.isdir(filedir):
                         os.makedirs(filedir)
                     
-                    ui.write(filepath, content)
+                    util.write(filepath, content)
 
                     # remove the key from design doc
                     temp = doc
@@ -151,7 +146,7 @@ def clone(ui, source, dest=None, rev=None):
                 del app_meta['length']
             if app_meta:
                 couchapp_file = os.path.join(path, 'couchapp.json')
-                ui.write_json(couchapp_file, app_meta)
+                util.write_json(couchapp_file, app_meta)
         elif key in ('views'):
             vs_dir = os.path.join(path, key)
             if not os.path.isdir(vs_dir):
@@ -163,10 +158,8 @@ def clone(ui, source, dest=None, rev=None):
                 for func_name, func in vs_item.iteritems():
                     filename = os.path.join(vs_item_dir, '%s.js' % 
                             func_name)
-                    ui.write(filename, func)
-                    if ui.verbose >=2:
-                        ui.logger.info(
-                            "clone view not in manifest: %s" % filename)
+                    util.write(filename, func)
+                    logger.warning("clone view not in manifest: %s" % filename)
         elif key in ('shows', 'lists', 'filter', 'update'):
             showpath = os.path.join(path, key)
             if not os.path.isdir(showpath):
@@ -174,19 +167,17 @@ def clone(ui, source, dest=None, rev=None):
             for func_name, func in doc[key].iteritems():
                 filename = os.path.join(showpath, '%s.js' % 
                         func_name)
-                ui.write(filename, func)
-                if ui.verbose >=2:
-                    ui.logger.info(
-                        "clone show or list not in manifest: %s" % filename)
+                util.write(filename, func)
+                logger.warning(
+                    "clone show or list not in manifest: %s" % filename)
         else:
             filedir = os.path.join(path, key)
             if os.path.exists(filedir):
                 continue
             else:
-                if ui.verbose >=2:
-                    ui.logger.info("clone property not in manifest: %s" % key)
+                logger.warning("clone property not in manifest: %s" % key)
                 if isinstance(doc[key], (list, tuple,)):
-                    ui.write_json(filedir + ".json", doc[key])
+                    util.write_json(filedir + ".json", doc[key])
                 elif isinstance(doc[key], dict):
                     if not os.path.isdir(filedir):
                         os.makedirs(filedir)
@@ -195,20 +186,20 @@ def clone(ui, source, dest=None, rev=None):
                         if isinstance(value, basestring):
                             if value.startswith('base64-encoded;'):
                                 value = base64.b64decode(content[15:])
-                            ui.write(fieldpath, value)
+                            util.write(fieldpath, value)
                         else:
-                            ui.write_json(fieldpath + '.json', value)        
+                            util.write_json(fieldpath + '.json', value)        
                 else:
                     value = doc[key]
                     if not isinstance(value, basestring):
                         value = str(value)
-                    ui.write(filedir, value)
+                    util.write(filedir, value)
 
     # save id
     idfile = os.path.join(path, '_id')
-    ui.write(idfile, doc['_id'])
+    util.write(idfile, doc['_id'])
   
-    ui.write_json(os.path.join(path, '.couchapprc'), {})
+    util.write_json(os.path.join(path, '.couchapprc'), {})
 
     if '_attachments' in doc:  # process attachments
         attachdir = os.path.join(path, '_attachments')
@@ -217,7 +208,7 @@ def clone(ui, source, dest=None, rev=None):
             
         for filename in doc['_attachments'].iterkeys():
             if filename.startswith('vendor'):
-                attach_parts = ui.split_path(filename)
+                attach_parts = util.split_path(filename)
                 vendor_attachdir = os.path.join(path, attach_parts.pop(0),
                         attach_parts.pop(0), '_attachments')
                 filepath = os.path.join(vendor_attachdir, *attach_parts)
@@ -228,34 +219,9 @@ def clone(ui, source, dest=None, rev=None):
             if not os.path.isdir(currentdir):
                 os.makedirs(currentdir)
     
-            if signatures.get(filename) != ui.sign(filepath):
+            if signatures.get(filename) != util.sign(filepath):
                 resp = db.fetch_attachment(docid, filename)
                 with open(filepath, 'wb') as f:
                     for chunk in resp.body_file:
                         f.write(chunk)
-                if ui.verbose>=2:
-                    ui.logger.info("clone attachment: %s" % filename)
-                    
-def generate(ui, path, kind, name, **opts):
-    if kind not in ["app", "view", "list", "show", 'filter', 'function', 
-                    'vendor', 'update']:
-        raise AppError(
-            "Can't generate %s in your couchapp. generator is unknown" % kind)
-
-    if kind == "app":
-        generator.generate_app(ui, path, template=opts.get("template"), 
-                        create=opts.get('create', False))
-    else:
-        if name is None:
-            raise AppError("Can't generate %s function, name is missing" % kind)
-        generator.generate_function(ui, path, kind, name, opts.get("template"))
-        
-        
-def vendor_install(ui, dest, source, *args, **opts):
-    vendor = Vendor(ui)
-    vendor.install(dest, source, *args, **opts)
-    
-def vendor_update(ui, dest, name=None, *args, **opts):
-    vendor = Vendor(ui)
-    vendor.update(dest, name, *args, **opts)
-    
+                logger.info("clone attachment: %s" % filename)

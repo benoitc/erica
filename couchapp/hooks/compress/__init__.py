@@ -3,21 +3,26 @@
 # This file is part of couchapp released under the Apache 2 license. 
 # See the NOTICE for more information.
 
+import logging
 import os
 import re
 
-from couchapp.utils import relpath
-from couchappext.compress import compress_css
+from couchapp.config import Config
+from couchapp.hooks.compress import compress_css
+from couchapp import util
+
+logger = logging.getLogger(__name__)
 
 class Compress(object):
     
-    def __init__(self, ui, path):
-        self.ui = ui
+    def __init__(self, path):
         self.appdir = path
         self.attach_dir = os.path.join(path, '_attachments')
+        self.conf = Config()
+        self.conf.update(path)
         
     def is_hook(self):
-        if not 'compress' in self.ui.conf:
+        if not 'compress' in self.conf:
             return False
         return True
         
@@ -33,7 +38,7 @@ class Compress(object):
             css_path = os.path.join(os.path.dirname(src_fpath),
                     css_url)
 
-            rel_path = relpath(css_path, fname_dir)
+            rel_path = util.relpath(css_path, fname_dir)
             return "url(%s)" % rel_path
 
         for fname, src_files in css.iteritems():
@@ -46,19 +51,18 @@ class Compress(object):
                 src_fpath = os.path.join(self.appdir, src_fname)
 
                 if os.path.exists(src_fpath):
-                    content_css = str(compress_css.CSSParser(self.ui.read(src_fpath)))
+                    content_css = str(compress_css.CSSParser(
+                                                        util.read(src_fpath)))
                     content_css = re_url.sub(replace_url, content_css)
                     output_css += content_css
-                    if self.ui.verbose >= 2:
-                        self.ui.logger.info("Merging %s in %s" % (src_fname, fname))
+                    logger.debug("Merging %s in %s" % (src_fname, fname))
 
             if not os.path.isdir(fname_dir):
                 os.makedirs(fname_dir)
-            self.ui.write(dest_path, output_css)
+            util.write(dest_path, output_css)
             
     def compress_js(self, backend, js):
-        if self.ui.verbose:
-            self.ui.logger.info("compress js with %s " % backend.__about__)
+        logger.info("compress js with %s " % backend.__about__)
 
         for fname, src_files in js.iteritems():
             output_js = ''
@@ -70,18 +74,17 @@ class Compress(object):
                 src_fpath = os.path.join(self.appdir, src_fname)
                 if os.path.isfile(src_fpath):
                     output_js += "/* %s */\n" % src_fpath
-                    output_js +=  self.ui.read(src_fpath)
-                    if self.ui.verbose >= 2:
-                        self.ui.logger.info("merging %s in %s" % (src_fname, fname))
+                    output_js +=  util.read(src_fpath)
+                    logger.debug("merging %s in %s" % (src_fname, fname))
 
             if not os.path.isdir(fname_dir):
                 os.makedirs(fname_dir)
 
             output_js = backend.compress(output_js)
-            self.ui.write(dest_path, output_js)
+            util.write(dest_path, output_js)
         
     def run(self):
-        conf = self.ui.conf
+        conf = self.conf
         actions = conf.get('compress', {})
         if 'css' in actions:
             self.compress_css(actions['css'])
@@ -90,8 +93,8 @@ class Compress(object):
             if 'js_compressor' in conf['compress']:
                 modname = conf['compress']['js_compressor']
                 if not isinstance(modname, basestring):
-                    self.ui.log.warning("Warning: js_compressor settings should be a string")
-                    self.ui.log.warning("Selecting default backend (jsmin)")
+                    logger.warning("Warning: js_compressor settings should be a string")
+                    logger.warning("Selecting default backend (jsmin)")
                     import couchappext.compress.jsmin as backend
                 else:
                     try:
@@ -103,8 +106,8 @@ class Compress(object):
             self.compress_js(backend, actions['js'])
         
 
-def hook(ui, path, hooktype, **kwarg):
-    c = Compress(ui, path)
+def hook(path, hooktype, **kwarg):
+    c = Compress(path)
         
     if hooktype == "pre-push":
         if not c.is_hook(): return

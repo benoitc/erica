@@ -9,7 +9,7 @@ import re
 import sys
 sys.path.append(os.path.dirname(__file__))
 
-from couchapp.utils import relpath
+from couchapp.util import relpath
 
 __all__ = ['CSSParser', 'merge_css']
 
@@ -84,55 +84,3 @@ class CSSParser(object):
 
         for line in self.parse(data):
             self.css_output += "%s {%s}\n" % (line['tags'], line['rules'])    
-
-
-def merge_css(app_dir, app_name, verbose=False):
-    docid = '_design/%s' % app_name
-    attach_dir = os.path.join(app_dir, '_attachments')
-    
-    re_url = re.compile('url\s*\(([^\s"].*)\)')
-
-    src_fpath = ''
-    fname_dir = ''
-
-    def replace_url(mo):
-        """ make sure urls are relative to css path """
-        css_url = mo.group(0)[4:].strip(")").replace("'", "").replace('"','')
-        css_path = os.path.join(os.path.dirname(src_fpath),
-                css_url)
-
-        rel_path = relpath(css_path, fname_dir)
-        return "url(%s)" % rel_path
-    
-    for fname, src_files in conf['css'].iteritems():
-        output_css = ''
-
-        dest_path = os.path.join(attach_dir, fname)
-        fname_dir = os.path.dirname(dest_path)
-
-        for src_fname in src_files:
-            src_fpath = os.path.join(attach_dir, src_fname)
-            
-            if os.path.exists(src_fpath):
-                content_css = str(CSSParser(read_file(src_fpath)))
-                content_css = re_url.sub(replace_url, content_css) 
-                output_css += content_css
-                if verbose >= 2:
-                    print "Merging %s in %s" % (src_fname, fname)
-
-        if not os.path.isdir(fname_dir):
-            os.makedirs(fname_dir)
-
-        write_content(dest_path, output_css)
-        
-def main():
-    parser = OptionParser(usage='%prog appdir appname') 
-    options, args = parser.parse_args()
-
-    if len(args) < 2:
-        return parser.error('incorrect number of arguments')
-        
-    merge_css(args[0], args[1])
-    
-if __name__ == '__main__':
-    main()

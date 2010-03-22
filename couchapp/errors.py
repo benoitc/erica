@@ -40,3 +40,6 @@ class BulkSaveError(Exception):
         Exception.__init__(self)
         self.docs = docs
         self.errors = errors
+        
+class ScriptError(Exception):
+    """ exception raised in external script"""

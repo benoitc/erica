@@ -5,79 +5,90 @@
 
 import logging
 import getopt
-import os
 import sys
 
 import couchapp.commands as commands
 from couchapp.errors import AppError, CommandLineError
-from couchapp.extensions import get_extensions, load_extensions
-from couchapp.ui import UI
+from couchapp.config import Config
 
+logger = logging.getLogger(__name__)
+
+class NullHandler(logging.Handler):
+    """ null log handler """
+    def emit(self, record):
+        pass
+
+def set_logging(level=2):
+    """
+    Set level of logging, and choose where to display/save logs 
+    (file or standard output).
+    """
+    handler = logging.StreamHandler()
+
+    loglevel = level * 10
+    logger_ = logging.getLogger('couchapp')
+    logger_.setLevel(loglevel)
+    format = r"%(asctime)s [%(levelname)s] %(message)s"
+    datefmt = r"%Y-%m-%d %H:%M:%S"
+    
+    handler.setFormatter(logging.Formatter(format, datefmt))
+    logger_.addHandler(handler)
+    
 
 def run():
     sys.exit(dispatch(sys.argv[1:]))
     
     
 def dispatch(args):
-    console = logging.StreamHandler()
-    console.setLevel(logging.INFO)
-    formatter = logging.Formatter('[%(levelname)s] %(message)s')
-    console.setFormatter(formatter)
-    ui = UI(logging_handler=console)
+    set_logging()
     
     try:
-        return _dispatch(ui, args)
+        return _dispatch(args)
     except AppError, e:
-        ui.logger.error("couchapp error: %s" % str(e))
+        logger.error("couchapp error: %s" % str(e))
     except KeyboardInterrupt:
-        ui.logger.info("keyboard interrupt")
+        logger.info("keyboard interrupt")
     except Exception, e:
         import traceback
         
-        ui.logger.critical("%s\n\n%s" % (str(e), traceback.format_exc()))
+        logger.critical("%s\n\n%s" % (str(e), traceback.format_exc()))
     return -1
     
+def _dispatch(args):
+    conf = Config()
 
-def _dispatch(ui, args):
-    # if we are in a couchapp path is not None
-    path = _findcouchapp(os.getcwd())
-    if path is not None:
-        ui.updateconfig(path)
-    
-    # load extensions
-    load_extensions(ui)
     # update commands
-    for name, mod in get_extensions():
+    for mod in conf.extensions:
         cmdtable = getattr(mod, 'cmdtable', {})
         commands.table.update(cmdtable)
         
-    cmd, globalopts, opts, args = _parse(ui, args)
+    cmd, globalopts, opts, args = _parse(args)
         
     if globalopts["help"]:
         del globalopts["help"]
-        return commands.usage(ui, *args, **globalopts)
+        return commands.usage(*args, **globalopts)
     elif globalopts["version"]:
         del globalopts["version"]
-        return commands.version(ui, *args, **globalopts)
+        return commands.version(*args, **globalopts)
     
-    verbose = 1
+    verbose = 2
     if globalopts["verbose"]:
-        verbose = 2
+        verbose = 1
     elif globalopts["quiet"]:
         verbose = 0
         
-    ui.set_verbose(verbose)
+    set_logging(verbose)
     if cmd is None:
         raise CommandLineError("unknown command")
 
     fun = commands.table[cmd][0]
     if cmd in commands.incouchapp:
-         return fun(ui, path, *args, **opts)    
+         return fun(conf, conf.app_dir, *args, **opts)    
     
-    return fun(ui, *args, **opts)    
+    return fun(conf, *args, **opts)    
 
 
-def _parse(ui, args):
+def _parse(args):
     options = {}
     cmdoptions = {}
     try:
@@ -151,9 +162,3 @@ def parseopts(args, options, state):
         
     return args
 
-def _findcouchapp(p):
-    while not os.path.isfile(os.path.join(p, ".couchapprc")):
-        oldp, p = p, os.path.dirname(p)
-        if p == oldp:
-            return None
-    return p

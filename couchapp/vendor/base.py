@@ -3,67 +3,67 @@
 # This file is part of couchapp released under the Apache 2 license. 
 # See the NOTICE for more information.
 
+import logging
 import os
 import shutil
 import tempfile
 
-from couchapp.extensions import get_extensions
 from couchapp.errors import VendorError
-from couchapp.utils import *
+from couchapp import util
 
 __all__ = ['Vendor']
+
+logger = logging.getLogger(__name__)
 
 def _tempdir():
     f, fname = tempfile.mkstemp()
     os.unlink(fname)
     return fname
-
-
+    
+class BackendVendor(object):
+    """ vendor backend interface """
+    url = "",
+    license =  "",
+    author = "",
+    author_email = "",
+    description = ""
+    long_description = ""
+    
+    scheme = None
+    
+    def fetch(url, path, *args, **opts):
+        raise NotImplementedError
+    
 class Vendor(object):
     """ Vendor object to manage vendors in a couchapp """
     
-    def __init__(self, ui):
+    def __init__(self, conf):
         """ Constructor of vendor object 
         
         :attr app_dir: string, path of app_dir
         """
-        self.ui = ui
+        self.conf = conf
         
         # load vendor handlers
-        scheme, vendors = self.load_vendors()
-        self.scheme = scheme
-        self.vendors = vendors
+        self.scheme = self.load_vendors()
 
     def load_vendors(self):
         """ associate vendor  to their scheme
-        each vendor should contain a scheme list and a callable that should be named
-        fetch. 
+        Each vendor is an instance of `couchapp.vendor.base.BackendVendor`.
+        
         Scheme is anything before "://" .
-        
-        ex:
-        
-            def fetch(ui, url, path, *args, **opts):
-                ...
-                
-            scheme = ['git', 'git+ssh']
             
-        See gitvendor module for more info.
+        See couchapp vendors' backends for more info.
         
         """
         scheme = {}
-        vendors = []
-        for name, mod in get_extensions():
-            if not hasattr(mod, 'fetch') or not hasattr(mod, 'scheme'):
+        for vendor_obj in self.conf.vendors:
+            if not hasattr(vendor_obj, 'fetch') or \
+                    not hasattr(vendor_obj, 'scheme'):
                 continue
-            else:
-                vendors.append((getattr(mod, '__extension_name__', name), 
-                                getattr(mod, '___copyright__', ""), 
-                                getattr(mod, '__doc__', "")))
-                
-                fetchcmd = getattr(mod, 'fetch')
-                for s in getattr(mod, 'scheme'):
-                    scheme[s] = fetchcmd
-        return scheme, vendors
+            for s in getattr(vendor_obj, 'scheme'):
+                scheme[s] = vendor_obj
+        return scheme
         
     def find_handler(self, uri):
         scheme = uri.split("://")[0]
@@ -87,10 +87,11 @@ class Vendor(object):
         """ fetch a vendor from uri """
         
         # get fetch cmd
-        fetchfun = self.find_handler(uri)  
+        vendor_obj = self.find_handler(uri)
+        
         # execute fetch command
         path = _tempdir()
-        fetchfun(self.ui, uri, path, *args, **opts)
+        vendor_obj.fetch(uri, path, *args, **opts)
         
         vendors = []
         for name in os.listdir(path):
@@ -99,14 +100,14 @@ class Vendor(object):
             if not os.path.isfile(metaf):
                 continue
             else:
-                meta = self.ui.read_json(metaf)
+                meta = util.read_json(metaf)
                 meta["fetch_uri"] = uri 
                 name = meta.get('name', name)
                 vendors.append((name, vpath, meta))
                 os.unlink(metaf)
                 
         if not vendors:
-            self.ui.deltree(path)    
+            util.deltree(path)    
             raise VendorError("Invalid vendor, medata not found.")
             
         return vendors, path
@@ -125,15 +126,14 @@ class Vendor(object):
             metaf = os.path.join(dest, "metadata.json")
             if os.path.isdir(dest):
                 if should_force:
-                    self.ui.deltree(dest)
+                    util.deltree(dest)
                 else:
-                    self.ui.logger.error("vendor: %s already installed" % name)
+                    logger.warning("vendor: %s already installed" % name)
                     continue
             shutil.copytree(path, dest)
-            self.ui.write_json(metaf, meta)
-            if self.ui.verbose >= 1:
-                self.ui.logger.info("%s installed in vendors" % name)
-        self.ui.deltree(temppath)
+            util.write_json(metaf, meta)
+            logger.info("%s installed in vendors" % name)
+        util.deltree(temppath)
         return 0
     
     def update(self, appdir, name=None, *args, **opts):
@@ -147,7 +147,7 @@ class Vendor(object):
                 raise VendorError("vendor `%s` doesn't exist" % name)
             dest = os.path.join(vendordir, name)
             metaf = os.path.join(dest, "metadata.json")
-            meta = self.ui.read_json(metaf)
+            meta = util.read_json(metaf)
             uri = meta.get("fetch_uri", "")
             if not uri:
                 raise VendorError("Can't update vendor `%s`: fetch_uri undefined." % name)
@@ -156,14 +156,13 @@ class Vendor(object):
                 if name != vname:
                     continue
                 else:
-                    self.ui.deltree(dest)
+                    util.deltree(dest)
                     shutil.copytree(vpath, dest)
-                    self.ui.write_json(metaf, vmeta)
-                    if self.ui.verbose >= 1:
-                        self.ui.logger.info("%s updated in vendors" % vname)
+                    util.write_json(metaf, vmeta)
+                    logger.info("%s updated in vendors" % vname)
                     break
 
-            self.ui.deltree(temppath)
+            util.deltree(temppath)
         else: # update all vendors
             updated = []
             for vendor in self.installed_vendors(vendordir):
@@ -172,30 +171,29 @@ class Vendor(object):
                 else:
                     dest = os.path.join(vendordir, vendor)
                     metaf = os.path.join(dest, "metadata.json")
-                    meta = self.ui.read_json(metaf)
+                    meta = util.read_json(metaf)
                     uri = meta.get("fetch_uri", "")
                     if not uri:
-                        if self.ui.verbose >= 1:
-                            self.ui.logger.error("Can't update vendor `%s`: fetch_uri undefined." % vendor)
+                        logger.warning(
+                        "Can't update vendor `%s`: fetch_uri undefined." % vendor)
                         continue
                     else:
-                        new_vendors, temppath = self.fetch_vendor(uri, *args, **opts)
+                        new_vendors, temppath = self.fetch_vendor(uri, *args, 
+                                                                **opts)
                         for vname, vpath, vmeta in new_vendors:
                             dest1 = os.path.join(vendordir, vname)
                             metaf1 =  os.path.join(dest1, "metadata.json")
                             if os.path.exists(dest1):
-                                self.ui.deltree(dest1)
+                                util.deltree(dest1)
                                 shutil.copytree(vpath, dest1)
-                                self.ui.write_json(metaf1, vmeta)
-                                if self.ui.verbose >= 1:
-                                    self.ui.logger.info("%s updated in vendors" % vname)
+                                util.write_json(metaf1, vmeta)
+                                logger.info("%s updated in vendors" % vname)
                                 updated.append(vname)
                             elif should_force: 
                                 #install forced
                                 shutil.copytree(vpath, dest1)
-                                self.ui.write_json(metaf1, vmeta)
-                                if self.ui.verbose >= 1:
-                                    self.ui.logger.info("%s installed in vendors" % vname)
+                                util.write_json(metaf1, vmeta)
+                                logger.info("%s installed in vendors" % vname)
                                 updated.append(vname)                                
-                        self.ui.deltree(temppath)
+                        util.deltree(temppath)
         return 0

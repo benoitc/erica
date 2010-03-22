@@ -3,17 +3,28 @@
 # This file is part of couchapp released under the Apache 2 license. 
 # See the NOTICE for more information.
 
+from __future__ import with_statement
+
+import codecs
+from hashlib import md5
+import logging
 import os
+import pkg_resources
+import string
 import sys
-import urlparse
-import urllib
 
+try:
+    import simplejson as json
+except ImportError:
+    import couchapp.simplejson as json
 
+from couchapp.errors import ScriptError
 
-__all__ = ['popen3', 'in_couchapp', 'parse_uri', 'parse_auth',
-        'get_appname', 'to_bytestring', 'vendor_dir',
-        'user_rcpath', 'rcpath', 'locate_program', 'deltree', 
-        'relpath', 'user_path', 'import_module', 'expandpath']
+__all__ = ['popen3', 'in_couchapp', 'parse_uri','get_appname', 'to_bytestring', 
+           'vendor_dir', 'user_rcpath', 'rcpath', 'locate_program', 'deltree', 
+           'relpath', 'user_path', 'expandpath']
+        
+logger = logging.getLogger(__name__)
 
 try:#python 2.6, use subprocess
     import subprocess
@@ -166,7 +177,15 @@ def rcpath():
             _rcpath = user_rcpath()
     return _rcpath
     
-    
+
+def findcouchapp(p):
+    while not os.path.isfile(os.path.join(p, ".couchapprc")):
+        oldp, p = p, os.path.dirname(p)
+        if p == oldp:
+            return None
+    return p
+
+   
 def in_couchapp():
     """ return path of couchapp if we are somewhere in a couchapp. """
     current_path = os.getcwd()
@@ -181,51 +200,6 @@ def in_couchapp():
         if parent == current_path:
             return False
         current_path = parent
-
-def parse_uri(string):
-    parts = urlparse.urlsplit(urllib.unquote(string))
-    if parts[0] != 'http' and parts[0] != 'https':
-        raise ValueError('Invalid dbstring')
-     
-    path = parts[2].strip('/').split('/')
-
-    dbname = ''
-    docid = ''
-    if len(path) >= 1:
-        db_parts=[]
-        i = 0
-        while 1:
-            try:
-                p = path[i]
-            except IndexError:
-                break
-
-            if p == '_design': break
-            db_parts.append(p)
-            i = i + 1
-        dbname = '/'.join(db_parts)
-        
-        if i < len(path) - 1:
-            docid = '/'.join(path[i:])
-
-    server_uri = '%s://%s' % (parts[0], parts[1])
-    return server_uri, dbname, docid
-
-
-def parse_auth(string):
-    """ get username and password for an url string """
-    parts = urlparse.urlsplit(urllib.unquote(string))
-    
-    server_parts = parts[1].split('@')
-    if ":" in server_parts[0]:
-        username, password = server_parts[0].split(":")
-    else:
-        username = server_parts[0]
-        password = ''
-
-    server_uri = "%s://%s" % (parts[0], server_parts[1])
-
-    return username, password, server_uri
 
 def get_appname(docid):
     """ get applicaton name for design name"""
@@ -279,7 +253,95 @@ def deltree(path):
         os.rmdir(path)
     except:
         pass
-            
+
+def split_path(self, path):
+    parts = []
+    while True:
+        head, tail = os.path.split(path)
+        parts = [tail] + parts
+        path = head
+        if not path: break
+    return parts
+    
+def sign(fpath):
+    """ return md5 hash from file content
+
+    :attr fpath: string, path of file
+
+    :return: string, md5 hexdigest
+    """
+    if os.path.isfile(fpath):
+        m = md5()
+        with  open(fpath, 'rb') as fp:
+            try:
+                while 1:
+                    data = fp.read(8096)
+                    if not data: break
+                    m.update(data)
+            except IOError, msg:
+                logger.error('%s: I/O error: %s\n' % (fpath, msg))
+                return 1
+            return m.hexdigest()
+    return ''
+    
+def read(fname, utf8=True, force_read=False):
+    """ read file content"""
+    if utf8:
+        try:
+            with codecs.open(fname, 'rb', "utf-8") as f:
+                return f.read()
+        except UnicodeError, e:
+            if force_read:
+                return read(fname, utf8=False)
+            raise
+    else:
+        with open(fname, 'rb') as f:
+            return f.read()
+           
+def write(fname, content):
+    """ write content in a file
+
+    :attr fname: string,filename
+    :attr content: string
+    """
+    with open(fname, 'wb') as f:
+        f.write(to_bytestring(content))
+
+def write_json(fname, content):
+    """ serialize content in json and save it
+
+    :attr fname: string
+    :attr content: string
+
+    """
+    write(fname, json.dumps(content).encode('utf-8'))
+
+def read_json(fname, use_environment=False):
+    """ read a json file and deserialize
+
+    :attr filename: string
+    :attr use_environment: boolean, default is False. If
+    True, replace environment variable by their value in file
+    content
+
+    :return: dict or list
+    """
+    try:
+        data = read(fname, force_read=True)
+    except IOError, e:
+        if e[0] == 2:
+            return {}
+        raise
+
+    if use_environment:
+        data = string.Template(data).substitute(os.environ)
+
+    try:
+        data = json.loads(data)
+    except ValueError:
+        logger.error("Json is invalid, can't load %s" % fname)
+        return {}
+    return data            
     
 _vendor_dir = None
 def vendor_dir():
@@ -291,39 +353,55 @@ def vendor_dir():
 
 def expandpath(path):
     return os.path.expanduser(os.path.expandvars(path))
+
+
+
+class SchellScript(object):
+    """ simple object used to manage extensions or hooks from external
+    scripts in any languages """
+    
+    def __init__(self, cmd):
+        self.cmd = cmd
         
-#backported form python2.7
+    def __call__(self, *args, **options):
+        cmd = self.cmd
+        
+        cmd += " ".join(
+            ["--%s=%s" % (k, v) for k, v in options.items()] +
+            args
+        )
+        (child_stdin, child_stdout, child_stderr) = popen3(cmd)
+        err = child_stderr.read()
+        if err:
+            raise ScriptError(str(err))
+        return (child_stdout.read())
+        
 
-def _resolve_name(name, package, level):
-    """Return the absolute name of the module to be imported."""
-    if not hasattr(package, 'rindex'):
-        raise ValueError("'package' not set to a string")
-    dot = len(package)
-    for x in xrange(level, 1, -1):
+def parse_uri(uri, section):
+    if uri.startswith("egg:"):
+        # uses entry points
+        entry_str = uri.split("egg:")[1]
         try:
-            dot = package.rindex('.', 0, dot)
+            dist, name = entry_str.rsplit("#",1)
         except ValueError:
-            raise ValueError("attempted relative import beyond top-level "
-                              "package")
-    return "%s.%s" % (package[:dot], name)
+            dist = entry_str
+            name = "main"
 
-
-def import_module(name, package=None):
-    """Import a module.
-
-    The 'package' argument is required when performing a relative import. It
-    specifies the package to use as the anchor point from which to resolve the
-    relative import to an absolute import.
-
-    """
-    if name.startswith('.'):
-        if not package:
-            raise TypeError("relative imports require the 'package' argument")
-        level = 0
-        for character in name:
-            if character != '.':
-                break
-            level += 1
-        name = _resolve_name(name[level:], package, level)
-    __import__(name)
-    return sys.modules[name]
+        return pkg_resources.load_entry_point(dist, section, name)
+    elif uri.startswith("python:"):
+        uri1 = uri.split("python:")[1]
+        components = uri1.split('.')
+        if len(components) == 1:
+            raise RuntimeError("extension uri invalid")
+        klass = components.pop(-1)
+        mod = __import__('.'.join(components))
+        for comp in components[1:]:
+            mod = getattr(mod, comp)
+        return getattr(mod, klass)
+    else:
+        raise RuntimeError("extension uri invalid")
+        
+def parse_hooks_uri(uri):
+    if uri.startswith("python:") or uri.startswith("egg:"):
+        return parse_uri(uri, "couchapp.hook")
+    return SchellScript(uri)
