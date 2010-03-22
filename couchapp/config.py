@@ -136,9 +136,9 @@ class Config(object):
                 else:
                     raise AppError("database isn't specified")
             else:
-                db_urls = "%s/%s" % (self.DEFAULT_SERVER_URI, db_string)
+                dburls = "%s/%s" % (self.DEFAULT_SERVER_URI, db_string)
                 if db_string in env:
-                    db_urls = env[db_string].get('db', db_urls)    
+                    dburls = env[db_string].get('db', dburls)    
         
         if isinstance(dburls, basestring):
             dburls = [dburls]
