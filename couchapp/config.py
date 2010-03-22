@@ -44,7 +44,9 @@ class Config(object):
         
         if isinstance(path, basestring):
             paths = [path]
-        
+        else:
+            paths = path
+            
         for p in paths:
             if os.path.isfile(p):
                 new_conf = util.read_json(p, use_environment=True)
@@ -106,7 +108,7 @@ class Config(object):
         for extension_uri in self.conf.get('extensions'):
             obj = util.parse_uri(extension_uri, "couchapp.extension")
             extensions_list.append(obj)
-        return extension_uri
+        return extensions_list
         
     @property
     def hooks(self):

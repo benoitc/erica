@@ -72,7 +72,7 @@ def generate_app(path, template=None, create=False):
             f.write('_design/%s' % os.path.split(appdir)[1])
     
     if create:
-        doc = localdoc.instance(path, create=True)
+        doc = localdoc.document(path, create=True)
     
 def generate_function(path, kind, name, template=None):
     functions_path = ['functions']

@@ -43,3 +43,6 @@ class BulkSaveError(Exception):
         
 class ScriptError(Exception):
     """ exception raised in external script"""
+    
+class InvalidAttachment(Exception):
+    """ raised when attachment is invalid (bad size, ct, ..)"""
