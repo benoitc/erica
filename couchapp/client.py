@@ -8,7 +8,6 @@ import base64
 import itertools
 import re
 import types
-import urlparse
 
 from couchapp import __version__
 from couchapp.errors import ResourceNotFound, ResourceConflict,\
@@ -160,10 +159,8 @@ class Database(CouchdbResource):
     
     def __init__(self, uri, **client_opts):
         CouchdbResource.__init__(self, uri=uri, **client_opts)
-        uri_parsed = urlparse.urlparse(uri)
-        self.server_uri = "%s://%s" % (uri_parsed.scheme, uri_parsed.netloc)
-        self.dbname = uri_parsed.path.strip("/")
-
+        self.server_uri, self.dbname = uri.rsplit('/', 1)
+        
         self.uuids = Uuids(self.server_uri)
         self.version = couchdb_version(self.server_uri)
         
