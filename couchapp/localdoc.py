@@ -38,7 +38,8 @@ class LocalDoc(object):
         self.ignores = []
         ignorefile = os.path.join(path, '.couchappignore')
         if os.path.exists(ignorefile):
-            # A .couchappignore file is a json file containing a list of regexps for things to skip
+            # A .couchappignore file is a json file containing a
+            # list of regexps for things to skip
             self.ignores = json.load(open(ignorefile, 'r'))
         if not docid:
             docid = self.get_id()

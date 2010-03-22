@@ -13,9 +13,8 @@ import sys
 import unittest
 
 from couchapp.errors import ResourceNotFound
-from couchapp.ui import UI
 from couchapp.client import Database
-from couchapp.utils import popen3, deltree
+from couchapp.util import popen3, deltree
 
 couchapp_dir = os.path.join(os.path.dirname(__file__), '../')
 couchapp_cli = os.path.join(os.path.dirname(__file__), '../bin/couchapp')
@@ -28,8 +27,7 @@ def _tempdir():
 class CliTestCase(unittest.TestCase):
     
     def setUp(self):
-        self.ui = ui = UI()
-        self.db = Database(ui, 'http://127.0.0.1:5984/couchapp-test')
+        self.db = Database('http://127.0.0.1:5984/couchapp-test')
             
         self.tempdir = _tempdir()
         os.makedirs(self.tempdir)

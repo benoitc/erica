@@ -11,8 +11,6 @@ import tempfile
 from couchapp.errors import VendorError
 from couchapp import util
 
-__all__ = ['Vendor']
-
 logger = logging.getLogger(__name__)
 
 def _tempdir():

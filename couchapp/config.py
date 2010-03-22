@@ -125,7 +125,7 @@ class Config(object):
         
     # TODO: add oauth management
     def get_dbs(self, db_string=None):
-        if db_string.startswith("http://"):
+        if db_string is not None and db_string.startswith("http://"):
             dburls = db_string
         else:
             env = self.conf.get('env', {})

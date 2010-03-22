@@ -109,6 +109,7 @@ setup(
     [console_scripts]
     couchapp=couchapp.dispatch:run
     """,
+    
     test_suite='tests',
     **extra
 )

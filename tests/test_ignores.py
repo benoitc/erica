@@ -21,7 +21,6 @@ import json
 import os
 from shutil import rmtree
 from couchapp.localdoc import LocalDoc as doc
-from couchapp.ui import UI
 
 class IgnoresTests(unittest.TestCase):
 
@@ -38,8 +37,7 @@ class IgnoresTests(unittest.TestCase):
         f.close()
 
         # Make a UI and a doc instance for the tests
-        ui = UI()
-        self.doc = doc(ui, self.tmp_dir)
+        self.doc = doc(self.tmp_dir)
 
         # I could write these files to the temp area, but that seems unnecessary
         # since the unit test doesn't interact with the file system other than 

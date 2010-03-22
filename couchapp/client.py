@@ -396,6 +396,8 @@ class Database(CouchdbResource):
         self.delete("%s/%s" % (escape_docid(doc['_id']), name), 
                         rev=doc['_rev']).json_body
         return doc.update(self.open_doc(doc['_id']))
+        
+    
                 
 
 def encode_params(params):
