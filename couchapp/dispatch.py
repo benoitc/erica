@@ -13,6 +13,8 @@ from couchapp.config import Config
 
 logger = logging.getLogger(__name__)
 
+print "__name__"
+
 class NullHandler(logging.Handler):
     """ null log handler """
     def emit(self, record):
@@ -24,10 +26,8 @@ def set_logging(level=2):
     (file or standard output).
     """
     handler = logging.StreamHandler()
-
-    loglevel = level * 10
     logger_ = logging.getLogger('couchapp')
-    logger_.setLevel(loglevel)
+    logger_.setLevel(level * 10)
     format = r"%(asctime)s [%(levelname)s] %(message)s"
     datefmt = r"%Y-%m-%d %H:%M:%S"
     

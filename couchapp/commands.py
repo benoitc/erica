@@ -15,7 +15,7 @@ from couchapp.errors import ResourceNotFound, AppError, BulkSaveError
 from couchapp import generator
 from couchapp.localdoc import document
 from couchapp import util
-from couchapp.vendor import vendor_install, vendor_update
+from couchapp.vendors import vendor_install, vendor_update
 
 logger = logging.getLogger(__name__)
 

@@ -7,29 +7,30 @@ import logging
 
 from couchapp.errors import VendorError
 from couchapp.util import locate_program, popen3
-from couchapp.vendor.base import BackendVendor
+from couchapp.vendors.base import BackendVendor
 
 logger = logging.getLogger(__name__)
 
-class GitVendor(BackendVendor):
+class HgVendor(BackendVendor):
     url="http://github.com/couchapp/couchapp"
     author="Benoit Chesneau"
     author_email="benoitc@e-engura.org"
-    description = "Git vendor handler"
-    long_description = """couchapp vendor install|update from git::
+    description = "HG vendor handler"
+    long_description = """couchapp vendor install|update from mercurial::
     
-    git://somerepo.git (use git+ssh:// for ssh repos)
+    hg://somerepo (repo available via http, use http+ssh:// for ssh repos)
     """
     
-    scheme = ['git', 'git+ssh']
+    scheme = ['hg', 'hg+ssh']
 
     def fetch(url, path, *args, **opts):
-        if url.startswith("git+ssh://"):
-            url = url[9:]
-    
         """ return git cmd path """
+        if url.startswith("hg+ssh://"):
+            url = url[8:]
+        else:
+            url = url.replace("hg://", "http://")
         try:
-            cmd = locate_program("git", raise_error=True)
+            cmd = locate_program("hg", raise_error=True)
         except ValueError, e:
             raise VendorError(e)
         
@@ -40,5 +41,6 @@ class GitVendor(BackendVendor):
         err = child_stderr.read()
         if err:
             raise VendorError(str(err))
-        logger.info(child_stdout.read())
             
+        logger.info(child_stdout.read())
+

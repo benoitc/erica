@@ -7,7 +7,7 @@ import os
 
 from couchapp.errors import VendorError
 from couchapp.clone_app import clone
-from couchapp.vendor.base import BackendVendor
+from couchapp.vendors.base import BackendVendor
 
 class CouchdbVendor(BackendVendor):
     url="http://github.com/couchapp/couchapp"
