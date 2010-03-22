@@ -72,7 +72,7 @@ def clone(source, dest=None, rev=None):
     # create files from manifest
     if manifest:
         for filename in manifest:
-            logger.info("clone property: %s" % filename)
+            logger.debug("clone property: %s" % filename)
             filepath = os.path.join(path, filename)
             if filename.endswith('/'): 
                 if not os.path.isdir(filepath):
@@ -224,4 +224,6 @@ def clone(source, dest=None, rev=None):
                 with open(filepath, 'wb') as f:
                     for chunk in resp.body_file:
                         f.write(chunk)
-                logger.info("clone attachment: %s" % filename)
+                logger.debug("clone attachment: %s" % filename)
+                
+    logger.info("%s cloned in %s" % (source, dest))

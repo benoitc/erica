@@ -19,10 +19,6 @@ except ImportError:
     import couchapp.simplejson as json
 
 from couchapp.errors import ScriptError
-
-__all__ = ['popen3', 'in_couchapp', 'parse_uri','get_appname', 'to_bytestring', 
-           'vendor_dir', 'user_rcpath', 'rcpath', 'locate_program', 'deltree', 
-           'relpath', 'user_path', 'expandpath']
         
 logger = logging.getLogger(__name__)
 
@@ -254,7 +250,7 @@ def deltree(path):
     except:
         pass
 
-def split_path(self, path):
+def split_path(path):
     parts = []
     while True:
         head, tail = os.path.split(path)
