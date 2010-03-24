@@ -27,7 +27,7 @@ def hook(conf, path, hook_type, *args, **kwargs):
 
 def init(conf, path, *args, **opts):
     if not args:
-        dest = path
+        dest = os.getcwd()
     else:
         dest = os.path.normpath(os.path.join(os.getcwd(), args[0]))
         

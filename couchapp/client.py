@@ -100,7 +100,7 @@ class CouchdbResource(Resource):
                 error = msg.get('reason')
             else:
                 error = msg
-                
+
             if e.status_int == 404:
                 raise ResourceNotFound(error, http_code=404,
                         response=e.response)
