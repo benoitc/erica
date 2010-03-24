@@ -75,7 +75,7 @@ class LocalDoc(object):
         else:
             logger.info("CouchApp already initialized in %s." % self.docdir)
 
-    def push(self, dbs, noatomic=False, browser=False):
+    def push(self, dbs, noatomic=False, browser=False, force=False):
         """Push a doc to a list of database `dburls`. If noatomic is true
         each attachments will be sent one by one."""
         for db in dbs:
@@ -97,7 +97,8 @@ class LocalDoc(object):
                             db.delete_attachment(doc, name)
                                            
                 for name, filepath in self.attachments():
-                    if old_signatures.get(name) != signatures[name]:
+                    if old_signatures.get(name) != signatures[name] or force:
+                        print (old_signatures.get(name) != signatures[name])
                         logger.debug("attach %s " % name)
                         db.put_attachment(doc, open(filepath, "r"), 
                                             name=name)

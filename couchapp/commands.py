@@ -329,7 +329,8 @@ pushopts = [
     ('', 'no-atomic', False, "send attachments one by one"),
     ('', 'export', False, "don't do push, just export doc to stdout"),
     ('', 'output', '', "if export is selected, output to the file"),
-    ('b', 'browse', False, "open the couchapp in the browser")
+    ('b', 'browse', False, "open the couchapp in the browser"),
+    ('', 'force', False, "force attachments sending")
 ]
     
 table = {
