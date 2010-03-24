@@ -115,7 +115,7 @@ class CouchdbResource(Resource):
             elif e.status_int in (401, 403):
                 raise Unauthorized(e)
             else:
-                RequestFailed(str(e))
+                raise RequestFailed(str(e))
         except Exception, e:
             raise RequestFailed("unknown error [%s]" % str(e))
                
