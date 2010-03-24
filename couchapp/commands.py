@@ -40,6 +40,7 @@ def push(conf, path, *args, **opts):
     export = opts.get('export', False)
     atomic = opts.get('no_atomic', False)
     browse = opts.get('browse', False)
+    force = opts.get('force', False)
     dest = None
     doc_path = None
     if len(args) < 2:
@@ -71,7 +72,7 @@ def push(conf, path, *args, **opts):
     dbs = conf.get_dbs(dest)
     
     hook(conf, doc_path, "pre-push", dbs=dbs)    
-    doc.push(dbs, atomic, browse)
+    doc.push(dbs, atomic, browse, force)
     hook(conf, doc_path, "post-push", dbs=dbs)
     
     docspath = os.path.join(doc_path, '_docs')

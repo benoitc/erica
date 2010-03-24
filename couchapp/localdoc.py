@@ -95,10 +95,8 @@ class LocalDoc(object):
                         cursign = signatures.get(name)
                         if cursign is not None and cursign != signature:
                             db.delete_attachment(doc, name)
-                                           
                 for name, filepath in self.attachments():
                     if old_signatures.get(name) != signatures[name] or force:
-                        print (old_signatures.get(name) != signatures[name])
                         logger.debug("attach %s " % name)
                         db.put_attachment(doc, open(filepath, "r"), 
                                             name=name)
