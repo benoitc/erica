@@ -6,7 +6,7 @@ function encodeOptions(options) {
       if (!options.hasOwnProperty(name)) {continue;}
       var value = options[name];
       if (name == "key" || name == "startkey" || name == "endkey") {
-        value = toJSON(value);
+        value = JSON.stringify(value);
       }
       buf.push(encodeURIComponent(name) + "=" + encodeURIComponent(value));
     }
@@ -51,6 +51,10 @@ exports.init = function(req) {
     },
     list : function() {
       var p = req.path, parts = ['', p[0], p[1] , p[2], '_list'];
+      return makePath(concatArgs(parts, arguments));
+    },
+    update : function() {
+      var p = req.path, parts = ['', p[0], p[1] , p[2], '_update'];
       return makePath(concatArgs(parts, arguments));
     },
     limit : function(limit) {
