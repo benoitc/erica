@@ -156,4 +156,27 @@ Evently understands CouchDB in a couple of very simple ways. If you know CouchDB
 
 -- links to example apps
 
-A tour of Taskr
+## Freeform Asynchronous Actions
+
+Watch out, you're dangerous! Evently allows you to make any old asyncronous action you want, with the `widget.async` member. Check it out:
+
+    $("#async").evently({
+      _init : {
+        mustache : "<p>How many databases on the local host?</p><p>Answer: {{number_of_dbs}}</p>",
+        async : function(cb) {
+          $.couch.allDbs({
+            success : function(resp) {
+              cb(resp.length);
+            }
+          })
+        },
+        data : function(count) {
+          return {
+            number_of_dbs : count
+          };
+        }
+      },
+      click : {
+        mustache : "<p>What a crazy world!</p>",
+      }
+    });
