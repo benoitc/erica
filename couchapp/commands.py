@@ -27,7 +27,7 @@ def hook(conf, path, hook_type, *args, **kwargs):
 
 def init(conf, path, *args, **opts):
     if not args:
-        dest = path
+        dest = os.getcwd()
     else:
         dest = os.path.normpath(os.path.join(os.getcwd(), args[0]))
         
@@ -40,6 +40,7 @@ def push(conf, path, *args, **opts):
     export = opts.get('export', False)
     atomic = opts.get('no_atomic', False)
     browse = opts.get('browse', False)
+    force = opts.get('force', False)
     dest = None
     doc_path = None
     if len(args) < 2:
@@ -71,7 +72,7 @@ def push(conf, path, *args, **opts):
     dbs = conf.get_dbs(dest)
     
     hook(conf, doc_path, "pre-push", dbs=dbs)    
-    doc.push(dbs, atomic, browse)
+    doc.push(dbs, atomic, browse, force)
     hook(conf, doc_path, "post-push", dbs=dbs)
     
     docspath = os.path.join(doc_path, '_docs')
@@ -329,7 +330,8 @@ pushopts = [
     ('', 'no-atomic', False, "send attachments one by one"),
     ('', 'export', False, "don't do push, just export doc to stdout"),
     ('', 'output', '', "if export is selected, output to the file"),
-    ('b', 'browse', False, "open the couchapp in the browser")
+    ('b', 'browse', False, "open the couchapp in the browser"),
+    ('', 'force', False, "force attachments sending")
 ]
     
 table = {

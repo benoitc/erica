@@ -100,7 +100,7 @@ class CouchdbResource(Resource):
                 error = msg.get('reason')
             else:
                 error = msg
-                
+
             if e.status_int == 404:
                 raise ResourceNotFound(error, http_code=404,
                         response=e.response)
@@ -115,7 +115,7 @@ class CouchdbResource(Resource):
             elif e.status_int in (401, 403):
                 raise Unauthorized(e)
             else:
-                RequestFailed(str(e))
+                raise RequestFailed(str(e))
         except Exception, e:
             raise RequestFailed("unknown error [%s]" % str(e))
                
@@ -230,6 +230,10 @@ class Database(CouchdbResource):
         if '_attachments' in doc and encode:
             doc['_attachments'] = encode_attachments(doc['_attachments'])
             
+        headers = params.get('headers', {})
+        headers.setdefault('Content-Type', 'application/json')
+        params['headers'] = headers
+        
         if '_id' in doc:
             docid = escape_docid(doc['_id'])
             try:
@@ -315,7 +319,8 @@ class Database(CouchdbResource):
             payload["all-or-nothing"] = True
             
         # update docs
-        res = self.post('/_bulk_docs', payload=json.dumps(payload))
+        res = self.post('/_bulk_docs', payload=json.dumps(payload),
+                    headers={'Content-Type': 'application/json'})
             
         json_res = res.json_body
         errors = []
