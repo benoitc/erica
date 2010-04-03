@@ -56,7 +56,8 @@ $.prettyDate = function(time){
 		Math.ceil( day_diff / 365 ) + " years ago";
 };
 
-$.toArray = function(args) {
+$.argsToArray = function(args) {
+  if (!args.callee) return args;
   var array = [];
   for (var i=0; i < args.length; i++) {
     array.push(args[i]);

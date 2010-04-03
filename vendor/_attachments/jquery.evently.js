@@ -140,14 +140,14 @@ function $$(node) {
   // as well as call this in a way that replaces the host elements content
   // this would be easy if there is a simple way to get at the element we just appended
   // (as html) so that we can attache the selectors
-  function renderElement(me, h, args, qrun) {
+  function renderElement(me, h, args, qrun, arun) {
     // if there's a query object we run the query,
     // and then call the data function with the response.
-    if (h.query && !qrun) {
+    if (h.async && !arun) {
+      runAsync(me, h, args)
+    } else if (h.query && !qrun) {
       // $.log("query before renderElement", arguments)
       runQuery(me, h, args)
-    } else if (h.async && !qrun) {
-      runAsync(me, h, args)
     } else {
       // $.log("renderElement")
       // $.log(me, h, args, qrun)
@@ -188,11 +188,11 @@ function $$(node) {
   };
   
   function runAsync(me, h, args) {  
-    var app = $$(me).app;
     // the callback is the first argument
     funViaString(h.async).apply(me, [function() {
-      renderElement(me, h, $.toArray(args).concat($.toArray(arguments)), true);
-    }].concat(args));
+      renderElement(me, h, 
+        $.argsToArray(arguments).concat($.argsToArray(args)), false, true);
+    }].concat($.argsToArray(args)));
   };
   
   
@@ -214,7 +214,7 @@ function $$(node) {
       q.success = function(resp) {
         $.log("runQuery newRows success", resp.rows.length, me, resp)
         resp.rows.reverse().forEach(function(row) {
-          renderElement(me, h, [row].concat($.toArray(args)), true)
+          renderElement(me, h, [row].concat($.argsToArray(args)), true)
         });
         if (userSuccess) userSuccess(resp);
       };
@@ -222,7 +222,7 @@ function $$(node) {
     } else {
       q.success = function(resp) {
         // $.log("runQuery success", resp)
-        renderElement(me, h, [resp].concat($.toArray(args)), true);
+        renderElement(me, h, [resp].concat($.argsToArray(args)), true);
         userSuccess && userSuccess(resp);
       };
       $.log(app)
