@@ -68,10 +68,10 @@ def _dispatch(args):
         
     if globalopts["help"]:
         del globalopts["help"]
-        return commands.usage(*args, **globalopts)
+        return commands.usage(conf, *args, **globalopts)
     elif globalopts["version"]:
         del globalopts["version"]
-        return commands.version(*args, **globalopts)
+        return commands.version(conf, *args, **globalopts)
     
     verbose = 2
     if globalopts["verbose"]:
