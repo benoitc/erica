@@ -3,6 +3,7 @@
 
 
 ## Full command line usage
+
     $ couchapp help
     couchapp [OPTIONS] [CMD] [OPTIONSCMD] [ARGS,...]
     usage:

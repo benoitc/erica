@@ -234,7 +234,7 @@ class CliTestCase(unittest.TestCase):
 
         
         (child_stdin, child_stdout, child_stderr) = popen3("%s pushdocs docs/ http://127.0.0.1:5984/couchapp-test" % self.cmd)
-        
+       
         alldocs = self.db.all_docs()['rows']
         self.assert_(len(alldocs) == 2)
         
