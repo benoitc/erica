@@ -80,7 +80,7 @@ path is the directory of the CouchApp on the filesystem, hooktype is the name of
 - vendor:  `source`, the uri of vendor,  `action`, could be *install* or *update*.
 - generate: None
 
-# 
+Have a look in [compress hook source](http://github.com/couchapp/couchapp/tree/master/couchapp/hooks/compress/) for a complete example.
 
 ## Vendors handlers
 
