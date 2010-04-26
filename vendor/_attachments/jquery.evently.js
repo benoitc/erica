@@ -53,13 +53,13 @@ function $$(node) {
   $.evently = {
     connect : function(source, target, events) {
       events.forEach(function(ev) {
-        source.bind(ev, function() {
+        $(source).bind(ev, function() {
           var args = $.makeArray(arguments);
           // remove the original event to keep from stacking args extra deep
           // it would be nice if jquery had a way to pass the original
           // event to the trigger method.
           args.shift();
-          target.trigger(ev, args);
+          $(target).trigger(ev, args);
           return false;
         });
       });
