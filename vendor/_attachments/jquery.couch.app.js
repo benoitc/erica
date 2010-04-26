@@ -25,6 +25,9 @@
     this.view = function(view, opts) {
       db.view(name+'/'+view, opts);
     };
+    this.list = function(list, view, opts) {
+    db.list(name+'/'+list, view, opts);
+  }
   }
   
   $.couch.app = $.couch.app || function(appFun) {
@@ -172,6 +175,7 @@
         db : db,
         design : design,
         view : design.view,
+        list : design.list,
         docForm : docForm,
         req : mockReq
       }, $.couch.app.app);
