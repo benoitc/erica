@@ -50,8 +50,13 @@
         function formToDeepJSON(form, fields, doc) {
           form = $(form);
           opts.fields.forEach(function(field) {
-            var val = form.find("[name="+field+"]").val();
-            if (!val) {return;}
+            var element = form.find("[name="+field+"]");
+            if (element.attr('type') === 'checkbox') {
+                var val = element.attr('checked');
+            } else {
+                var val = element.val();
+                if (!val) return;
+            }
             var parts = field.split('-');
             var frontObj = doc, frontName = parts.shift();
             while (parts.length > 0) {
@@ -90,8 +95,14 @@
               frontName = parts.shift();
             }
             if (frontObj && frontObj[frontName]) {
-              form.find("[name="+field+"]").val(frontObj[frontName]);              
+              var element = form.find("[name="+field+"]");
+              if (element.attr('type') === 'checkbox') {
+                element.attr('checked', frontObj[frontName]);
+              } else {
+                element.val(frontObj[frontName]);
+              }
             }
+          });
           });            
         }
         
