@@ -352,7 +352,7 @@ def expandpath(path):
 
 
 
-class SchellScript(object):
+class ShellScript(object):
     """ simple object used to manage extensions or hooks from external
     scripts in any languages """
     
@@ -360,12 +360,12 @@ class SchellScript(object):
         self.cmd = cmd
         
     def __call__(self, *args, **options):
-        cmd = self.cmd
+        cmd = self.cmd + " "
         
-        cmd += " ".join(
-            ["--%s=%s" % (k, v) for k, v in options.items()] +
-            args
-        )
+        # cmd += " ".join(
+        #     ["--%s=%s" % (k, v) for k, v in options.items()] +
+        #     list(args)
+        # )
         (child_stdin, child_stdout, child_stderr) = popen3(cmd)
         err = child_stderr.read()
         if err:
@@ -400,4 +400,4 @@ def parse_uri(uri, section):
 def parse_hooks_uri(uri):
     if uri.startswith("python:") or uri.startswith("egg:"):
         return parse_uri(uri, "couchapp.hook")
-    return SchellScript(uri)
+    return ShellScript(uri)

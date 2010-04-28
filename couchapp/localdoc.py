@@ -314,12 +314,12 @@ class LocalDoc(object):
                             yield (name, filepath)
                 
     def attachments(self):
-        """ This function yield a tupple (name, filepath) corrsponding
-        to each attachments (vendor included) in the couchapp. `name`
-        is the name of attachment in `_attachments` member and `filapath`
+        """ This function yield a tuple (name, filepath) corresponding
+        to each attachment (vendor included) in the couchapp. `name`
+        is the name of attachment in `_attachments` member and `filepath`
         the path to the attachment on the disk.
         
-        attachments are processed later to allow us to send attachmenrs inline
+        attachments are processed later to allow us to send attachments inline
         or one by one.
         """
         # process main attachments
