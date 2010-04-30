@@ -26,14 +26,15 @@
       db.view(name+'/'+view, opts);
     };
     this.list = function(list, view, opts) {
-    db.list(name+'/'+list, view, opts);
+      db.list(name+'/'+list, view, opts);
+    };
   }
-  }
-  
-  $.couch.app = $.couch.app || function(appFun) {
+
+  $.couch.app = $.couch.app || function(appFun, opts) {
+    opts = opts || {};
     $(function() {
-      var dbname = document.location.href.split('/')[3];
-      var dname = unescape(document.location.href).split('/')[5];
+      var dbname = opts.db || document.location.href.split('/')[3];
+      var dname = opts.design || unescape(document.location.href).split('/')[5];
       var db = $.couch.db(dbname);
       var design = new Design(db, dname);
       
