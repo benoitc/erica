@@ -2,7 +2,6 @@
 
 body {
   font:1em Helvetica, sans-serif;
-  margin:0;
   padding:4px;
 }
 
@@ -38,3 +37,6 @@ div.avatar img {
   height : 40px;
 }
 
+#items ul {
+  list-style: none;
+}
