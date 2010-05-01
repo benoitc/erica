@@ -1,14 +1,21 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Generated CouchApp</title>
+    <title>My New CouchApp</title>
     <link rel="stylesheet" href="style/main.css" type="text/css">
   </head>
   <body>
-    <h1>Generated CouchApp</h1>
-    <p>This is a placeholder page</p>
+    <h1>Generated Evently CouchApp</h1>
+    <div id="account"></div>
+    <div id="profile"></div>
+    <p>This is where you can list thing people have saved.</p>
   </body>
-  <script src="/_utils/script/json2.js"></script>
-  <script src="/_utils/script/jquery.js?1.3.1"></script>
-  <script src="/_utils/script/jquery.couch.js?0.9.0"></script>
+  <script src="vendor/couchapp/loader.js"></script>
+  <script type="text/javascript" charset="utf-8">
+    $.couch.app(function(app) {
+      $("#account").evently("account", app);
+      $("#profile").evently("profile", app);
+      $.evently.connect("#account","#profile", ["loggedIn","loggedOut"]);
+    });
+  </script>
 </html>
