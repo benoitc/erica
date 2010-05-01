@@ -1,1 +1,40 @@
 /* add styles here */
+
+body {
+  font:1em Helvetica, sans-serif;
+  margin:0;
+  padding:4px;
+}
+
+#account {
+  float:right;
+}
+
+form {
+  padding:4px;
+  margin:6px;
+  background-color:#ddd;  
+}
+
+div.avatar {
+  padding:2px;
+  padding-bottom:0;
+  margin-right:4px;
+  float:left;
+  font-size:0.78em;
+  width : 60px;
+  height : 60px;
+  text-align: center;
+}
+
+div.avatar .name {
+  padding-top:2px;
+}
+
+div.avatar img {
+  margin:0 auto;
+  padding:0;
+  width : 40px;
+  height : 40px;
+}
+
