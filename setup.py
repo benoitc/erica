@@ -40,7 +40,8 @@ if os.name == "nt":
             for p in m.__path__[1:]:
                 modulefinder.AddPackagePath(pn, p)
         except ImportError:
-            pass
+            raise SystemExit('You need pywin32 installed ' +
+                    'http://sourceforge.net/projects/pywin32')
     
     except ImportError:
         raise SystemExit('You need py2exe installed to run Couchapp.')
