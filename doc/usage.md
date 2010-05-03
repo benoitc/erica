@@ -1,7 +1,6 @@
 #Couchapp Command Line Usage
 
 
-
 ## Full command line usage
 
     $ couchapp help
