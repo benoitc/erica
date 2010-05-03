@@ -7,16 +7,16 @@
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
 AppId={{0CDA65F1-9FD8-42C5-8DD0-F65F7E8B7304}
 AppName=Couchapp
-AppVerName=Couchapp 0.5
-AppPublisher=Benoît Chesneau
-AppPublisherURL=http://benoitc.github.com/couchapp
-AppSupportURL=http://benoitc.github.com/couchapp
-AppUpdatesURL=http://benoitc.github.com/couchapp
+AppVerName=Couchapp 0.6
+AppPublisher=Benoit Chesneau
+AppPublisherURL=http://github.com/couchapp/couchapp
+AppSupportURL=http://github.com/couchapp/couchapp
+AppUpdatesURL=http://github.com/couchapp/couchapp
 DefaultDirName={pf}\Couchapp
 DefaultGroupName=Couchapp
 LicenseFile=LICENSE
 InfoAfterFile=contrib\win32\postinstall.txt
-OutputBaseFilename=couchapp-0.5
+OutputBaseFilename=couchapp-0.6
 Compression=lzma
 SolidCompression=yes
 SourceDir=..\..
@@ -29,31 +29,18 @@ Name: desktopicon; Description: {cm:CreateDesktopIcon}; GroupDescription: {cm:Ad
 
 [Files]
 Source: dist\couchapp.exe; DestDir: {app}; Flags: ignoreversion
-Source: dist\_hashlib.pyd; DestDir: {app}; Flags: ignoreversion
-Source: dist\_socket.pyd; DestDir: {app}; Flags: ignoreversion
-Source: dist\_ssl.pyd; DestDir: {app}; Flags: ignoreversion
-Source: dist\_win32sysloader.pyd; DestDir: {app}; Flags: ignoreversion
-Source: dist\API-MS-Win-Core-LocalRegistry-L1-1-0.dll; DestDir: {app}; Flags: ignoreversion
-Source: dist\API-MS-Win-Core-ProcessThreads-L1-1-0.dll; DestDir: {app}; Flags: ignoreversion
-Source: dist\API-MS-Win-Security-Base-L1-1-0.dll; DestDir: {app}; Flags: ignoreversion
-Source: dist\bz2.pyd; DestDir: {app}; Flags: ignoreversion
-Source: dist\couchapp.exe; DestDir: {app}; Flags: ignoreversion
 Source: dist\library.zip; DestDir: {app}; Flags: ignoreversion
-Source: dist\POWRPROF.dll; DestDir: {app}; Flags: ignoreversion
-Source: dist\python26.dll; DestDir: {app}; Flags: ignoreversion
-Source: dist\pythoncom26.dll; DestDir: {app}; Flags: ignoreversion
-Source: dist\pywintypes26.dll; DestDir: {app}; Flags: ignoreversion
-Source: dist\select.pyd; DestDir: {app}; Flags: ignoreversion
-Source: dist\unicodedata.pyd; DestDir: {app}; Flags: ignoreversion
 Source: dist\w9xpopen.exe; DestDir: {app}; Flags: ignoreversion
-Source: dist\win32api.pyd; DestDir: {app}; Flags: ignoreversion
-Source: dist\win32com.shell.shell.pyd; DestDir: {app}; Flags: ignoreversion
 Source: dist\couchapp\*; DestDir: {app}; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: dist\Microsoft.VC*.CRT.manifest; DestDir: {app}; Flags: ignoreversion
 Source: dist\Microsoft.VC*.MFC.manifest; DestDir: {app}
 Source: dist\mfc*.dll; DestDir: {app}
 Source: dist\msvc*.dll; DestDir: {app}
 Source: dist\add_path.exe; DestDir: {app}
+Source: dist\python26.dll; DestDir: {app}
+Source: dist\*.pyd; DestDir: {app}
+Source: dist\*.dll; DestDir: {app}
+
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]

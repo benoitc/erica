@@ -22,6 +22,13 @@ for root in ('templates', 'vendor'):
         data_files.append((os.path.join('couchapp', dir),
                           [os.path.join(dir, file_) for file_ in files]))
 
+class install_package_data(install_data):
+    def finalize_options(self):
+        self.set_undefined_options('install',
+                                   ('install_lib', 'install_dir'))
+        install_data.finalize_options(self)
+ 
+cmdclass = {'install_data': install_package_data }
 
 if os.name == "nt":
     # py2exe needs to be installed to work
@@ -42,18 +49,10 @@ if os.name == "nt":
         except ImportError:
             raise SystemExit('You need pywin32 installed ' +
                     'http://sourceforge.net/projects/pywin32')
-    
+        extra['console'] = ['bin/couchapp.py']
     except ImportError:
         raise SystemExit('You need py2exe installed to run Couchapp.')
     
-
-class install_package_data(install_data):
-    def finalize_options(self):
-        self.set_undefined_options('install',
-                                   ('install_lib', 'install_dir'))
-        install_data.finalize_options(self)
- 
-cmdclass = {'install_data': install_package_data }
 
 from couchapp import __version__
  
