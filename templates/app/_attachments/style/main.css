@@ -5,6 +5,10 @@ body {
   padding:4px;
 }
 
+h1 {
+  margin-top:0;
+}
+
 #account {
   float:right;
 }
