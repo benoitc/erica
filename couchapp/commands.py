@@ -122,8 +122,8 @@ def pushapps(conf, source, dest, *args, **opts):
                             docs1.append(doc)
                         except ResourceNotFound:
                             pass 
-                if docs1:
-                    db.save_docs(docs1)
+                    if docs1:
+                        db.save_docs(docs1)
     return 0
   
 def pushdocs(conf, source, dest, *args, **opts):
