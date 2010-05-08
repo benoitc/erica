@@ -65,9 +65,9 @@
     var pathSpec, path_params, params = {}, param_name, param;
     for (var i=0; i < $.pathbinder.paths.length; i++) {
       pathSpec = $.pathbinder.paths[i];
-      $.log("pathSpec", pathSpec);
+      // $.log("pathSpec", pathSpec);
       if ((path_params = pathSpec.matcher.exec(path)) !== null) {
-        $.log("path_params", path_params);
+        // $.log("path_params", path_params);
         path_params.shift();
         for (var j=0; j < path_params.length; j++) {
           param_name = pathSpec.param_names[j];

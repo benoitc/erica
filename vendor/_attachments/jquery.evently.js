@@ -102,7 +102,7 @@ function $$(node) {
     });
     
     if (events._init) {
-      $.log("ev _init", elem);
+      // $.log("ev _init", elem);
       elem.trigger("_init", args);
     }
     
@@ -110,7 +110,7 @@ function $$(node) {
       $("body").bind("evently.changes."+app.db.name, function() {
         // we want to unbind this function when the element is deleted.
         // maybe jquery 1.4.2 has this covered?
-        $.log('changes', elem);
+        // $.log('changes', elem);
         elem.trigger("_changes");        
       });
       followChanges(app);
@@ -152,7 +152,7 @@ function $$(node) {
   };
   
   $.fn.replace = function(elem) {
-    $.log("Replace", this)
+    // $.log("Replace", this)
     $(this).empty().append(elem);
   };
   
@@ -177,7 +177,7 @@ function $$(node) {
       var act = h.render || "replace";
       var app = $$(me).app;
       if (h.mustache) {
-        $.log("rendering", h.mustache)
+        // $.log("rendering", h.mustache)
         var newElem = mustachioed(me, h, args);
         me[act](newElem);
       }
@@ -233,7 +233,7 @@ function $$(node) {
     
     if (qType == "newRows") {
       q.success = function(resp) {
-        $.log("runQuery newRows success", resp.rows.length, me, resp)
+        // $.log("runQuery newRows success", resp.rows.length, me, resp)
         resp.rows.reverse().forEach(function(row) {
           renderElement(me, h, [row].concat($.argsToArray(args)), true)
         });
@@ -246,7 +246,7 @@ function $$(node) {
         renderElement(me, h, [resp].concat($.argsToArray(args)), true);
         userSuccess && userSuccess(resp);
       };
-      $.log(app)
+      // $.log(app)
       app.view(viewName, q);      
     }
   }
