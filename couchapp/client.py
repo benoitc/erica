@@ -121,7 +121,9 @@ class CouchdbResource(Resource):
                
 def couchdb_version(server_uri):
     resp = request(server_uri, headers=[("Accept", "application/json")])
-    version = json.load(resp.body_file)["version"]
+    if resp.status_int >= 400:
+        raise RequestFailed("Error while checking CouchDB version %s" % resp.body)
+    version = json.load(resp.body)["version"]
     t = []
     for p in version.split("."):
         try:

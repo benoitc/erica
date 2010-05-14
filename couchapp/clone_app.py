@@ -37,6 +37,7 @@ def clone(source, dest=None, rev=None):
     :attr design_doc: dict, the design doc retrieved from couchdb
     if something was wrong.
     """
+
     try:
         dburl, docid = source.split('_design/')
     except ValueError:
