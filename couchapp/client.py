@@ -24,6 +24,8 @@ aliases = {
     'rev': '_rev' 
 }
 
+UNKNOWN_VERSION = tuple()
+
 class CouchdbResponse(HttpResponse):
     
     @property
@@ -120,10 +122,14 @@ class CouchdbResource(Resource):
             raise RequestFailed("unknown error [%s]" % str(e))
                
 def couchdb_version(server_uri):
-    resp = request(server_uri, headers=[("Accept", "application/json")])
-    if resp.status_int >= 400:
-        raise RequestFailed("Error while checking CouchDB version %s" % resp.body)
-    version = json.load(resp.body)["version"]
+    res = CouchdbResource(server_uri)
+    
+    try:
+        resp = res.get()
+    except Exception, e:
+        return UNKNOWN_VERSION
+    
+    version = resp.json_body["version"]
     t = []
     for p in version.split("."):
         try:
