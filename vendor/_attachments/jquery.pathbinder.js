@@ -141,7 +141,7 @@
   $.fn.pathbinder = function(name, path) {
     var self = $(this);
     var pathSpec = makePathSpec(path, function(params) {
-      // $.log("path cb", name, path, self)
+      $.log("path cb", name, path, self)
       self.trigger(name, [params]);
     });
     self.bind(name, function(ev, params) {

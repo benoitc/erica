@@ -23,7 +23,7 @@ function $$(node) {
   };
   $.forIn = forIn;
   function funViaString(fun) {
-    if (fun && fun.match && fun.match(/function/)) {
+    if (fun && fun.match && fun.match(/^function/)) {
       eval("var f = "+fun);
       if (typeof f == "function") {
         return function() {
@@ -164,6 +164,9 @@ function $$(node) {
   function renderElement(me, h, args, qrun, arun) {
     // if there's a query object we run the query,
     // and then call the data function with the response.
+    if (h.before && (!qrun || !arun)) {
+      funViaString(h.before).apply(me, args);
+    }
     if (h.async && !arun) {
       runAsync(me, h, args)
     } else if (h.query && !qrun) {
@@ -195,7 +198,8 @@ function $$(node) {
         });
       }
       if (h.after) {
-        funViaString(h.after).apply(me, args);
+        runIfFun(me, h.after, args);
+        // funViaString(h.after).apply(me, args);
       }
     }    
   };
