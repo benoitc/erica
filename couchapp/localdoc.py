@@ -79,9 +79,14 @@ class LocalDoc(object):
         """Push a doc to a list of database `dburls`. If noatomic is true
         each attachments will be sent one by one."""
         for db in dbs:
-            self.olddoc = {}
             if noatomic:
                 doc = self.doc(db, with_attachments=False)
+                try:
+                    self.olddoc = db.open_doc(doc['_id'])
+                    doc['_attachments'] = self.olddoc.get('_attachments')
+                except ResourceNotFound:
+                    self.olddoc = {}
+                
                 db.save_doc(doc, force_update=True)
                 if 'couchapp' in self.olddoc:
                     old_signatures = self.olddoc['couchapp'].get('signatures', 
@@ -90,13 +95,19 @@ class LocalDoc(object):
                     old_signatures = {}
                 
                 signatures = doc['couchapp'].get('signatures', {})
+
                 if old_signatures:
                     for name, signature in old_signatures.items():
                         cursign = signatures.get(name)
-                        if cursign is not None and cursign != signature:
+                        if not cursign:
                             db.delete_attachment(doc, name)
+                        elif cursign != signature:
+                            db.delete_attachment(doc, name)
+                        else:
+                            continue
+                            
                 for name, filepath in self.attachments():
-                    if old_signatures.get(name) != signatures[name] or force:
+                    if old_signatures.get(name) != signatures.get(name) or force:
                         logger.debug("attach %s " % name)
                         db.put_attachment(doc, open(filepath, "r"), 
                                             name=name)
