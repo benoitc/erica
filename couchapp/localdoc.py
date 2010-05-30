@@ -339,7 +339,7 @@ class LocalDoc(object):
             yield attachment
         vendordir = os.path.join(self.docdir, 'vendor')
         if not os.path.isdir(vendordir):
-            logger.warning("%s don't exist" % vendordir)
+            logger.debug("%s don't exist" % vendordir)
             return
             
         for name in os.listdir(vendordir):
