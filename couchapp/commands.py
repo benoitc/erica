@@ -140,7 +140,6 @@ def pushdocs(conf, source, dest, *args, **opts):
             if d.endswith(".json"):
                 doc = util.read_json(docdir)
                 docid, ext = os.path.splitext(d)
-                
                 doc.setdefault('_id', docid)
                 doc.setdefault('couchapp', {})
                 if export or not noatomic:
