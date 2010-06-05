@@ -177,7 +177,7 @@ function $$(node) {
       // $.log(me, h, args, qrun)
       // otherwise we just render the template with the current args
       var selectors = runIfFun(me, h.selectors, args);
-      var act = h.render || "replace";
+      var act = (h.render || "replace").replace(/\s/g,"");
       var app = $$(me).app;
       if (h.mustache) {
         // $.log("rendering", h.mustache)
