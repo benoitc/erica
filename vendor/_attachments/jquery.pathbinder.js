@@ -145,6 +145,7 @@
       self.trigger(name, [params]);
     });
     self.bind(name, function(ev, params) {
+      params = params || {};
       // set the path when triggered
       // $.log("set path", name, pathSpec)
       setPath(pathSpec, params);
