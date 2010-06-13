@@ -316,34 +316,44 @@ function $$(node) {
   
   // only start one changes listener per db
   function followChanges(app) {
-    var dbName = app.db.name;
+    var dbName = app.db.name, changeEvent = function() {
+      $("body").trigger("evently.changes."+dbName);
+    };
     if (!$.evently.changesDBs[dbName]) {
-      connectToChanges(app, function() {
-        $("body").trigger("evently.changes."+dbName);
-      });
+      if (app.db.changes) {
+        // new api in jquery.couch.js 1.0
+        app.db.changes().onChange(changeEvent);
+      } else {
+        // in case you are still on CouchDB 0.11 ;) deprecated.
+        connectToChanges(app, changeEvent);
+      }
       $.evently.changesDBs[dbName] = true;
     }
   }
   
-  function connectToChanges(app, fun) {
-    function resetHXR(x) {
-      x.abort();
-      connectToChanges(app, fun);    
+  // deprecated. use db.changes() from jquery.couch.js
+  // this does not have an api for closing changes request.
+  function connectToChanges(app, fun, update_seq) {
+    function changesReq(seq) {
+      $.ajax({
+        url: app.db.uri+"_changes?feed=longpoll&since="+seq,
+        contentType: "application/json",
+        dataType: "json",
+        beforeSend : beforeSend,
+        complete: function(req) {
+          var resp = $.httpData(req, "json");
+          fun(resp);
+          connectToChanges(app, fun, resp.last_seq);
+        }
+      });
     };
-    app.db.info({success: function(db_info) {  
-      var c_xhr = jQuery.ajaxSettings.xhr();
-      c_xhr.open("GET", app.db.uri+"_changes?feed=continuous&since="+db_info.update_seq, true);
-      c_xhr.send("");
-      // todo use a timeout to prevent rapid triggers
-      var t;
-      c_xhr.onreadystatechange = function() {
-        clearTimeout(t);
-        t = setTimeout(fun, 100);
-      };
-      setTimeout(function() {
-        resetHXR(c_xhr);      
-      }, 1000 * 60);
-    }});
+    if (update_seq) {
+      changesReq(update_seq);
+    } else {
+      app.db.info({success: function(db_info) {
+        changesReq(db_info.update_seq);
+      }});
+    }
   };
   
 })(jQuery);
