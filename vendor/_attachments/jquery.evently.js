@@ -339,7 +339,6 @@ function $$(node) {
         url: app.db.uri+"_changes?feed=longpoll&since="+seq,
         contentType: "application/json",
         dataType: "json",
-        beforeSend : beforeSend,
         complete: function(req) {
           var resp = $.httpData(req, "json");
           fun(resp);
