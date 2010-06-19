@@ -65,7 +65,8 @@ function $$(node) {
       });
     },
     paths : [],
-    changesDBs : {}
+    changesDBs : {},
+    changesOpts : {}
   };
   
   function extractFrom(name, evs) {
@@ -316,13 +317,13 @@ function $$(node) {
   
   // only start one changes listener per db
   function followChanges(app) {
-    var dbName = app.db.name, changeEvent = function() {
-      $("body").trigger("evently.changes."+dbName);
+    var dbName = app.db.name, changeEvent = function(resp) {
+      $("body").trigger("evently.changes."+dbName, [resp]);
     };
     if (!$.evently.changesDBs[dbName]) {
       if (app.db.changes) {
         // new api in jquery.couch.js 1.0
-        app.db.changes().onChange(changeEvent);
+        app.db.changes(null, $.evently.changesOpts).onChange(changeEvent);
       } else {
         // in case you are still on CouchDB 0.11 ;) deprecated.
         connectToChanges(app, changeEvent);
@@ -330,13 +331,17 @@ function $$(node) {
       $.evently.changesDBs[dbName] = true;
     }
   }
-  
+  $.evently.followChanges = followChanges;
   // deprecated. use db.changes() from jquery.couch.js
   // this does not have an api for closing changes request.
   function connectToChanges(app, fun, update_seq) {
     function changesReq(seq) {
+      var url = app.db.uri+"_changes?feed=longpoll&since="+seq;
+      if ($.evently.changesOpts.include_docs) {
+        url = url + "&include_docs=true";
+      }
       $.ajax({
-        url: app.db.uri+"_changes?feed=longpoll&since="+seq,
+        url: url,
         contentType: "application/json",
         dataType: "json",
         complete: function(req) {
