@@ -38,6 +38,9 @@
       goPath(path);
       triggerOnPath(path);
     },
+    currentPath : function() {
+      return getPath();
+    },
     onChange : function (fun) {
       $.pathbinder.changeFuns.push(fun);
     }
