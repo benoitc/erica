@@ -336,7 +336,7 @@ function $$(node) {
   // this does not have an api for closing changes request.
   function connectToChanges(app, fun, update_seq) {
     function changesReq(seq) {
-      var url = app.db.uri+"_changes?feed=longpoll&since="+seq;
+      var url = app.db.uri+"_changes?heartbeat=10000&feed=longpoll&since="+seq;
       if ($.evently.changesOpts.include_docs) {
         url = url + "&include_docs=true";
       }
