@@ -1,13 +1,11 @@
 function() {
-  var form = this;
-  var doc = {
-    created_at : new Date(),
-    profile : $$("#profile").profile,
-    message : $("[name=message]", form).val()
-  };
-  $$(this).app.db.saveDoc(doc, {
+  var form = $(this);
+  var fdoc = form.serializeObject();
+  fdoc.created_at = new Date();
+  fdoc.profile = $$("#profile").profile;
+  $$(this).app.db.saveDoc(fdoc, {
     success : function() {
-      $("[name=message]", form).val("");
+      form[0].reset();
     }
   });
   return false;
