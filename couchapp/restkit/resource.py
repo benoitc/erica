@@ -8,28 +8,17 @@
 restkit.resource
 ~~~~~~~~~~~~~~~~
 
-This module provide a common interface for all HTTP equest. 
-
-    >>> from restkit import Resource
-    >>> res = Resource('http://friendpaste.com')
-    >>> res.get('/5rOqE9XTz7lccLgZoQS4IP',headers={'Accept': 'application/json'}).body
-    u'{"snippet": "hi!", "title": "", "id": "5rOqE9XTz7lccLgZoQS4IP", "language": "text", "revision": "386233396230"}'
-    >>> res.status
-    200
+This module provide a common interface for all HTTP request. 
 """
-
-import cgi
-import mimetypes
-import uuid
+from copy import copy
 import urlparse
 
 from couchapp.restkit.errors import ResourceNotFound, Unauthorized, RequestFailed,\
 ParserError, RequestError
-from couchapp.restkit.forms import MultipartForm, multipart_form_encode, form_encode
 from couchapp.restkit.client import HttpConnection
 from couchapp.restkit.filters import BasicAuth
 from couchapp.restkit import util
-from couchapp.restkit import pool
+from couchapp.restkit.pool.simple import SimplePool
 
 class Resource(object):
     """A class that can be instantiated for access to a RESTful resource, 
@@ -39,9 +28,8 @@ class Resource(object):
     charset = 'utf-8'
     encode_keys = True
     safe = "/:"
-    pool_class = pool.ConnectionPool
+    pool_class = SimplePool
     keepalive = True
-    max_connections = 4
     basic_auth_url = True
     
     def __init__(self, uri, headers=None, **client_opts):
@@ -56,10 +44,12 @@ class Resource(object):
         """
 
         pool_instance = client_opts.get('pool_instance')
+        keepalive = client_opts.get("keepalive") or 10
         if not pool_instance and self.keepalive:
-            pool = self.pool_class(max_connections=self.max_connections)
+            pool = self.pool_class(keepalive=keepalive)
             client_opts['pool_instance'] = pool
             
+        self.filters = client_opts.get('filters') or []
         if self.basic_auth_url:
             # detect credentials from url
             u = urlparse.urlparse(uri)
@@ -67,7 +57,7 @@ class Resource(object):
                 password = u.password or ""
                 
                 # add filters
-                filters = client_opts.get('filters', [])
+                filters = copy(self.filters)                
                 filters.append(BasicAuth(u.username, password))
                 client_opts['filters'] = filters
                 
@@ -83,23 +73,12 @@ class Resource(object):
     def __repr__(self):
         return '<%s %s>' % (self.__class__.__name__, self.uri)
         
-    def add_filter(self, f):
-        """ add an htt filter """
-        filters = self.client_opts.get('filters', [])
-        filters.append(f)
-        self.client_opts['filters'] = filters
-
-    add_authorization = util.deprecated_property(
-        add_filter, 'add_authorization', 'use add_filter() instead',
-        warning=False)
+    def _set_default_attrs(self, obj):
+        for attr_name in ('charset', 'encode_keys', 'pool_class',
+                'keepalive', 'basic_auth_url'):
+            setattr(obj, attr_name, getattr(self, attr_name))
+        return obj
         
-    def remmove_filter(self, f):
-        """ remove an http filter """
-        filters = self.client_opts.get('filters', [])
-        for i, f1 in enumerate(filters):
-            if f == f1: del filters[i]
-        self.client_opts['filters'] = filters
-    
     def clone(self):
         """if you want to add a path to resource uri, you can do:
 
@@ -108,13 +87,11 @@ class Resource(object):
             resr2 = res.clone()
         
         """
+        client_opts = self.client_opts.copy()
+        client_opts["filters"] = self.filters
         obj = self.__class__(self.uri, headers=self._headers, 
-                        **self.client_opts)
-             
-        for attr in ('charset', 'encode_keys', 'safe', 'pool_class',
-                'keepalive', 'max_connections', 'basic_auth_url'):
-            setattr(obj, attr, getattr(self, attr))           
-        return obj
+                        **client_opts)
+        return self._set_default_attrs(obj)
    
     def __call__(self, path):
         """if you want to add a path to resource uri, you can do:
@@ -124,12 +101,23 @@ class Resource(object):
             Resource("/path").get()
         """
 
-        new_uri = self._make_uri(self.uri, path)
-        obj = type(self)(new_uri, headers=self._headers, **self.client_opts)
-        for attr in ('charset', 'encode_keys', 'safe', 'pool_class',
-                'keepalive', 'max_connections', 'basic_auth_url'):
-            setattr(obj, attr, getattr(self, attr))
-        return obj
+        client_opts = self.client_opts.copy()
+        client_opts["filters"] = self.filters
+        
+        new_uri = util.make_uri(self.uri, path, charset=self.charset, 
+                        safe=self.safe, encode_keys=self.encode_keys)
+                        
+        obj = type(self)(new_uri, headers=self._headers, **client_opts)
+        return self._set_default_attrs(obj)
+        
+    def close(self):
+        """ Close all the connections related to the resource """
+        pool = self.client_opts.get('pool_instance')
+        if not pool: 
+            return
+        
+        parsed_url = urlparse.urlparse(self.uri)
+        pool.clear_host(util.parse_netloc(parsed_url))
  
     def get(self, path=None, headers=None, **params):
         """ HTTP GET         
@@ -195,61 +183,27 @@ class Resource(object):
         :param params: Optionnal parameterss added to the request
         """
         
-        headers = headers or {}
-        headers.update(self._headers.copy())
-
+        headers = headers or []
+        uri = util.make_uri(self.uri, path, charset=self.charset, 
+                        safe=self.safe, encode_keys=self.encode_keys,
+                        **params)
         
-        self._body_parts = []
-        if payload is not None:
-            if isinstance(payload, dict):
-                ctype = headers.get('Content-Type')
-                if ctype is not None and \
-                        ctype.startswith("multipart/form-data"):
-                    type_, opts = cgi.parse_header(ctype)
-                    boundary = opts.get('boundary', uuid.uuid4().hex)
-                    payload, headers = multipart_form_encode(payload, 
-                                                headers, boundary)
-                else:
-                    ctype = "application/x-www-form-urlencoded; charset=utf-8"
-                    headers['Content-Type'] = ctype
-                    payload = form_encode(payload)
-                    headers['Content-Length'] = len(payload)
-            elif isinstance(payload, MultipartForm):
-                ctype = "multipart/form-data; boundary=%s" % payload.boundary
-                headers['Content-Type'] = ctype
-                headers['Content-Length'] = str(payload.get_size())
-
-            if 'Content-Type' not in headers:
-                ctype = 'application/octet-stream'
-                if hasattr(payload, 'name'):
-                    ctype = mimetypes.guess_type(payload.name)[0]
-
-                headers['Content-Type'] = ctype
-                
-    
-        uri = self._make_uri(self.uri, path, **params)
-        
-        try:
-            resp = self.do_request(uri, method=method, payload=payload, 
+        resp = self.do_request(uri, method=method, payload=payload, 
                                 headers=headers)
-        except ParserError:
-            raise
-        except Exception, e:
-            raise RequestError(e)
             
         if resp is None:
             # race condition
-            raise RequestError("unkown error")
+            raise ValueError("Unkown error: response object is None")
 
         if resp.status_int >= 400:
             if resp.status_int == 404:
-                raise ResourceNotFound(resp.body, http_code=404, response=resp)
+                raise ResourceNotFound(resp.body_string(), response=resp)
             elif resp.status_int in (401, 403):
-                raise Unauthorized(resp.body, http_code=resp.status_int,
-                        response=resp)
+                raise Unauthorized(resp.body_string(), 
+                                   http_code=resp.status_int, response=resp)
             else:
-                raise RequestFailed(resp.body, http_code=resp.status_int,
-                    response=resp)
+                raise RequestFailed(resp.body_string(), 
+                                    http_code=resp.status_int, response=resp)
 
         return resp
 
@@ -257,43 +211,5 @@ class Resource(object):
         """
         to set a new uri absolute path
         """
-        self.uri = self._make_uri(self.uri, path)
-
-    def _make_uri(self, base, *path, **query):
-        """Assemble a uri based on a base, any number of path segments, 
-        and query string parameters.
-
-        """
-        base_trailing_slash = False
-        if base and base.endswith("/"):
-            base_trailing_slash = True
-            base = base[:-1]
-        retval = [base]
-
-        # build the path
-        _path = []
-        trailing_slash = False       
-        for s in path:
-            if s is not None and isinstance(s, basestring):
-                if len(s) > 1 and s.endswith('/'):
-                    trailing_slash = True
-                else:
-                    trailing_slash = False
-                _path.append(util.url_quote(s.strip('/'), self.charset, self.safe))
-                       
-        path_str =""
-        if _path:
-            path_str = "/".join([''] + _path)
-            if trailing_slash:
-                path_str = path_str + "/" 
-        elif base_trailing_slash:
-            path_str = path_str + "/" 
-            
-        if path_str:
-            retval.append(path_str)
-
-        params_str = util.url_encode(query, self.charset, self.encode_keys)
-        if params_str:
-            retval.extend(['?', params_str])
-
-        return ''.join(retval)
+        self.uri = util.make_uri(self.uri, path, charset=self.charset, 
+                        safe=self.safe, encode_keys=self.encode_keys)

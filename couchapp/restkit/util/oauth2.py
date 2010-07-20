@@ -2,24 +2,22 @@
 #
 # This file is part of restkit released under the MIT license. 
 # See the NOTICE for more information.
-#
-# Copyright (c) 2007 Leah Culver, Joe Stump, Mark Paschal, Vic Fryzel
-#
+
+
 import urllib
 import time
 import random
 import urlparse
 import hmac
 import binascii
-from types import ListType
 
 try:
-    from urlparse import parse_qs
+    from urlparse import parse_qs, parse_qsl
 except ImportError:
-    from cgi import parse_qs
+    from cgi import parse_qs, parse_qsl
 
 
-VERSION = '1.0' # Hi Blaine!
+VERSION = '1.0'  # Hi Blaine!
 HTTP_METHOD = 'GET'
 SIGNATURE_METHOD = 'PLAINTEXT'
 
@@ -27,7 +25,7 @@ SIGNATURE_METHOD = 'PLAINTEXT'
 class Error(RuntimeError):
     """Generic exception class."""
 
-    def __init__(self, message='OAuth error occured.'):
+    def __init__(self, message='OAuth error occurred.'):
         self._message = message
 
     @property
@@ -38,12 +36,30 @@ class Error(RuntimeError):
     def __str__(self):
         return self._message
 
+
 class MissingSignature(Error):
     pass
+
 
 def build_authenticate_header(realm=''):
     """Optional WWW-Authenticate header (401 error)"""
     return {'WWW-Authenticate': 'OAuth realm="%s"' % realm}
+
+
+def build_xoauth_string(url, consumer, token=None):
+    """Build an XOAUTH string for use in SMTP/IMPA authentication."""
+    request = Request.from_consumer_and_token(consumer, token,
+        "GET", url)
+
+    signing_method = SignatureMethod_HMAC_SHA1()
+    request.sign_request(signing_method, consumer, token)
+
+    params = []
+    for k, v in sorted(request.iteritems()):
+        if v is not None:
+            params.append('%s="%s"' % (k, escape(v)))
+
+    return "%s %s %s" % ("GET", url, ','.join(params))
 
 
 def escape(s):
@@ -97,10 +113,8 @@ class Consumer(object):
             raise ValueError("Key and secret must be set.")
 
     def __str__(self):
-        data = {
-            'oauth_consumer_key': self.key,
-            'oauth_consumer_secret': self.secret
-        }
+        data = {'oauth_consumer_key': self.key,
+            'oauth_consumer_secret': self.secret}
 
         return urllib.urlencode(data)
 
@@ -199,7 +213,7 @@ class Token(object):
         try:
             token.callback_confirmed = params['oauth_callback_confirmed'][0]
         except KeyError:
-            pass # 1.0, no callback confirmed.
+            pass  # 1.0, no callback confirmed.
         return token
 
     def __str__(self):
@@ -233,36 +247,33 @@ class Request(dict):
  
     """
  
-    http_method = HTTP_METHOD
-    http_url = None
     version = VERSION
  
     def __init__(self, method=HTTP_METHOD, url=None, parameters=None):
-        if method is not None:
-            self.method = method
- 
-        if url is not None:
-            self.url = url
- 
+        self.method = method
+        self.url = url
         if parameters is not None:
             self.update(parameters)
  
     @setter
     def url(self, value):
-        parts = urlparse.urlparse(value)
-        scheme, netloc, path = parts[:3]
-
-        # Exclude default port numbers.
-        if scheme == 'http' and netloc[-3:] == ':80':
-            netloc = netloc[:-3]
-        elif scheme == 'https' and netloc[-4:] == ':443':
-            netloc = netloc[:-4]
-
-        if scheme != 'http' and scheme != 'https':
-            raise ValueError("Unsupported URL %s (%s)." % (value, scheme))
-
-        value = '%s://%s%s' % (scheme, netloc, path)
         self.__dict__['url'] = value
+        if value is not None:
+            scheme, netloc, path, params, query, fragment = urlparse.urlparse(value)
+
+            # Exclude default port numbers.
+            if scheme == 'http' and netloc[-3:] == ':80':
+                netloc = netloc[:-3]
+            elif scheme == 'https' and netloc[-4:] == ':443':
+                netloc = netloc[:-4]
+            if scheme not in ('http', 'https'):
+                raise ValueError("Unsupported URL %s (%s)." % (value, scheme))
+
+            # Normalized URL excludes params, query, and fragment.
+            self.normalized_url = urlparse.urlunparse((scheme, netloc, path, None, None, None))
+        else:
+            self.normalized_url = None
+            self.__dict__['url'] = None
  
     @setter
     def method(self, value):
@@ -295,11 +306,37 @@ class Request(dict):
         # tell urlencode to deal with sequence values and map them correctly
         # to resulting querystring. for example self["k"] = ["v1", "v2"] will
         # result in 'k=v1&k=v2' and not k=%5B%27v1%27%2C+%27v2%27%5D
-        return urllib.urlencode(self, True)
+        return urllib.urlencode(self, True).replace('+', '%20')
  
     def to_url(self):
         """Serialize as a URL for a GET request."""
-        return '%s?%s' % (self.url, self.to_postdata())
+        base_url = urlparse.urlparse(self.url)
+        try:
+            query = base_url.query
+        except AttributeError:
+            # must be python <2.5
+            query = base_url[4]
+        query = parse_qs(query)
+        for k, v in self.items():
+            query.setdefault(k, []).append(v)
+        
+        try:
+            scheme = base_url.scheme
+            netloc = base_url.netloc
+            path = base_url.path
+            params = base_url.params
+            fragment = base_url.fragment
+        except AttributeError:
+            # must be python <2.5
+            scheme = base_url[0]
+            netloc = base_url[1]
+            path = base_url[2]
+            params = base_url[3]
+            fragment = base_url[5]
+        
+        url = (scheme, netloc, path, params,
+               urllib.urlencode(query, True), fragment)
+        return urlparse.urlunparse(url)
 
     def get_parameter(self, parameter):
         ret = self.get(parameter)
@@ -310,15 +347,30 @@ class Request(dict):
  
     def get_normalized_parameters(self):
         """Return a string that contains the parameters that must be signed."""
-        # 1.0a/9.1.1 states that kvp must be sorted by key, then by value
-        items = [(k, v if type(v) != ListType else sorted(v)) for \
-            k,v in sorted(self.items()) if k != 'oauth_signature']
-        encoded_str = urllib.urlencode(items, True)
+        items = []
+        for key, value in self.iteritems():
+            if key == 'oauth_signature':
+                continue
+            # 1.0a/9.1.1 states that kvp must be sorted by key, then by value,
+            # so we unpack sequence values into multiple items for sorting.
+            if hasattr(value, '__iter__'):
+                items.extend((key, item) for item in value)
+            else:
+                items.append((key, value))
+
+        # Include any query string parameters from the provided URL
+        query = urlparse.urlparse(self.url)[4]
+        
+        url_items = self._split_url_string(query).items()
+        non_oauth_url_items = list([(k, v) for k, v in url_items  if not k.startswith('oauth_')])
+        items.extend(non_oauth_url_items)
+
+        encoded_str = urllib.urlencode(sorted(items))
         # Encode signature parameters per Oauth Core 1.0 protocol
         # spec draft 7, section 3.6
         # (http://tools.ietf.org/html/draft-hammer-oauth-07#section-3.6)
         # Spaces must be encoded with "%20" instead of "+"
-        return encoded_str.replace('+', '%20')
+        return encoded_str.replace('+', '%20').replace('%7E', '~')
  
     def sign_request(self, signature_method, consumer, token):
         """Set the signature parameter to the result of sign."""
@@ -396,6 +448,8 @@ class Request(dict):
  
         if token:
             parameters['oauth_token'] = token.key
+            if token.verifier:
+                parameters['oauth_verifier'] = token.verifier
  
         return Request(http_method, http_url, parameters)
  
@@ -437,7 +491,6 @@ class Request(dict):
         for k, v in parameters.iteritems():
             parameters[k] = urllib.unquote(v[0])
         return parameters
-
 
 class Server(object):
     """A skeletal implementation of a service provider, providing protected
@@ -495,9 +548,7 @@ class Server(object):
             signature_method = self.signature_methods[signature_method]
         except:
             signature_method_names = ', '.join(self.signature_methods.keys())
-            raise Error(
-            'Signature method %s not supported try one of the following: %s' % (
-                    signature_method, signature_method_names))
+            raise Error('Signature method %s not supported try one of the following: %s' % (signature_method, signature_method_names))
 
         return signature_method
 
@@ -533,7 +584,7 @@ class Server(object):
         if lapsed > self.timestamp_threshold:
             raise Error('Expired timestamp: given %d and now %s has a '
                 'greater difference than threshold %d' % (timestamp, now, 
-                self.timestamp_threshold))
+                    self.timestamp_threshold))
 
 
 class SignatureMethod(object):
@@ -576,9 +627,12 @@ class SignatureMethod_HMAC_SHA1(SignatureMethod):
     name = 'HMAC-SHA1'
         
     def signing_base(self, request, consumer, token):
+        if request.normalized_url is None:
+            raise ValueError("Base URL for request is not set.")
+
         sig = (
             escape(request.method),
-            escape(request.url),
+            escape(request.normalized_url),
             escape(request.get_normalized_parameters()),
         )
 
@@ -594,14 +648,15 @@ class SignatureMethod_HMAC_SHA1(SignatureMethod):
 
         # HMAC object.
         try:
-            import hashlib # 2.5
-            hashed = hmac.new(key, raw, hashlib.sha1)
+            from hashlib import sha1 as sha
         except ImportError:
             import sha # Deprecated
-            hashed = hmac.new(key, raw, sha)
+
+        hashed = hmac.new(key, raw, sha)
 
         # Calculate the digest base 64.
         return binascii.b2a_base64(hashed.digest())[:-1]
+
 
 class SignatureMethod_PLAINTEXT(SignatureMethod):
 

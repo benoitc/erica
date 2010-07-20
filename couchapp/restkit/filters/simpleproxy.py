@@ -29,22 +29,11 @@ import base64
 import os
 import urlparse
 
-
-from couchapp.restkit.errors import InvalidUrl
-from couchapp.restkit.parser import Parser
-from couchapp.restkit import sock
+from couchapp.restkit import http
 from couchapp.restkit import util
-from couchapp.restkit import __version__
+from couchapp.restkit.util import sock
 
-class BasicAuth(object):
-    """ Simple filter to manage basic authentification"""
-    
-    def __init__(self, username, password):
-        self.credentials = (username, password)
-    
-    def on_request(self, req):
-        encode = base64.encodestring("%s:%s" % self.credentials)[:-1]
-        req.headers.append(('Authorization', 'Basic %s' %  encode))
+from couchapp.restkit import __version__
         
 class ProxyError(Exception):
     pass
@@ -55,25 +44,7 @@ class SimpleProxy(object):
     connect to the proxy and modify connection headers.
     """
     
-    def _host_port(self, proxy_uri):
-        proxy_host = proxy_uri.netloc
-        i = proxy_host.rfind(':')
-        j = proxy_host.rfind(']')         
-        if i > j:
-            try:
-                proxy_port = int(proxy_host[i+1:])
-            except ValueError:
-                raise InvalidUrl("nonnumeric port: '%s'" % proxy_host[i+1:])
-            proxy_host = proxy_host[:i]
-        else:
-            proxy_port = 80
-
-        if proxy_host and proxy_host[0] == '[' and proxy_host[-1] == ']':
-            proxy_host = proxy_host[1:-1]
-            
-        return proxy_host, proxy_port
-    
-    def on_request(self, req):
+    def on_connect(self, req):
         proxy_auth = _get_proxy_auth()
         if req.uri.scheme == "https":
             proxy = os.environ.get('https_proxy')
@@ -85,46 +56,47 @@ class SimpleProxy(object):
                 proxy_pieces = '%s%s%s\r\n' % (proxy_connect, proxy_auth, 
                                         user_agent)
                 proxy_uri = urlparse.urlparse(proxy)
-                proxy_host, proxy_port = self._host_port(proxy_uri)
+                proxy_host, proxy_port = util.parse_netloc(proxy_uri)
+                
+                if req.pool is not None:
+                    s = req.pool.get((proxy_host, proxy_port))
+                    if s:
+                        self._sock = s
+                        req.host = proxy_host
+                        req.port = proxy_port
+                        return
+                
                 # Connect to the proxy server, 
                 # very simple recv and error checking
                 
-                p_sock = sock.connect((proxy_host, int(proxy_port))   )          
+                p_sock = sock.connect((proxy_host, int(proxy_port)))          
                 sock.send(p_sock, proxy_pieces)
             
                 # wait header
-                p = Parser.parse_response()
-                headers = []
-                buf = ""
-                buf = sock.recv(p_sock, util.CHUNK_SIZE)
-                i = self.parser.filter_headers(headers, buf)
-                if i == -1 and buf:
-                    while True:
-                        data = sock.recv(p_sock, util.CHUNK_SIZE)
-                        if not data: break
-                        buf += data
-                        i = self.parser.filter_headers(headers, buf)
-                        if i != -1: break
-                        
-                if p.status_int != 200:
-                    raise ProxyError('Error status=%s' % p.status)
+                parser = http.ResponseParser(p_sock)
+                resp = parser.next()
+ 
+                if resp.status_int != 200:
+                    raise ProxyError('Error status=%s' % resp.status)
                     
                 sock._ssl_wrap_socket(p_sock, None, None)
                 
                 # update socket
-                req.socket = p_sock
+                req._sock = p_sock
                 req.host = proxy_host
+                req.port = proxy_port
         else:
             proxy = os.environ.get('http_proxy')
             if proxy:
                 proxy_uri = urlparse.urlparse(proxy)
                 proxy_host, proxy_port = self._host_port(proxy_uri)
                 if proxy_auth:
-                    headers['Proxy-Authorization'] = proxy_auth.strip()
                     req.headers.append(('Proxy-Authorization', 
                              proxy_auth.strip()))
+                             
                 req.host = proxy_host
                 req.port = proxy_port
+                
             
      
 def _get_proxy_auth():
@@ -140,4 +112,3 @@ def _get_proxy_auth():
         return 'Basic %s\r\n' % (user_auth.strip())
     else:
         return ''
-   

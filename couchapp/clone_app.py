@@ -223,7 +223,7 @@ def clone(source, dest=None, rev=None):
             if signatures.get(filename) != util.sign(filepath):
                 resp = db.fetch_attachment(docid, filename)
                 with open(filepath, 'wb') as f:
-                    for chunk in resp.body_file:
+                    for chunk in resp.body_stream():
                         f.write(chunk)
                 logger.debug("clone attachment: %s" % filename)
                 

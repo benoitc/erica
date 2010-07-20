@@ -5,17 +5,16 @@
 
 
 
-version_info = (1, 2, 1)
+version_info = (2, 0, 5)
 __version__ =  ".".join(map(str, version_info))
 
 try:
     from couchapp.restkit.errors import ResourceNotFound, Unauthorized, RequestFailed,\
 RedirectLimit, RequestError, InvalidUrl, ResponseError, ProxyError, ResourceError
-    from couchapp.restkit.client import HttpConnection, HttpResponse
+    from couchapp.restkit.client import HttpConnection, HttpResponse, MAX_FOLLOW_REDIRECTS
     from couchapp.restkit.resource import Resource
-    from couchapp.restkit.pool import ConnectionPool
-    from couchapp.restkit.filters import BasicAuth, SimpleProxy
-    from couchapp.restkit.oauth2.filter import OAuthFilter
+    from couchapp.restkit.pool.simple import SimplePool
+    from couchapp.restkit.filters import BasicAuth, SimpleProxy, OAuthFilter
 except ImportError:
     import traceback
     traceback.print_exc()
@@ -48,23 +47,27 @@ def set_logging(level, handler=None):
     handler.setFormatter(logging.Formatter(format, datefmt))
     logger.addHandler(handler)
     
-def request(url, method='GET', body=None, headers=None, pool_instance=None, 
-        follow_redirect=False, filters=None, key_file=None, cert_file=None):
+from couchapp.restkit.util.sock import _GLOBAL_DEFAULT_TIMEOUT
+    
+def request(url, method='GET', body=None, headers=None,  
+        timeout=_GLOBAL_DEFAULT_TIMEOUT, filters=None, follow_redirect=False, 
+        force_follow_redirect=False, max_follow_redirect=MAX_FOLLOW_REDIRECTS,
+        pool_instance=None, response_class=None, **ssl_args):
     """ Quick shortcut method to pass a request
     
     :param url: str, url string
     :param method: str, by default GET. http verbs
     :param body: the body, could be a string, an iterator or a file-like object
     :param headers: dict or list of tupple, http headers
-    :pool intance: instance inherited from `restkit.pool.PoolInterface`. 
+    :pool intance: instance inherited from `couchapp.restkit.pool.PoolInterface`. 
     It allows you to share and reuse connections connections.
     :param follow_redirect: boolean, by default is false. If true, 
     if the HTTP status is 301, 302 or 303 the client will follow
     the location.
     :param filters: list, list of http filters. see the doc of http filters 
     for more info
-    :param key_file: the key fle to use with ssl
-    :param cert_file: the cert file to use with ssl
+    :param ssl_args: ssl arguments. See http://docs.python.org/library/ssl.html
+    for more information.
     
     """
     # detect credentials from url
@@ -76,8 +79,14 @@ def request(url, method='GET', body=None, headers=None, pool_instance=None,
             u.path, u.params, u.query, u.fragment))
         filters.append(BasicAuth(u.username, password))
     
-    http_client = HttpConnection(follow_redirect=follow_redirect,
-            filters=filters, key_file=key_file, cert_file=cert_file,
-            pool_instance=pool_instance)
+    http_client = HttpConnection(
+            timeout=timeout, 
+            filters=filters,
+            follow_redirect=follow_redirect, 
+            force_follow_redirect=force_follow_redirect,
+            max_follow_redirect=max_follow_redirect,
+            pool_instance=pool_instance, 
+            response_class=response_class,
+            **ssl_args)
     return http_client.request(url, method=method, body=body, 
         headers=headers)

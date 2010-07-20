@@ -31,7 +31,7 @@ class CouchdbResponse(HttpResponse):
     @property
     def json_body(self):
         try:
-            return json.load(self.body_file)
+            return json.loads(self.body_string())
         except ValueError:
             return self.body
 
