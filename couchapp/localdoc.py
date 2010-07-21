@@ -354,8 +354,6 @@ class LocalDoc(object):
     def index(self, dburl, index):
         if index is not None:
             return "%s/%s/%s" % (dburl, self.docid, index)
-        else:
-            return  "%s/%s/index.html" % (dburl, self.docid)
         return False
         
 def document(path, create=False, docid=None):
