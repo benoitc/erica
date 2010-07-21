@@ -83,7 +83,7 @@ class LocalDoc(object):
                 doc = self.doc(db, with_attachments=False)
                 try:
                     self.olddoc = db.open_doc(doc['_id'])
-                    doc['_attachments'] = self.olddoc.get('_attachments')
+                    doc['_attachments'] = self.olddoc.get('_attachments') or {}
                 except ResourceNotFound:
                     self.olddoc = {}
                 
@@ -203,7 +203,7 @@ class LocalDoc(object):
                 self._doc.update({'_rev': self.olddoc['_rev']})
             except ResourceNotFound:
                 pass
-            
+        
         return self._doc
     
     def check_ignore(self, item):
