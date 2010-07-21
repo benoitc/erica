@@ -33,11 +33,17 @@
   $.couch.app = $.couch.app || function(appFun, opts) {
     opts = opts || {};
     $(function() {
-      var dbname = opts.db || document.location.href.split('/')[3];
-      var dname = opts.design || unescape(document.location.href).split('/')[5];
+      var urlPrefix = opts.urlPrefix || "";
+      $.couch.urlPrefix = urlPrefix;
+
+      var index = urlPrefix.split('/').length;
+      var fragments = unescape(document.location.href).split('/');
+      var dbname = opts.db || fragments[index + 2];
+      var dname = opts.design || fragments[index + 4];
+
       var db = $.couch.db(dbname);
       var design = new Design(db, dname);
-      
+
       // docForm applies CouchDB behavior to HTML forms.
       // todo make this a couch.app plugin
       function docForm(formSelector, opts) {
