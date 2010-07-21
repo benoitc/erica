@@ -354,6 +354,9 @@ class LocalDoc(object):
     def index(self, dburl, index):
         if index is not None:
             return "%s/%s/%s" % (dburl, self.docid, index)
+        elif os.path.isfile(os.path.join(self.docdir, "_attachments", 
+                    'index.html')):
+            return "%s/%s/index.html" % (dburl, self.docid)
         return False
         
 def document(path, create=False, docid=None):
