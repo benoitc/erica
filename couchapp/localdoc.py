@@ -33,9 +33,11 @@ logger = logging.getLogger(__name__)
 
 class LocalDoc(object):
     
-    def __init__(self, path, create=False, docid=None):
+    def __init__(self, path, create=False, docid=None, is_ddoc=True):
         self.docdir = path
         self.ignores = []
+        self.is_ddoc = is_ddoc
+        
         ignorefile = os.path.join(path, '.couchappignore')
         if os.path.exists(ignorefile):
             # A .couchappignore file is a json file containing a
@@ -57,7 +59,10 @@ class LocalDoc(object):
         if os.path.exists(idfile):
             docid = util.read(idfile).split("\n")[0].strip()
             if docid: return docid
-        return "_design/%s" % os.path.split(self.docdir)[1]
+        if self.is_ddoc:
+            return "_design/%s" % os.path.split(self.docdir)[1]
+        else:
+            return os.path.split(self.docdir)[1]
         
     def __repr__(self):
         return "<%s (%s/%s)>" % (self.__class__.__name__, self.docdir, self.docid)
@@ -359,5 +364,5 @@ class LocalDoc(object):
             return "%s/%s/index.html" % (dburl, self.docid)
         return False
         
-def document(path, create=False, docid=None):
-    return LocalDoc(path, create=create, docid=docid)
+def document(path, create=False, docid=None, is_ddoc=True):
+    return LocalDoc(path, create=create, docid=docid, is_ddoc=is_ddoc)

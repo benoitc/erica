@@ -148,7 +148,7 @@ def pushdocs(conf, source, dest, *args, **opts):
                     for db in dbs:
                         db.save_doc(doc, force_update=True)
         else:
-            doc = document(docdir)
+            doc = document(docdir, is_ddoc=False)
             if export or not noatomic:
                 docs.append(doc)
             else:
