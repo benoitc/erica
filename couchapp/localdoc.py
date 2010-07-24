@@ -86,7 +86,8 @@ class LocalDoc(object):
         else:
             logger.info("CouchApp already initialized in %s." % self.docdir)
 
-    def push(self, dbs, noatomic=False, browser=False, force=False):
+    def push(self, dbs, noatomic=False, browser=False, force=False,
+            noindex=False):
         """Push a doc to a list of database `dburls`. If noatomic is true
         each attachments will be sent one by one."""
         for db in dbs:
@@ -126,7 +127,7 @@ class LocalDoc(object):
                 doc = self.doc()
                 db.save_doc(doc, force_update=True)
             indexurl = self.index(db.raw_uri, doc['couchapp'].get('index'))
-            if indexurl:
+            if indexurl and not noindex:
                 logger.info("Visit your CouchApp here:\n%s" % indexurl)
                 if browser:
                     self.browse_url(indexurl)

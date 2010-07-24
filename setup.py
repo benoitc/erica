@@ -98,6 +98,9 @@ setup(
                                    welcome='contrib/macosx/Welcome.html')),
                                    
     entry_points="""
+    [couchapp.extension]
+    autopush=couchapp.ext.autopush
+
     [couchapp.vendor]
     git=couchapp.vendors.backends.git:GitVendor
     hg=couchapp.vendors.backends.hg:HgVendor

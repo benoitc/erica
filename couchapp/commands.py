@@ -44,7 +44,7 @@ def init(conf, path, *args, **opts):
 
 def push(conf, path, *args, **opts):
     export = opts.get('export', False)
-    atomic = opts.get('no_atomic', False)
+    noatomic = opts.get('no_atomic', False)
     browse = opts.get('browse', False)
     force = opts.get('force', False)
     dest = None
@@ -78,7 +78,7 @@ def push(conf, path, *args, **opts):
     dbs = conf.get_dbs(dest)
     
     hook(conf, doc_path, "pre-push", dbs=dbs)    
-    doc.push(dbs, atomic, browse, force)
+    doc.push(dbs, noatomic, browse, force)
     hook(conf, doc_path, "post-push", dbs=dbs)
     
     docspath = os.path.join(doc_path, '_docs')
