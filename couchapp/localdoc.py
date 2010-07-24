@@ -24,7 +24,7 @@ except ImportError:
     desktopcouch = None
 
 
-from couchapp.errors import ResourceNotFound
+from couchapp.errors import ResourceNotFound, AppError
 from couchapp.macros import package_shows, package_views
 from couchapp import util
 
