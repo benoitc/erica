@@ -9,12 +9,21 @@ import itertools
 import re
 import types
 
+try:
+    import desktopcouch
+except ImportError:
+    desktopcouch = None
+
+
+from restkit import Resource, HttpResponse, ResourceError, request
+from restkit import util
+from restkit.util import oauth2 as oauth
+from restkit.filters.oauth2 import OAuthFilter
+
 from couchapp import __version__
 from couchapp.errors import ResourceNotFound, ResourceConflict,\
 PreconditionFailed, RequestFailed, BulkSaveError, Unauthorized, \
 InvalidAttachment
-from couchapp.restkit import Resource, HttpResponse, ResourceError, request
-from couchapp.restkit import util
 import couchapp.simplejson as json
 
 USER_AGENT = "couchapp/%s" % __version__
@@ -161,15 +170,41 @@ class Uuids(CouchdbResource):
         self._uuids += resp.json_body['uuids']
 
 class Database(CouchdbResource):
+        
+    def fetch_uuids(self):
+        count = self.max_uuids - len(self._uuids)
+        resp = self.get('/_uuids', count=count)
+        self._uuids += resp.json_body['uuids']
     """ Object that abstract access to a CouchDB database
     A Database object can act as a Dict object.
     """
     
     def __init__(self, uri, **client_opts):
+        self.raw_uri = uri
+        if uri.startswith("desktopcouch://"):
+            if not desktopcouch:
+                raise AppError("Desktopcouch isn't available on this"+
+                    "machine. You can't access to %s" % db_string)
+            uri = "http://localhost:%s/%s" % (
+                desktopcouch.find_port(), uri[15:])
+            ctx = desktopcouch.local_files.DEFAULT_CONTEXT
+            oauth_tokens = desktopcouch.local_files.get_oauth_tokens(ctx)
+
+            consumer = oauth.Consumer(oauth_tokens["consumer_key"],
+                    oauth_tokens["consumer_secret"])
+            token = oauth.Token(oauth_tokens["token"],
+                oauth_tokens["token_secret"])
+            
+            oauth_filter = OAuthFilter("*", consumer, token)
+            filters = client_opts.get("filters") or []
+            filters.append(oauth_filter)
+            client_opts["filters"] = filters
+
+        
         CouchdbResource.__init__(self, uri=uri, **client_opts)
         self.server_uri, self.dbname = uri.rsplit('/', 1)
         
-        self.uuids = Uuids(self.server_uri)
+        self.uuids = Uuids(self.server_uri, **client_opts)
         self.version = couchdb_version(self.server_uri)
         
         if self.uri.endswith("/"):

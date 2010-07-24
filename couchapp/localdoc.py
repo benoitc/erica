@@ -119,7 +119,7 @@ class LocalDoc(object):
             else:
                 doc = self.doc()
                 db.save_doc(doc, force_update=True)
-            indexurl = self.index(db.uri, doc['couchapp'].get('index'))
+            indexurl = self.index(db.raw_uri, doc['couchapp'].get('index'))
             if indexurl:
                 logger.info("Visit your CouchApp here:\n%s" % indexurl)
                 if browser:

@@ -88,7 +88,8 @@ setup(
     cmdclass=cmdclass,
     
     install_requires = [
-        'setuptools>=0.6b1'
+        'setuptools>=0.6b1',
+        'restkit>=2.1.0'
     ],
     
     options = dict(py2exe={},

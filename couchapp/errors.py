@@ -4,7 +4,7 @@
 # See the NOTICE for more information.
 
 
-from couchapp.restkit import ResourceError
+from restkit import ResourceError
 
 class AppError(Exception):
     """ raised when a application error appear """
