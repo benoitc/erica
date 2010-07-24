@@ -278,6 +278,8 @@ class PollWatcher(CouchappWatcher):
             # Traversal function for directories
             for filename in files:
                 path = os.path.join(dirname, filename)
+                if check_ignore(self.ignores, path):
+                    continue
 
                 try:
                     t = os.stat(path)
