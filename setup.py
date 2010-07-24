@@ -88,7 +88,6 @@ setup(
     cmdclass=cmdclass,
     
     install_requires = [
-        'setuptools>=0.6b1',
         'restkit>=2.1.0'
     ],
     
