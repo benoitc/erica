@@ -10,6 +10,12 @@ try:
 except ImportError:
     import couchapp.simplejson as json
 
+try:
+    import desktopcouch
+except ImportError:
+    desktopcouch = None
+
+
 from couchapp import clone_app
 from couchapp.errors import ResourceNotFound, AppError, BulkSaveError
 from couchapp import generator
