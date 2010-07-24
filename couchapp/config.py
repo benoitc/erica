@@ -125,7 +125,8 @@ class Config(object):
         return hooks
         
     # TODO: add oauth management
-    def get_dbs(self, db_string=''):
+    def get_dbs(self, db_string=None):
+        db_string = db_string or ''
         if db_string.startswith("http://") or \
                 db_string.startswith("desktopcouch://"):
             dburls = db_string
