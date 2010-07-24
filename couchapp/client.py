@@ -170,11 +170,6 @@ class Uuids(CouchdbResource):
         self._uuids += resp.json_body['uuids']
 
 class Database(CouchdbResource):
-        
-    def fetch_uuids(self):
-        count = self.max_uuids - len(self._uuids)
-        resp = self.get('/_uuids', count=count)
-        self._uuids += resp.json_body['uuids']
     """ Object that abstract access to a CouchDB database
     A Database object can act as a Dict object.
     """
