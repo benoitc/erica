@@ -277,7 +277,29 @@ def vendor(conf, path, *args, **opts):
         vendor_update(conf, dest, vendorname, *args, **opts)
         hook(conf, dest, "pre-vendor", name=vendorname, action="update")
     return 0
-   
+
+
+def browse(conf, path, *args, **opts):
+    dest = None
+    doc_path = None
+    if len(args) < 2:
+        doc_path = path
+        if args:
+            dest = args[0]
+    else:
+        doc_path = os.path.normpath(os.path.join(os.getcwd(), args[0]))
+        dest = args[1]
+    if doc_path is None:
+        raise AppError("You aren't in a couchapp.")
+    
+    conf.update(doc_path)
+
+    doc = document(doc_path, create=False, 
+                        docid=opts.get('docid'))
+
+    dbs = conf.get_dbs(dest)
+    doc.browse(dbs)
+
 def version(conf, *args, **opts):
     from couchapp import __version__
     
@@ -368,6 +390,10 @@ table = {
         (vendor,
         [("f", 'force', False, "force install or update")],
         "[OPTION]...[-f] install|update [COUCHAPPDIR] SOURCE"),
+    "browse":
+        (browse,
+        [],
+        "[COUCHAPPDIR] DEST"),
     "help":
         (usage, [], ""),
     "version":

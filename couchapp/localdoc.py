@@ -18,6 +18,12 @@ try:
 except ImportError:
     import couchapp.simplejson as json
 
+try:
+    import desktopcouch
+except ImportError:
+    desktopcouch = None
+
+
 from couchapp.errors import ResourceNotFound
 from couchapp.macros import package_shows, package_views
 from couchapp import util
@@ -123,8 +129,33 @@ class LocalDoc(object):
             if indexurl:
                 logger.info("Visit your CouchApp here:\n%s" % indexurl)
                 if browser:
-                    webbrowser.open_new_tab(indexurl)            
-                        
+                    self.browse_url(indexurl)
+
+    def browse(self, dbs):
+        for db in dbs:
+            doc = self.doc()
+            indexurl = self.index(db.raw_uri, doc['couchapp'].get('index'))
+            if indexurl:
+                self.browse_url(indexurl)
+
+    def browse_url(self, url):
+        if url.startswith("desktopcouch://"):
+            if not desktopcouch:
+                raise AppError("Desktopcouch isn't available on this"+
+                    "machine. You can't access to %s" % db_string)
+            ctx = desktopcouch.local_files.DEFAULT_CONTEXT
+            bookmark_file = os.path.join(ctx.db_dir, "couchdb.html")
+            try:
+                username, password = re.findall("<!-- !!([^!]+)!!([^!]+)!! -->", 
+                        open(bookmark_file).read())[-1]
+            except ValueError:
+                raise IOError("Bookmark file is corrupt."+
+                        "Username/password are missing.")
+
+            url = "http://%s:%s@localhost:%s/%s" % (username, password,
+                desktopcouch.find_port(), url[15:])
+        webbrowser.open_new_tab(url)
+
     def doc(self, db=None, with_attachments=True):
         """ Function to reetrieve document object from
         document directory. If `with_attachments` is True
