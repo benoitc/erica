@@ -11,11 +11,7 @@ from hashlib import md5
 import logging
 import os
 import os.path
-try:
-    import json
-except ImportError:
-    import couchapp.simplejson as json
-    
+
 from couchapp.errors import AppError
 from couchapp import client
 from couchapp import util
@@ -109,7 +105,7 @@ def clone(source, dest=None, rev=None):
                             content = base64.b64decode(content[15:])
 
                     if fname.endswith('.json'):
-                        content = json.dumps(content).encode('utf-8')
+                        content = util.json.dumps(content).encode('utf-8')
 
                     del v[last_key]
 

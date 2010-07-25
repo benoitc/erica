@@ -12,11 +12,6 @@ import os
 import os.path
 import re
 import webbrowser
-# import json
-try:
-    import json
-except ImportError:
-    import couchapp.simplejson as json
 
 try:
     import desktopcouch
@@ -48,7 +43,7 @@ class LocalDoc(object):
         if os.path.exists(ignorefile):
             # A .couchappignore file is a json file containing a
             # list of regexps for things to skip
-            self.ignores = json.load(open(ignorefile, 'r'))
+            self.ignores = util.json.load(open(ignorefile, 'r'))
         if not docid:
             docid = self.get_id()
         self.docid = docid
@@ -74,7 +69,7 @@ class LocalDoc(object):
         return "<%s (%s/%s)>" % (self.__class__.__name__, self.docdir, self.docid)
         
     def __str__(self):
-        return json.dumps(self.doc())
+        return util.json.dumps(self.doc())
         
     def create(self):
         if not os.path.isdir(self.docdir):

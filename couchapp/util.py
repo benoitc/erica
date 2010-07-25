@@ -13,13 +13,24 @@ import pkg_resources
 import string
 import sys
 
-try:
-    import simplejson as json
-except ImportError:
-    import couchapp.simplejson as json
+from couchapp.errors import ScriptError, AppError
 
-from couchapp.errors import ScriptError
-        
+try:
+    import json
+except ImportError:
+    try:
+        import simplejson as json
+    except ImportError:
+            try:
+        import simplejson as json
+    except ImportError:
+        raise AppError("""simplejson isn't installed
+
+Install it with the command:
+
+    pip install simplejson
+""")
+
 logger = logging.getLogger(__name__)
 
 try:#python 2.6, use subprocess

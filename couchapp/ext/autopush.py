@@ -18,24 +18,12 @@ import traceback
 
 from couchapp.errors import AppError
 from couchapp.localdoc import document
+from couchapp.util import json
 
 try:
     import pyinotify
 except ImportError:
     pyinotify = None
-
-try:
-    import json
-except ImportError:
-    try:
-        import simplejson as json
-    except ImportError:
-        raise AppError("""simplejson isn't installed
-
-Install it with the command:
-
-    pip install simplejson
-""")
 
 try:
     import eventlet

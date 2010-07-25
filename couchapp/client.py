@@ -14,7 +14,6 @@ try:
 except ImportError:
     desktopcouch = None
 
-
 from restkit import Resource, HttpResponse, ResourceError, request
 from restkit import util
 from restkit.util import oauth2 as oauth
@@ -24,7 +23,6 @@ from couchapp import __version__
 from couchapp.errors import ResourceNotFound, ResourceConflict,\
 PreconditionFailed, RequestFailed, BulkSaveError, Unauthorized, \
 InvalidAttachment
-import couchapp.simplejson as json
 
 USER_AGENT = "couchapp/%s" % __version__
 
@@ -40,7 +38,7 @@ class CouchdbResponse(HttpResponse):
     @property
     def json_body(self):
         try:
-            return json.loads(self.body_string())
+            return util.json.loads(self.body_string())
         except ValueError:
             return self.body
 
@@ -103,7 +101,7 @@ class CouchdbResource(Resource):
             if e.response and msg:
                 if e.response.headers.get('content-type') == 'application/json':
                     try:
-                        msg = json.loads(str(msg))
+                        msg = util.json.loads(str(msg))
                     except ValueError:
                         pass
                     
@@ -275,15 +273,15 @@ class Database(CouchdbResource):
         if '_id' in doc:
             docid = escape_docid(doc['_id'])
             try:
-                resp = self.put(docid, payload=json.dumps(doc), **params)
+                resp = self.put(docid, payload=util.json.dumps(doc), **params)
             except ResourceConflict:
                 if not force_update:
                     raise
                 rev = self.last_rev(doc['_id'])
                 doc['_rev'] = rev
-                resp = self.put(docid, payload=json.dumps(doc), **params)
+                resp = self.put(docid, payload=util.json.dumps(doc), **params)
         else:
-            json_doc = json.dumps(doc)
+            json_doc = util.json.dumps(doc)
             try:
                 doc['_id'] = self.uuids.next()
                 resp = self.put(doc['_id'], payload=json_doc, **params)
@@ -358,7 +356,7 @@ class Database(CouchdbResource):
             payload["all-or-nothing"] = True
             
         # update docs
-        res = self.post('/_bulk_docs', payload=json.dumps(payload),
+        res = self.post('/_bulk_docs', payload=util.json.dumps(payload),
                     headers={'Content-Type': 'application/json'})
             
         json_res = res.json_body
@@ -450,7 +448,7 @@ class Database(CouchdbResource):
 
         if "keys" in params:
             keys = params.pop("keys")
-            return self.post(path, json.dumps({"keys": keys}, **params)).json_body
+            return self.post(path, util.json.dumps({"keys": keys}, **params)).json_body
 
         return self.get(path, **params).json_body
 
@@ -463,7 +461,7 @@ def encode_params(params):
                 continue
             if name in ('key', 'startkey', 'endkey') \
                     or not isinstance(value, basestring):
-                value = json.dumps(value).encode('utf-8')
+                value = util.json.dumps(value).encode('utf-8')
             _params[name] = value
     return _params    
     

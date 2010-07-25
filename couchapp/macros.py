@@ -8,10 +8,6 @@ from hashlib import md5
 import logging
 import os
 import re
-try:
-    import simplejson as json
-except ImportError:
-    import couchapp.simplejson as json
 
 from couchapp.errors import MacroError
 from couchapp import util
@@ -131,6 +127,6 @@ def run_json_macros(doc, f_string, app_dir):
        return f_string
 
    for k, v in included.iteritems():
-       varstrings.append("var %s = %s;" % (k, json.dumps(v).encode('utf-8')))
+       varstrings.append("var %s = %s;" % (k, util.json.dumps(v).encode('utf-8')))
 
    return re_json.sub(rjson2, f_string)

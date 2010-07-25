@@ -5,10 +5,6 @@
 
 import logging
 import os
-try:
-    import json
-except ImportError:
-    import couchapp.simplejson as json
 
 try:
     import desktopcouch
@@ -110,9 +106,9 @@ def pushapps(conf, source, dest, *args, **opts):
             docs.append([doc.doc() for doc in apps])
             jsonobj = {'docs': docs}
             if opts.get('output') is not None:
-                util.write_json(opts.get('output'), json.dumps(jsonobj))
+                util.write_json(opts.get('output'), util.json.dumps(jsonobj))
             else:
-                print json.dumps(jsonobj)
+                print util.json.dumps(jsonobj)
             return 0
         else:
             for db in dbs:
@@ -169,9 +165,9 @@ def pushdocs(conf, source, dest, *args, **opts):
                     docs1.append(doc)
             jsonobj = {'docs': docs}
             if opts.get('output') is not None:
-                util.write_json(opts.get('output'), json.dumps(jsonobj))
+                util.write_json(opts.get('output'), util.json.dumps(jsonobj))
             else:
-                print json.dumps(jsonobj)
+                print util.json.dumps(jsonobj)
         else:
             for db in dbs:
                 docs1 = []
