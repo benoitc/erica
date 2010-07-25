@@ -1,0 +1,2 @@
+http://github.com/benoitc/couchapp/tarball/master
+restkit==2.1.0
