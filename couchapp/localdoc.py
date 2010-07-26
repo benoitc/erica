@@ -307,7 +307,7 @@ class LocalDoc(object):
                         logger.error("Json invalid in %s" % current_path)           
                 else:
                     try:
-                        content = util.read(current_path)
+                        content = util.read(current_path).strip()
                     except UnicodeDecodeError, e:
                         logger.warning("%s isn't encoded in utf8" % current_path)
                         content = util.read(current_path, utf8=False)
