@@ -1,3 +1,6 @@
+// this code makes http://example.com into a link, 
+// and also handles @name and #hashtag
+
 // todo add [[wiki_links]]
 
 var mustache = require("vendor/couchapp/lib/mustache");
