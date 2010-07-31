@@ -8,11 +8,11 @@ CouchApps are web applications which can be served directly from [CouchDB](http:
 
 Assuming you just cloned this app from git, and you have changed into the app directory in your terminal, you want to push it to your CouchDB with the CouchApp command line tool, like this:
 
-    couchapp push http://name:password@hostname:5984/mydatabase
+    couchapp push . http://name:password@hostname:5984/mydatabase
 
 If you don't have a password on your CouchDB (admin party) you can do it like this (but it's a bad, idea, set a password):
 
-    couchapp push http://hostname:5984/mydatabase
+    couchapp push . http://hostname:5984/mydatabase
 
 If you get sick of typing the URL, you should setup a `.couchapprc` file in the root of your directory. Remember not to check this into version control as it will have passwords in it.
 
