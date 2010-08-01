@@ -104,6 +104,9 @@ def generate_function(path, kind, name, template=None):
             targetpath = os.path.join(*template.split('/'))
             copy_helper(path, targetpath)
             return
+        elif kind == "spatial":
+            path = os.path.join(path, "spatial")
+            functions = [("spatial.js", "%s.js" % name )]
         else:
             path = os.path.join(path, "%ss" % kind)
             functions = [('%s.js' % kind, "%s.js" % name )]
@@ -182,7 +185,7 @@ def find_template_dir(name, directory=''):
     
 def generate(path, kind, name, **opts):
     if kind not in ["app", "view", "list", "show", 'filter', 'function', 
-                    'vendor', 'update']:
+            'vendor', 'update', 'spatial']:
         raise AppError(
             "Can't generate %s in your couchapp. generator is unknown" % kind)
 
