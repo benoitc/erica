@@ -14,12 +14,18 @@ CouchDB's replication means that programs running locally, can still be social. 
 
 ## Installation
 
-Couchapp requires Python 2.5x or sup. To install couchapp using easy_install you must make sure you have a recent version of setuptools installed (as of this writing, 0.6c6 (0.6a9 on windows) or later):
+Couchapp requires Python 2.5x or sup. To install couchapp using
+easy_install you must make sure you have a recent version of distribute installed:
 
-    $ curl -O http://peak.telecommunity.com/dist/ez_setup.py
-    $ sudo python ez_setup.py -U setuptools
+    $ curl -O http://python-distribute.org/distribute_setup.py
+    $ sudo python distribute_setup.py
+    $ easy_install pip
 
 To install or upgrade to the latest released version of couchapp:
+
+    $ pip install couchapp
+
+If it doesn't work on windows:
 
     $ sudo easy_install -U couchapp
 
