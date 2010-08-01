@@ -194,7 +194,7 @@ class LocalDoc(object):
         
         if self.docid.startswith('_design/'):  # process macros
             for funs in ['shows', 'lists', 'updates', 'filters', 
-                    'fulltext']:
+                    'fulltext', 'spatial']:
                 if funs in self._doc:
                     package_shows(self._doc, self._doc[funs], self.docdir, 
                             objects)
