@@ -6,9 +6,9 @@ Build-Depends: python-setuptools (>= 0.6b3), debhelper (>= 7), python-support (>
 Standards-Version: 3.7.2
 XS-Python-Version: current
 
-Package: python-couchapp
+Package: python-couchapp 
 Architecture: all
-Depends: ${python:Depends}
+Depends: ${python:Depends} python-restkit (>=2.1.0)
 XB-Python-Version: ${python:Versions}
 Provides: ${python:Provides}
 Description: Standalone CouchDB Application Development Made Simple.
