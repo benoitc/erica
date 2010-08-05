@@ -6,7 +6,7 @@ Build-Depends: python-setuptools (>= 0.6b3), debhelper (>= 7), python-support (>
 Standards-Version: 3.7.2
 XS-Python-Version: current
 
-Package: python-couchapp 
+Package: couchapp
 Architecture: all
 Depends: ${python:Depends} python-restkit (>=2.1.0)
 XB-Python-Version: ${python:Versions}
