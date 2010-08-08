@@ -323,10 +323,10 @@ class LocalDoc(object):
                 
                 # remove extension
                 name, ext = os.path.splitext(name)
-                if name in fields and ext in ('.txt'):
+                if name in fields:
                     logger.warning(
-        "%(name)s is already in properties. Can't add (%(name)s%(ext)s)" % {
-                            "name": name, "ext": ext })
+        "%(name)s is already in properties. Can't add (%(fqn)s)" % {
+                            "name": name, "fqn": rel_path })
                 else:
                     manifest.append(rel_path)
                     fields[name] = content
