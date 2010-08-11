@@ -56,7 +56,7 @@
         // {"author":{"email":"quentin@example.com"}}
         function formToDeepJSON(form, fields, doc) {
           form = $(form);
-          opts.fields.forEach(function(field) {
+          fields.forEach(function(field) {
             var element = form.find("[name="+field+"]");
             if (element.attr('type') === 'checkbox') {
                 var val = element.attr('checked');
