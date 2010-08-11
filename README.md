@@ -189,6 +189,14 @@ For example, the javascript that is vendored (by default) with your use of couch
 
     vendor/couchapp
 
+Add a metadata.json file to vendor/appname directory, for example:
+
+    {
+      "name": "couchapp", 
+      "fetch_uri": "git://github.com/couchapp/couchapp.git", 
+      "description": "official couchapp vendor"
+    }
+
 ### Commands
 
 To update a vendor folder in your couchapp:
@@ -205,7 +213,7 @@ To install a vendor app:
 
 Example:
 
-    couchapp vendor install git://github.com/jchris/couchapp.git
+    couchapp vendor install git://github.com/couchapp/couchapp.git
 
 CouchApp's JavaScript library is a vendor (the one right above this line) and it is installed by default in new generators.
 
