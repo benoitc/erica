@@ -343,6 +343,7 @@ def print_option(opt):
         print "--%s%s\t %s" % (opt[1], default, opt[3])
     
 globalopts = [
+    ('d', 'debug', None, "debug mode"),
     ('h', 'help', None, "display help and exit"),
     ('', 'version', None, "display version and exit"),
     ('v', 'verbose', None, "enable additionnal output"),
