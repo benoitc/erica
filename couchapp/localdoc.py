@@ -88,38 +88,17 @@ class LocalDoc(object):
         for db in dbs:
             if noatomic:
                 doc = self.doc(db, with_attachments=False)
-                try:
-                    self.olddoc = db.open_doc(doc['_id'])
-                    doc['_attachments'] = self.olddoc.get('_attachments') or {}
-                except ResourceNotFound:
-                    self.olddoc = {}
-                
                 db.save_doc(doc, force_update=True)
-                if 'couchapp' in self.olddoc:
-                    old_signatures = self.olddoc['couchapp'].get('signatures', 
-                                                                {})
-                else:
-                    old_signatures = {}
                 
-                signatures = doc['couchapp'].get('signatures', {})
+                attachments = doc.get('_attachments') or {}
 
-                if old_signatures:
-                    for name, signature in old_signatures.items():
-                        cursign = signatures.get(name)
-                        if not cursign:
-                            db.delete_attachment(doc, name)
-                        elif cursign != signature:
-                            db.delete_attachment(doc, name)
-                        else:
-                            continue
-                            
                 for name, filepath in self.attachments():
-                    if old_signatures.get(name) != signatures.get(name) or force:
+                    if name not in attachments:
                         logger.debug("attach %s " % name)
                         db.put_attachment(doc, open(filepath, "r"), 
                                             name=name)
             else:
-                doc = self.doc()
+                doc = self.doc(db)
                 db.save_doc(doc, force_update=True)
             indexurl = self.index(db.raw_uri, doc['couchapp'].get('index'))
             if indexurl and not noindex:
@@ -152,13 +131,28 @@ class LocalDoc(object):
                 desktopcouch.find_port(), url[15:])
         webbrowser.open_new_tab(url)
 
-    def doc(self, db=None, with_attachments=True):
+    def attachment_stub(self, name, filepath):
+        att = {}
+        with open(filepath, "rb") as f:
+            re_sp = re.compile('\s')
+            att = {
+                    "data": re_sp.sub('',base64.b64encode(f.read())),
+                    "content_type": ';'.join(filter(None, 
+                                            mimetypes.guess_type(name)))
+            }
+
+        return att 
+
+    def doc(self, db, with_attachments=True, force=False):
         """ Function to reetrieve document object from
         document directory. If `with_attachments` is True
         attachments will be included and encoded"""
         
         manifest = []
         objects = {}
+        signatures = {}
+        attachments = {}
+
         self._doc = {'_id': self.docid}
         
         # get designdoc
@@ -166,24 +160,46 @@ class LocalDoc(object):
         
        
         if not 'couchapp' in self._doc:
-             self._doc['couchapp'] = {}
-            
-        signatures = {}
-        attachments = {}
+            self._doc['couchapp'] = {}
+
+        
+        try:
+            self.olddoc = db.open_doc(self._doc['_id'])
+            attachments = self.olddoc.get('_attachments') or {}
+        except ResourceNotFound:
+            self.olddoc = {}
+        
+        if 'couchapp' in self.olddoc:
+            old_signatures = self.olddoc['couchapp'].get('signatures', 
+                                                        {})
+        else:
+            old_signatures = {}
+        
         for name, filepath in self.attachments():
             signatures[name] = util.sign(filepath)
-            if with_attachments:
+            if with_attachments and not old_signatures:
                 logger.debug("attach %s " % name)
-                attachments[name] = {}
-                with open(filepath, "rb") as f:
-                    re_sp = re.compile('\s')
-                    attachments[name]['data'] = re_sp.sub('', 
-                                        base64.b64encode(f.read()))
-                attachments[name]['content_type'] = ';'.join(filter(None, 
-                                            mimetypes.guess_type(name)))
+                attachments[name] = self.attachment_stub(name, filepath) 
+
+        if old_signatures:
+            for name, signature in old_signatures.items():
+                cursign = signatures.get(name)
+                if not cursign:
+                    logger.debug("detach %s " % name)
+                    del attachments[name]
+                elif cursign != signature:
+                    logger.debug("detach %s " % name)
+                    del attachments[name]
+                else:
+                    continue
+            
+            if with_attachments:
+                for name, filepath in self.attachments():
+                    if old_signatures.get(name) != signatures.get(name) or force:
+                        logger.debug("attach %s " % name)
+                        attachments[name] = self.attachment_stub(name, filepath) 
         
-        if with_attachments: 
-            self._doc['_attachments'] = attachments
+        self._doc['_attachments'] = attachments
             
         self._doc['couchapp'].update({
             'manifest': manifest,
