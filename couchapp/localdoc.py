@@ -87,7 +87,7 @@ class LocalDoc(object):
         each attachments will be sent one by one."""
         for db in dbs:
             if noatomic:
-                doc = self.doc(db, with_attachments=False)
+                doc = self.doc(db, with_attachments=False, force=force)
                 db.save_doc(doc, force_update=True)
                 
                 attachments = doc.get('_attachments') or {}
@@ -98,7 +98,7 @@ class LocalDoc(object):
                         db.put_attachment(doc, open(filepath, "r"), 
                                             name=name)
             else:
-                doc = self.doc(db)
+                doc = self.doc(db, force=force)
                 db.save_doc(doc, force_update=True)
             indexurl = self.index(db.raw_uri, doc['couchapp'].get('index'))
             if indexurl and not noindex:
