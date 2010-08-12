@@ -202,7 +202,6 @@ class Database(object):
         self.server_uri, self.dbname = uri.rsplit('/', 1)
         
         self.uuids = Uuids(self.server_uri, **client_opts)
-        self.version = couchdb_version(self.server_uri)
         
         
         # create the db
@@ -305,7 +304,13 @@ class Database(object):
         @return rev: str, the last revision of document.
         """
         r = self.res.head(escape_docid(docid))
-        return r.headers['etag'].strip('"')
+        if "etag" in r.headers:
+            # yeah new couchdb handle that
+            return r.headers['etag'].strip('"')
+        # old way ..
+        doc = self.open_doc(docid)
+        return doc['_rev']
+
         
     def delete_doc(self, id_or_doc):
         """ Delete a document
