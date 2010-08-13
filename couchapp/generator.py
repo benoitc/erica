@@ -158,9 +158,12 @@ def copy_helper(path, directory, tname="templates"):
             path))
                         
 def find_template_dir(name, directory=''):
-    paths = ['%s' % name, '../%s' % name]
+    paths = ['%s' % name, os.path.join('..', name]
     if hasattr(sys, 'frozen'): # py2exe
         modpath = sys.executable
+    elif sys.platform == "win32" or os.name == "nt":
+        modpath = os.path.join(sys.prefix, "Lib", "site-packages",
+            "couchapp", "templates")
     else:
         modpath = __file__
         
