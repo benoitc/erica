@@ -42,17 +42,17 @@ Read the [tutorial](http://www.couchapp.org/page/getting-started).
 
 ## Other resources
 
-* [Frequently Asked Questions](http://couchapp.org/faq)
-* [couchapp command line usage](http://couchapp.org/couchapp-usage)
-* [Extend couchapp command line](http://couchapp.org/couchapp-extend)
-* [CouchApps with DesktopCouch](http://couchapp.org/desktopcouch)
-* [List of CouchApps](http://couchapp.org/list-of-couchapps)
-* [Video Tutorials and Screencasts](http://couchapp.org/videos)
-* [Roadmap](http://couchapp.org/roadmap)
-* [CouchApp Garden](http://couchapp.org/garden)
+* [Frequently Asked Questions](http://couchapp.org/page/faq)
+* [couchapp command line usage](http://couchapp.org/page/couchapp-usage)
+* [Extend couchapp command line](http://couchapp.org/page/couchapp-extend)
+* [CouchApps with DesktopCouch](http://couchapp.org/page/desktopcouch)
+* [List of CouchApps](http://couchapp.org/page/list-of-couchapps)
+* [Video Tutorials and Screencasts](http://couchapp.org/page/videos)
+* [Roadmap](http://couchapp.org/page/roadmap)
+* [CouchApp Garden](http://couchapp.org/page/garden)
 * [Mailing List](http://groups.google.com/group/couchapp)
-* [Contributing to CouchApp](http://couchapp.org/how-to-contribute)
-* [Some development notes](http://couchapp.org/development-notes)
+* [Contributing to CouchApp](http://couchapp.org/page/how-to-contribute)
+* [Some development notes](http://couchapp.org/page/development-notes)
 * [Interactive Docs](http://couchapp.couchone.com/docs/_design/docs/index.html)
-* [Instruction on how to install this.pages app on your own machine](http://couchapp.org/pages-install)
+* [Instruction on how to install this.pages app on your own machine](http://couchapp.org/page/pages-install)
 
