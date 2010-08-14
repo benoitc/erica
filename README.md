@@ -42,17 +42,17 @@ Read the [tutorial](http://www.couchapp.org/page/getting-started).
 
 ## Other resources
 
-* [Frequently Asked Questions](faq)
-* [couchapp command line usage](couchapp-usage)
-* [Extend couchapp command line](couchapp-extend)
-* [CouchApps with DesktopCouch](desktopcouch)
-* [List of CouchApps](list-of-couchapps)
-* [Video Tutorials and Screencasts](videos)
-* [Roadmap](roadmap)
-* [CouchApp Garden](garden)
+* [Frequently Asked Questions](http://couchapp.org/faq)
+* [couchapp command line usage](http://couchapp.org/couchapp-usage)
+* [Extend couchapp command line](http://couchapp.org/couchapp-extend)
+* [CouchApps with DesktopCouch](http://couchapp.org/desktopcouch)
+* [List of CouchApps](http://couchapp.org/list-of-couchapps)
+* [Video Tutorials and Screencasts](http://couchapp.org/videos)
+* [Roadmap](http://couchapp.org/roadmap)
+* [CouchApp Garden](http://couchapp.org/garden)
 * [Mailing List](http://groups.google.com/group/couchapp)
-* [Contributing to CouchApp](how-to-contribute)
-* [Some development notes](development-notes)
+* [Contributing to CouchApp](http://couchapp.org/how-to-contribute)
+* [Some development notes](http://couchapp.org/development-notes)
 * [Interactive Docs](http://couchapp.couchone.com/docs/_design/docs/index.html)
-* [Instruction on how to install this.pages app on your own machine](pages-install)
+* [Instruction on how to install this.pages app on your own machine](http://couchapp.org/pages-install)
 
