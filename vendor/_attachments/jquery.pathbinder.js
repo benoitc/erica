@@ -111,8 +111,10 @@
   };
   
   function goPath(newPath) {
-    // $.log("goPath", newPath)
-    window.location = '#'+newPath;
+    if (newPath) {
+      // $.log("goPath", newPath)
+      window.location = '#'+newPath;
+    }
     _lastPath = getPath();
   };
   
