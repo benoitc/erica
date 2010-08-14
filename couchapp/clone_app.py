@@ -94,7 +94,7 @@ def clone(source, dest=None, rev=None):
                         content = v[last_key]
                     except KeyError:
                         break
-                        
+
 
                     if isinstance(content, basestring):
                         _ref = md5(util.to_bytestring(content)).hexdigest()
