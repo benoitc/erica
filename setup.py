@@ -91,7 +91,7 @@ setup(
         'restkit>=2.1.0'
     ],
     
-    options = dict(py2exe={},
+    options = dict(py2exe={'dll_excludes': [ "kernelbase.dll", "powrprof.dll" ]},
                    bdist_mpkg=dict(zipdist=True,
                                    license='LICENSE',
                                    readme='contrib/macosx/Readme.html',
