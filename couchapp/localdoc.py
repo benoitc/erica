@@ -143,7 +143,7 @@ class LocalDoc(object):
 
         return att 
 
-    def doc(self, db, with_attachments=True, force=False):
+    def doc(self, db=None, with_attachments=True, force=False):
         """ Function to reetrieve document object from
         document directory. If `with_attachments` is True
         attachments will be included and encoded"""
@@ -163,11 +163,14 @@ class LocalDoc(object):
             self._doc['couchapp'] = {}
 
         
-        try:
-            self.olddoc = db.open_doc(self._doc['_id'])
-            attachments = self.olddoc.get('_attachments') or {}
-        except ResourceNotFound:
-            self.olddoc = {}
+        self.olddoc = {}
+        if db is not None:
+            try:
+                self.olddoc = db.open_doc(self._doc['_id'])
+                attachments = self.olddoc.get('_attachments') or {}
+                self._doc.update({'_rev': self.olddoc['_rev']})
+            except ResourceNotFound:
+                self.olddoc = {}
         
         if 'couchapp' in self.olddoc:
             old_signatures = self.olddoc['couchapp'].get('signatures', 
@@ -244,13 +247,6 @@ class LocalDoc(object):
                 package_views(self._doc,self._doc["views"], self.docdir, 
                         objects)
         
-        self.olddoc = {}
-        if db is not None:
-            try:
-                self.olddoc = db.open_doc(self._doc['_id'])
-                self._doc.update({'_rev': self.olddoc['_rev']})
-            except ResourceNotFound:
-                pass
         
         return self._doc
     
