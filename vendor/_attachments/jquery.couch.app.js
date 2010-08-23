@@ -129,50 +129,48 @@
     $.couch.urlPrefix = urlPrefix;
     var db = $.couch.db(dbname),
       design = new Design(db, dname);
-    $(function() {
-      var appExports = $.extend({
-        db : db,
-        design : design,
-        view : design.view,
-        list : design.list,
-        docForm : docForm, // deprecated
-        req : mockReq()
-      }, $.couch.app.app);
-      function handleDDoc(ddoc) {        
-        if (ddoc) {
-          appExports.ddoc = ddoc;
-          appExports.require = makeRequire(ddoc);
-        }
-        appFun.apply(appExports, [appExports]);
+    var appExports = $.extend({
+      db : db,
+      design : design,
+      view : design.view,
+      list : design.list,
+      docForm : docForm, // deprecated
+      req : mockReq()
+    }, $.couch.app.app);
+    function handleDDoc(ddoc) {        
+      if (ddoc) {
+        appExports.ddoc = ddoc;
+        appExports.require = makeRequire(ddoc);
       }
-      if ($.couch.app.ddocs[design.doc_id]) {
-        handleDDoc($.couch.app.ddocs[design.doc_id])
+      appFun.apply(appExports, [appExports]);
+    }
+    if ($.couch.app.ddocs[design.doc_id]) {
+      $(function() {handleDDoc($.couch.app.ddocs[design.doc_id])});
+    } else {
+      // only open 1 connection for this ddoc 
+      if ($.couch.app.ddoc_handlers[design.doc_id]) {
+        // we are already fetching, just wait
+        $.couch.app.ddoc_handlers[design.doc_id].push(handleDDoc);
       } else {
-        // only open 1 connection for this ddoc 
-        if ($.couch.app.ddoc_handlers[design.doc_id]) {
-          // we are already fetching, just wait
-          $.couch.app.ddoc_handlers[design.doc_id].push(handleDDoc);
-        } else {
-          $.couch.app.ddoc_handlers[design.doc_id] = [handleDDoc];
-          db.openDoc(design.doc_id, {
-            success : function(doc) {
-              $.couch.app.ddocs[design.doc_id] = doc;
-              $.couch.app.ddoc_handlers[design.doc_id].forEach(function(h) {
-                h(doc);
-              });
-              $.couch.app.ddoc_handlers[design.doc_id] = null;
-            },
-            error : function() {
-              $.couch.app.ddoc_handlers[design.doc_id].forEach(function(h) {
-                h();
-              });
-              $.couch.app.ddoc_handlers[design.doc_id] = null;
-            }
-          });
-        }
+        $.couch.app.ddoc_handlers[design.doc_id] = [handleDDoc];
+        db.openDoc(design.doc_id, {
+          success : function(doc) {
+            $.couch.app.ddocs[design.doc_id] = doc;
+            $.couch.app.ddoc_handlers[design.doc_id].forEach(function(h) {
+              $(function() {h(doc)});
+            });
+            $.couch.app.ddoc_handlers[design.doc_id] = null;
+          },
+          error : function() {
+            $.couch.app.ddoc_handlers[design.doc_id].forEach(function(h) {
+              $(function() {h()});
+            });
+            $.couch.app.ddoc_handlers[design.doc_id] = null;
+          }
+        });
       }
-    });
-  };
+    }
+    };
   $.couch.app.ddocs = {};
   $.couch.app.ddoc_handlers = {};
   // legacy support. $.CouchApp is deprecated, please use $.couch.app
