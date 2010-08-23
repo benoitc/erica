@@ -20,8 +20,13 @@
 
 (function($) {
 
-  function Design(db, name) {
+  function Design(db, name, code) {
     this.doc_id = "_design/"+name;
+    if (code) {
+      this.code_path = this.doc_id + "/" + code;
+    } else {
+      this.code_path = this.doc_id;
+    }
     this.view = function(view, opts) {
       db.view(name+'/'+view, opts);
     };
@@ -128,7 +133,7 @@
       dname = opts.design || fragments[index + 4];
     $.couch.urlPrefix = urlPrefix;
     var db = $.couch.db(dbname),
-      design = new Design(db, dname);
+      design = new Design(db, dname, opts.load_path);
     var appExports = $.extend({
       db : db,
       design : design,
@@ -144,6 +149,11 @@
       }
       appFun.apply(appExports, [appExports]);
     }
+    if (opts.ddoc) {
+      // allow the ddoc to be embedded in the html
+      // to avoid a second http request
+      $.couch.app.ddocs[design.doc_id] = opts.ddoc;
+    }
     if ($.couch.app.ddocs[design.doc_id]) {
       $(function() {handleDDoc($.couch.app.ddocs[design.doc_id])});
     } else {
@@ -153,7 +163,8 @@
         $.couch.app.ddoc_handlers[design.doc_id].push(handleDDoc);
       } else {
         $.couch.app.ddoc_handlers[design.doc_id] = [handleDDoc];
-        db.openDoc(design.doc_id, {
+        // use getDbProperty to bypass %2F encoding on _show/app
+        db.getDbProperty(design.code_path, {
           success : function(doc) {
             $.couch.app.ddocs[design.doc_id] = doc;
             $.couch.app.ddoc_handlers[design.doc_id].forEach(function(h) {
@@ -170,7 +181,7 @@
         });
       }
     }
-    };
+  };
   $.couch.app.ddocs = {};
   $.couch.app.ddoc_handlers = {};
   // legacy support. $.CouchApp is deprecated, please use $.couch.app
