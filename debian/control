@@ -6,7 +6,7 @@ Build-Depends: debhelper (>= 7), python-support, python-setuptools
 Standards-Version: 3.9.0.0
 Homepage: http://couchapp.org/
 
-Package: couchapp 
+Package: couchapp
 Architecture: all
 Depends: ${python:Depends}, ${shlibs:Depends}, ${misc:Depends}, 
 	python-restkit(>=2.1.4)
