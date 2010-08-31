@@ -209,7 +209,7 @@ function $$(node) {
   function mustachioed(me, h, args) {
     return $($.mustache(
       runIfFun(me, h.mustache, args),
-      runIfFun(me, h.data, args), 
+      (runIfFun(me, h.data, args) || {}), 
       runIfFun(me, h.partials, args)));
   };
   
