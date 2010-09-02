@@ -238,7 +238,9 @@ function $$(node) {
     
     var q = {};
     forIn(qu, function(k, v) {
-      q[k] = v;
+      if (["type", "view"].indexOf(k) == -1) {
+        q[k] = v;
+      }
     });
     
     if (qType == "newRows") {
