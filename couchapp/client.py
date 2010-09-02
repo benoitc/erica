@@ -173,7 +173,7 @@ class Database(object):
     A Database object can act as a Dict object.
     """
     
-    def __init__(self, uri, **client_opts):
+    def __init__(self, uri, create=True, **client_opts):
         if uri.endswith("/"):
             uri = uri[:-1]
 
@@ -203,12 +203,13 @@ class Database(object):
         
         self.uuids = Uuids(self.server_uri, **client_opts)
         
-        
-        # create the db
-        try:
-            self.res.head()
-        except ResourceNotFound:
-            self.res.put()
+       
+        if create:
+            # create the db
+            try:
+                self.res.head()
+            except ResourceNotFound:
+                self.res.put()
         
     def info(self):
         """

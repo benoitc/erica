@@ -29,6 +29,7 @@ To install/upgrade development version :
    
     $ pip install http+git://github.com/couchapp/couchapp.git#egg=Couchapp
 
+Note: some installations need to use `sudo` command beafore each command line.
 
 To install on windows follow instructions
 [here](http://www.couchapp.org/page/windows-python-installers) .

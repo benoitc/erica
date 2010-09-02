@@ -47,7 +47,7 @@ def clone(source, dest=None, rev=None):
     if not os.path.exists(path):
         os.makedirs(path)
 
-    db = client.Database(dburl[:-1])    
+    db = client.Database(dburl[:-1], create=False)    
     if not rev:
         doc = db.open_doc("_design/%s" % docid)
     else:
