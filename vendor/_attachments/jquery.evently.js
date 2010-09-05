@@ -22,7 +22,7 @@ function $$(node) {
     }
   };
   $.forIn = forIn;
-  function funViaString(fun) {
+  function funViaString(fun, hint) {
     if (fun && fun.match && fun.match(/^function/)) {
       eval("var f = "+fun);
       if (typeof f == "function") {
@@ -31,7 +31,8 @@ function $$(node) {
             return f.apply(this, arguments);
           } catch(e) {
             // IF YOU SEE AN ERROR HERE IT HAPPENED WHEN WE TRIED TO RUN YOUR FUNCTION
-            $.log({"message": "Error in evently function.", "error": e, "src" : fun});
+            $.log({"message": "Error in evently function.", "error": e, 
+              "src" : fun, "hint":hint});
             throw(e);
           }
         };
@@ -42,7 +43,7 @@ function $$(node) {
   
   function runIfFun(me, fun, args) {
     // if the field is a function, call it, bound to the widget
-    var f = funViaString(fun);
+    var f = funViaString(fun, me);
     if (typeof f == "function") {
       return f.apply(me, args);
     } else {
@@ -75,15 +76,32 @@ function $$(node) {
 
   function extractEvents(name, ddoc) {
     // extract events from ddoc.evently and ddoc.vendor.*.evently
-    var events = [true, {}];
-    $.forIn(ddoc.vendor, function(k, v) {
+    var events = [true, {}]
+      , vendor = ddoc.vendor || {}
+      , evently = ddoc.evently || {};
+      ;
+    $.forIn(vendor, function(k, v) {
       if (v.evently && v.evently[name]) {
         events.push(v.evently[name]);
       }
     });
-    if (ddoc.evently[name]) {events.push(ddoc.evently[name]);}
+    if (evently[name]) {events.push(evently[name]);}
     return $.extend.apply(null, events);
   }
+
+  function extractPartials(ddoc) {
+    var partials = [true, {}]
+      , vendor = ddoc.vendor || {}
+      , evently = ddoc.evently || {};
+      ;
+    $.forIn(vendor, function(k, v) {
+      if (v.evently && v.evently._partials) {
+        partials.push(v.evently._partials);
+      }
+    });
+    if (evently._partials) {events.push(ddoc.evently._partials);}
+    return $.extend.apply(null, partials);
+  };
 
   $.fn.evently = function(events, app, args) {
     var elem = $(this);
@@ -97,6 +115,7 @@ function $$(node) {
     }
 
     $$(elem).evently = events;
+    $$(elem).partials = extractPartials(app.ddoc);
     // setup the handlers onto elem
     forIn(events, function(name, h) {
       eventlyHandler(elem, name, h, args);
@@ -109,9 +128,6 @@ function $$(node) {
     
     if (app && events._changes) {
       $("body").bind("evently-changes-"+app.db.name, function() {
-        // we want to unbind this function when the element is deleted.
-        // maybe jquery 1.4.2 has this covered?
-        // $.log('changes', elem);
         elem.trigger("_changes");        
       });
       followChanges(app);
@@ -122,15 +138,10 @@ function $$(node) {
   // eventlyHandler applies the user's handler (h) to the 
   // elem, bound to trigger based on name.
   function eventlyHandler(elem, name, h, args) {
-    if ($.evently.log) {
-      elem.bind(name, function() {
-        $.log(elem, name);
-      });
-    }
     if (h.path) {
       elem.pathbinder(name, h.path);
     }
-    var f = funViaString(h);
+    var f = funViaString(h, name);
     if (typeof f == "function") {
       elem.bind(name, {args:args}, f); 
     } else if (typeof f == "string") {
@@ -146,7 +157,7 @@ function $$(node) {
     } else {
       // an object is using the evently / mustache template system
       if (h.fun) {
-        elem.bind(name, {args:args}, funViaString(h.fun));
+        elem.bind(name, {args:args}, funViaString(h.fun, name));
       }
       // templates, selectors, etc are intepreted
       // when our named event is triggered.
@@ -171,7 +182,7 @@ function $$(node) {
     // if there's a query object we run the query,
     // and then call the data function with the response.
     if (h.before && (!qrun || !arun)) {
-      funViaString(h.before).apply(me, args);
+      funViaString(h.before, me).apply(me, args);
     }
     if (h.async && !arun) {
       runAsync(me, h, args)
@@ -205,22 +216,22 @@ function $$(node) {
       }
       if (h.after) {
         runIfFun(me, h.after, args);
-        // funViaString(h.after).apply(me, args);
       }
     }    
   };
   
   // todo this should return the new element
   function mustachioed(me, h, args) {
+    var partials = $$(me).partials;
     return $($.mustache(
       runIfFun(me, h.mustache, args),
-      (runIfFun(me, h.data, args) || {}), 
-      runIfFun(me, h.partials, args)));
+      runIfFun(me, h.data, args), 
+      runIfFun(me, $.extend(true, partials, h.partials), args)));
   };
   
   function runAsync(me, h, args) {  
     // the callback is the first argument
-    funViaString(h.async).apply(me, [function() {
+    funViaString(h.async, me).apply(me, [function() {
       renderElement(me, h, 
         $.argsToArray(arguments).concat($.argsToArray(args)), false, true);
     }].concat($.argsToArray(args)));
@@ -238,9 +249,7 @@ function $$(node) {
     
     var q = {};
     forIn(qu, function(k, v) {
-      if (["type", "view"].indexOf(k) == -1) {
-        q[k] = v;
-      }
+      q[k] = v;
     });
     
     if (qType == "newRows") {
