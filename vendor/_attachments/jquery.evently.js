@@ -78,7 +78,7 @@ function $$(node) {
     // extract events from ddoc.evently and ddoc.vendor.*.evently
     var events = [true, {}]
       , vendor = ddoc.vendor || {}
-      , evently = ddoc.evently || {};
+      , evently = ddoc.evently || {}
       ;
     $.forIn(vendor, function(k, v) {
       if (v.evently && v.evently[name]) {
@@ -92,14 +92,14 @@ function $$(node) {
   function extractPartials(ddoc) {
     var partials = [true, {}]
       , vendor = ddoc.vendor || {}
-      , evently = ddoc.evently || {};
+      , evently = ddoc.evently || {}
       ;
     $.forIn(vendor, function(k, v) {
       if (v.evently && v.evently._partials) {
         partials.push(v.evently._partials);
       }
     });
-    if (evently._partials) {events.push(ddoc.evently._partials);}
+    if (evently._partials) {partials.push(evently._partials);}
     return $.extend.apply(null, partials);
   };
 
