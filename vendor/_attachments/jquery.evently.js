@@ -103,17 +103,29 @@ function $$(node) {
     return $.extend.apply(null, partials);
   };
 
+  function applyCommon(events) {
+    if (events._common) {
+      $.forIn(events, function(k, v) {
+        events[k] = $.extend(true, {}, events._common, v);
+      });
+      delete events._common;
+      return events;
+    } else {
+      return events;
+    }
+  }
+
   $.fn.evently = function(events, app, args) {
     var elem = $(this);
     // store the app on the element for later use
     if (app) {
-      $$(elem).app = app;      
+      $$(elem).app = app;
     }
 
     if (typeof events == "string") {
       events = extractEvents(events, app.ddoc);
     }
-
+    events = applyCommon(events);
     $$(elem).evently = events;
     $$(elem).partials = extractPartials(app.ddoc);
     // setup the handlers onto elem
