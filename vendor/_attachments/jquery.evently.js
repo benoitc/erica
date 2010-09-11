@@ -127,14 +127,15 @@ function $$(node) {
     }
     events = applyCommon(events);
     $$(elem).evently = events;
-    $$(elem).partials = extractPartials(app.ddoc);
+    if (app && app.ddoc) {
+      $$(elem).partials = extractPartials(app.ddoc);
+    }
     // setup the handlers onto elem
     forIn(events, function(name, h) {
       eventlyHandler(elem, name, h, args);
     });
     
     if (events._init) {
-      // $.log("ev _init", elem);
       elem.trigger("_init", args);
     }
     
