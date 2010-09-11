@@ -170,7 +170,7 @@ function $$(node) {
     } else {
       // an object is using the evently / mustache template system
       if (h.fun) {
-        elem.bind(name, {args:args}, funViaString(h.fun, name));
+        throw("e.fun has been removed, please rename to e.before")
       }
       // templates, selectors, etc are intepreted
       // when our named event is triggered.
