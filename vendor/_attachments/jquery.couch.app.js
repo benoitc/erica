@@ -91,7 +91,7 @@
         return cachedModule;
       }
       var exports = {};
-      var resolved = resolveModule(name, name.split('/'), parent, ddoc);
+      var resolved = resolveModule(name, name.split('/'), parents, ddoc);
       var source = resolved[0]; 
       parents = resolved[1];
       var s = "var func = function (exports, require) { " + source + " };";
