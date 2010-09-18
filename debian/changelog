@@ -1,3 +1,9 @@
+couchapp (0.7.1-1) karmic; urgency=low
+
+  * new release 
+
+ -- Benoit Chesneau <benoitc@e-engura.org>  Fri, 18 Sept 2010 20:28:00 +0100
+
 couchapp (0.7.0-1) karmic; urgency=low
 
   * Initial release
