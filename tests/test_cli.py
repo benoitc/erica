@@ -27,7 +27,8 @@ def _tempdir():
 class CliTestCase(unittest.TestCase):
     
     def setUp(self):
-        self.db = Database('http://127.0.0.1:5984/couchapp-test')
+        self.db = Database('http://127.0.0.1:5984/couchapp-test',
+                create=True)
             
         self.tempdir = _tempdir()
         os.makedirs(self.tempdir)
@@ -36,10 +37,7 @@ class CliTestCase(unittest.TestCase):
         self.startdir = os.getcwd()
         
     def tearDown(self):
-        try:
-            self.db.delete()
-        except:
-            pass
+        self.db.delete()
         deltree(self.tempdir)
         os.chdir(self.startdir)
         
@@ -236,6 +234,7 @@ class CliTestCase(unittest.TestCase):
         (child_stdin, child_stdout, child_stderr) = popen3("%s pushdocs docs/ http://127.0.0.1:5984/couchapp-test" % self.cmd)
        
         alldocs = self.db.all_docs()['rows']
+        
         self.assert_(len(alldocs) == 2)
         
         self.assert_('_design/app1' == alldocs[0]['id'])

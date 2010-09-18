@@ -88,7 +88,7 @@ setup(
     cmdclass=cmdclass,
     
     install_requires = [
-        'restkit>=2.1.0'
+        'restkit>=2.2.0'
     ],
     
     options = dict(py2exe={'dll_excludes': [ "kernelbase.dll", "powrprof.dll" ]},

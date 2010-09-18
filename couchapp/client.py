@@ -210,6 +210,9 @@ class Database(object):
                 self.res.head()
             except ResourceNotFound:
                 self.res.put()
+
+    def delete(self):
+        self.res.delete()
         
     def info(self):
         """
