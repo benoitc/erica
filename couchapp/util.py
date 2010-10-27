@@ -320,7 +320,7 @@ def write_json(fname, content):
     """
     write(fname, json.dumps(content).encode('utf-8'))
 
-def read_json(fname, use_environment=False):
+def read_json(fname, use_environment=False, raise_on_error=False):
     """ read a json file and deserialize
 
     :attr filename: string
@@ -344,7 +344,9 @@ def read_json(fname, use_environment=False):
         data = json.loads(data)
     except ValueError:
         logger.error("Json is invalid, can't load %s" % fname)
-        return {}
+        if not raise_on_error:
+            return {}
+        raise
     return data            
     
 _vendor_dir = None

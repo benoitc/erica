@@ -50,7 +50,11 @@ class Config(object):
             
         for p in paths:
             if os.path.isfile(p):
-                new_conf = util.read_json(p, use_environment=True)
+                try:
+                    new_conf = util.read_json(p, use_environment=True,
+                        raise_on_error=True)
+                except ValueError:
+                    raise AppError("Error while reading %s" % p)
                 conf.update(new_conf)
         
         return conf
