@@ -29,7 +29,18 @@ if os.name == 'nt':
 else:
     def _replace_backslash(name):
         return name
+
+re_comment = re.compile("((?:\/\*(?:[^*]|(?:\*+[^*\/]))*\*+\/)|(?:\/\/.*))")
         
+DEFAULT_IGNORE = """[
+  // filenames matching these regexps will not be pushed to the database
+  // uncomment to activate; separate entries with ","
+  // ".*~$"
+  // ".*\\.swp$"
+  // ".*\\.bak$"
+]"""
+
+
 logger = logging.getLogger(__name__)
 
 class LocalDoc(object):
@@ -43,7 +54,10 @@ class LocalDoc(object):
         if os.path.exists(ignorefile):
             # A .couchappignore file is a json file containing a
             # list of regexps for things to skip
-            self.ignores = util.json.load(open(ignorefile, 'r'))
+            with open(ignorefile, 'r') as f:
+                self.ignores = util.json.loads(
+                    util.remove_comments(f.read())
+                )
         if not docid:
             docid = self.get_id()
         self.docid = docid
@@ -76,8 +90,10 @@ class LocalDoc(object):
             logger.error("%s directory doesn't exist." % self.docdir)
             
         rcfile = os.path.join(self.docdir, '.couchapprc')
+        ignfile = os.path.join(self.docdir, '.couchappignore')
         if not os.path.isfile(rcfile):
             util.write_json(rcfile, {})
+            util.write(ignfile, DEFAULT_IGNORE)
         else:
             logger.info("CouchApp already initialized in %s." % self.docdir)
 

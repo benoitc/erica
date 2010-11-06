@@ -10,6 +10,7 @@ from hashlib import md5
 import logging
 import os
 import pkg_resources
+import re
 import string
 import sys
 
@@ -411,3 +412,14 @@ def parse_hooks_uri(uri):
     if uri.startswith("python:") or uri.startswith("egg:"):
         return parse_uri(uri, "couchapp.hook")
     return ShellScript(uri)
+
+re_comment = re.compile(r'//.*?$|/\*.*?\*/|\'(?:\\.|[^\\\'])*\'|"(?:\\.|[^\\"])*"', 
+        re.DOTALL | re.MULTILINE)
+
+def remove_comments(t):
+    def replace(m):
+        s = m.group(0)
+        if s.startswith("/"):
+            return ""
+        return s
+    return re.sub(re_comment, replace, t)
