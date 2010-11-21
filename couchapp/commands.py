@@ -311,37 +311,50 @@ def version(conf, *args, **opts):
 def usage(conf, *args, **opts):
     if opts.get('version', False):
         version(conf, *args, **opts)
-    print "couchapp [OPTIONS] [CMD] [OPTIONSCMD] [ARGS,...]"
-    print "usage:"
-    print ""
+    print "Usage: couchapp [OPTIONS] [CMD] [CMDOPTIONS] [ARGS,...]"
 
+    print ""
+    print "Options:"
     mainopts = []
+    max_opt_len = len(max(globalopts, key=len))
     for opt in globalopts:
-        print_option(opt)
+        print "\t%-*s" % (max_opt_len, get_switch_str(opt))
         mainopts.append(opt[0])
-        
+
     print ""
-    print "list of commands:"
-    print "-----------------"
-    print ""
-    for cmd in sorted(table.keys()):
+    print "Commands:"
+    commands = sorted(table.keys())
+    max_len = len(max(commands, key=len))
+    for cmd in commands:
         opts = table[cmd]
-        print "%s\t %s" % (cmd, opts[2])
-        for opt in opts[1]:
-            print_option(opt)
+        # Command name is max_len characters. Used by the %-*s formatting code
+        print "\t%-*s %s" % (max_len, cmd, opts[2])
+        # Print each command's option list
+        cmd_options = opts[1]
+        if cmd_options:
+            max_opt = max(cmd_options, key=lambda o: len(get_switch_str(o)))
+            max_opt_len = len(get_switch_str(max_opt))
+            for opt in cmd_options:
+                print "\t\t%-*s %s" % (max_opt_len, get_switch_str(opt), opt[3])
+            print ""
         print ""
     return 0
 
-def print_option(opt):
+def get_switch_str(opt):
+    """
+    Output just the '-r, --rev [VAL]' part of the option string.
+    """
     if opt[2] is None or opt[2] is True or opt[2] is False:
         default = ""
     else:
-        default = " [VAL]"
+        default = "[VAL]"
     if opt[0]:
-        print "-%s/--%s%s\t %s" % (opt[0], opt[1], default, opt[3])
+        # has a short and long option
+        return "-%s, --%s %s" % (opt[0], opt[1], default)
     else:
-        print "--%s%s\t %s" % (opt[1], default, opt[3])
-    
+        # only has a long option
+        return "--%s %s" % (opt[1], default)
+
 globalopts = [
     ('d', 'debug', None, "debug mode"),
     ('h', 'help', None, "display help and exit"),
