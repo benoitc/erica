@@ -11,6 +11,7 @@ import mimetypes
 import os
 import os.path
 import re
+import urlparse
 import webbrowser
 
 try:
@@ -118,6 +119,11 @@ class LocalDoc(object):
                 db.save_doc(doc, force_update=True)
             indexurl = self.index(db.raw_uri, doc['couchapp'].get('index'))
             if indexurl and not noindex:
+                if "@" in indexurl:
+                    u = urlparse.urlparse(indexurl)
+                    indexurl = urlparse.urlunparse((u.scheme, u.netloc.split("@")[-1],
+                        u.path, u.params, u.query, u.fragment))
+
                 logger.info("Visit your CouchApp here:\n%s" % indexurl)
                 if browser:
                     self.browse_url(indexurl)
