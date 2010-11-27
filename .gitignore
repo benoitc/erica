@@ -10,5 +10,6 @@ setuptools-*
 *.so
 deps
 ebin/*
+erl_crash.dump
 debian/python-couchapp
 debian/couchapp
