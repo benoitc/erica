@@ -1,0 +1,10 @@
+{application,couchapp,
+             [{description,"Couchapp: Couchdb Application Tool"},
+              {vsn,"0.8.0"},
+              {modules,[couchapp,couchapp_config,couchapp_core,
+                        couchapp_generate,couchapp_log,couchapp_push,
+                        couchapp_util,getopt]},
+              {registered,[]},
+              {applications,[kernel,stdlib]},
+              {included_applications,[crypto,sasl,ibrowse,couchbeam]},
+              {env,[{log_level,error}]}]}.

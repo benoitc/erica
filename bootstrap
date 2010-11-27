@@ -1,0 +1,74 @@
+#!/usr/bin/env escript
+%% -*- mode:erlang;tab-width:4;erlang-indent-level:4;indent-tabs-mode:nil -*-
+%% ex: ft=erlang ts=4 sw=4 et
+
+main(Args) ->
+ 
+    %% Add ebin/ to our path
+    true = code:add_path("ebin"),
+    true = code:add_path("deps/mochiweb/ebin"),
+    true = code:add_path("deps/ibrowse/ebin"),
+    true = code:add_path("deps/oauth/ebin"),
+    true = code:add_path("deps/couchbeam/ebin"),
+    
+
+
+    %% Run couchapp to do proper .app validation and such
+    couchapp:main(["compile"] ++ Args),
+
+
+    %% Read the contents of the files in ebin and templates; note that we place
+    %% all the beam files at the top level of the code archive so that code loading
+    %% works properly.
+    Files = load_files("*", "ebin") 
+            ++ load_files("*", "deps/mochiweb/ebin") 
+            ++ load_files("*", "deps/ibrowse/ebin")
+            ++ load_files("*", "deps/oauth/ebin")
+            ++ load_files("*", "deps/couchbeam/ebin")
+            ++ load_files("*", "priv/templates"),
+
+            case zip:create("mem", Files, [memory]) of
+        {ok, {"mem", ZipBin}} ->
+            %% Archive was successfully created. Prefix that binary with our
+            %% header and write to "rebar" file
+            Script = <<"#!/usr/bin/env escript\n%%! -pa . -noshell -noinput -sasl errlog_type error\n", ZipBin/binary>>,
+            case file:write_file("couchapp", Script) of
+                ok ->
+                    ok;
+                {error, WriteError} ->
+                    io:format("Failed to write couchapp script: ~p\n", [WriteError]),
+                    halt(1)
+            end;
+        {error, ZipError} ->
+            io:format("Failed to construct couchapp archive: ~p\n", [ZipError]),
+            halt(1)
+    end,
+
+    %% Finally, update executable perms for our script
+    case os:type() of
+        {unix,_} ->
+            [] = os:cmd("chmod u+x couchapp"),
+            ok;
+        _ ->
+            ok
+    end,
+    
+    %% Add a helpful message
+    io:format("Congratulations! You now have a self-contained script called \"couchapp\" in\n"
+              "your current working directory. Place this script anywhere in your path\n"
+              "and you can use build and push your design docs and docs
+              like couchapp.\n").
+
+load_files(Wildcard, Dir) ->
+    [read_file(Filename, Dir) || Filename <- filelib:wildcard(Wildcard,
+            Dir), not lists:member(Filename, [".", ".."])].
+
+read_file(Filename, Dir) ->
+    Filename1 = filename:join(Dir, Filename),
+    case filelib:is_dir(Filename1) of
+        true ->
+            load_files("*", Filename1);
+        false ->
+            {ok, Bin} = file:read_file(filename:join(Dir, Filename)),
+            {Filename, Bin}
+    end.
