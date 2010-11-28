@@ -12,5 +12,11 @@
   {included_applications, [crypto, sasl, ibrowse, couchbeam]},
   {env, [
     %% default log level
-    {log_level, error}
+    {log_level, error},
+
+    %% list of commands modules
+    {modules, [
+        couchapp_init,
+        couchapp_generate,
+        couchapp_push]}
   ]}]}.

@@ -31,8 +31,6 @@ run(RawArgs) ->
     %% Initialize logging system
     couchapp_log:init(),
 
-    ?INFO("commands ~p~n", [Commands]), 
-
     %% Determine the location of the rebar executable; important for pulling
     %% resources out of the escript
     couchapp_config:set_global(escript, filename:absname(escript:script_name())),
@@ -41,11 +39,56 @@ run(RawArgs) ->
     %% Note the top-level directory for reference
     couchapp_config:set_global(base_dir, filename:absname(couchapp_util:get_cwd())),
  
-    
-    Server = couchbeam:server_connection(),
-    Info = couchbeam:server_info(Server),
-    io:format("server info: ~p~n", [Info]),
-    ok.
+    process_commands(Commands).
+
+
+process_commands([Command|Args]) ->
+    {ok, Modules} = application:get_env(couchapp, modules),
+    Config = couchapp_config:new(),
+    execute(list_to_atom(Command), Args, Modules, Config).
+
+
+execute(Command, Args, Modules, Config) ->
+    case select_modules(Modules, Command, []) of
+        [] -> 
+            ?WARN("'~p' unkown command", [Command]);
+        TargetModules ->
+            Dir = couchapp_util:get_cwd(),
+            ?CONSOLE("==> ~s (~s)\n", [filename:basename(Dir), Command]),
+            case catch(run_modules(TargetModules, Command, Args, Config)) of
+                ok ->
+                    ok;
+                {error, failed} ->
+                    ?FAIL;
+                {Module, {error, _} = Other} ->
+                    ?ABORT("~p failed while processing ~s in module ~s: ~s\n",
+                           [Command, Dir, Module, io_lib:print(Other, 1,80,-1)]);
+                Other ->
+                    ?ABORT("~p failed while processing ~s: ~s\n",
+                           [Command, Dir, io_lib:print(Other, 1,80,-1)])
+            end
+    end.
+
+select_modules([], _Command, Acc) ->
+    lists:reverse(Acc);
+select_modules([Module | Rest], Command, Acc) ->
+    Exports = Module:module_info(exports),
+    case lists:member({Command, 2}, Exports) of
+        true ->
+            select_modules(Rest, Command, [Module | Acc]);
+        false ->
+            select_modules(Rest, Command, Acc)
+    end.
+
+run_modules([], _Command, _Args, _Config) ->
+    ok;
+run_modules([Module | Rest], Command, Args, Config) ->
+    case Module:Command(Args, Config) of
+        ok ->
+            run_modules(Rest, Command, Args, Config);
+        {error, _} = Error ->
+            {Module, Error}
+    end.
 
 parse_args(Args) ->
     OptSpecList = option_spec_list(),
@@ -79,8 +122,6 @@ option_spec_list() ->
      {force,    $f, "force",      undefined, "Force"},
      {version,  $V, "version",    undefined, "Show version information"}
     ].
-
-
 
 %%
 %% set global flag based on getopt option boolean value
@@ -134,7 +175,7 @@ help() ->
 %%
 commands() ->
     S = <<"
-init                                 inititiliaze a couchapp
+init                                 initialize a couchapp
 push        [options...] [dir] dest  push a document to couchdb                       
 clone       [option] source dir      clone a document from couchdb
 pushapps    [option] source dest     push all CouchApps in a folder 

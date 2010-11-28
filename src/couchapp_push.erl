@@ -11,18 +11,41 @@
 -include("couchapp.hrl").
 -include("deps/couchbeam/include/couchbeam.hrl").
 
--export([push/2, push/3, push/4]).
+-export([push/2]).
 
 -export([make_doc/1, couchapp_from_fs/1, process_signatures/1]).
 
-push(Path, Db) ->
-    push(Path, Db, #push_options{}).
+%% ====================================================================
+%% Public API
+%% ====================================================================
 
-push(Path, Db, Options) ->
+push([DbString], Config) ->
+    push1(couchapp_util:get_cwd(), DbString, Config);
+push([Path, DbString|_], Config) ->
+    push1(Path, DbString, Config).
+
+push1(Path, DbString, Config) ->
+
+    case couchapp_util:in_couchapp(Path) of
+        {ok, Path} ->
+            Db = couchapp_util:db_from_string(DbString),
+            ?CONSOLE("push ~p to ~p", [Path, DbString]),
+            halt(0);
+
+        {error, not_found} ->
+            ?ERROR("Can't find initialized couchapp in '~p'~n", [Path]),
+            halt(1)
+    end.
+
+
+do_push(Path, Db) ->
+    do_push(Path, Db, #push_options{}).
+
+do_push(Path, Db, Options) ->
     DocId = id_from_path(Path, Options),
-    push(Path, Db, DocId, Options).
+    do_push(Path, Db, DocId, Options).
 
-push(Path, #db{server=Server}=Db, DocId, 
+do_push(Path, #db{server=Server}=Db, DocId, 
         #push_options{atomic=Atomic}=Options) ->
 
     OldDoc = case couchbeam:open_doc(Db, DocId) of

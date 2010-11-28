@@ -5,7 +5,14 @@
 
 -module(couchapp_config).
 
--export([set_global/2, get_global/2]).
+-include("couchapp.hrl").
+
+-export([new/0,
+         set_global/2, get_global/2]).
+
+new() ->
+    #config { dir = couchapp_util:get_cwd(),
+              opts = []}.
 
 set_global(jobs=Key, Value) when is_list(Value) ->
     set_global(Key,list_to_integer(Value));
