@@ -28,7 +28,7 @@ push1(Path, DbString, Config) ->
 
     case couchapp_util:in_couchapp(Path) of
         {ok, Path} ->
-            Db = couchapp_util:db_from_string(DbString),
+            Db = couchapp_util:db_from_config(DbString),
             ?CONSOLE("push ~p to ~p", [Path, DbString]),
             halt(0);
 
@@ -38,8 +38,7 @@ push1(Path, DbString, Config) ->
     end.
 
 
-do_push(Path, Db) ->
-    do_push(Path, Db, #push_options{}).
+
 
 do_push(Path, Db, Options) ->
     DocId = id_from_path(Path, Options),

@@ -4,7 +4,10 @@
 %%% See the NOTICE for more information.
 
 -record(config, { dir,
-                  opts }).
+                  opts,
+                  dbs,
+                  hooks,
+                  extensions }).
 
 -record(global_state, { working_dir }).
 
