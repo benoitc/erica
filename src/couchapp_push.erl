@@ -37,9 +37,6 @@ push1(Path, DbString, Config) ->
             halt(1)
     end.
 
-
-
-
 do_push(Path, Db, Config) ->
     DocId = id_from_path(Path, Config),
     do_push(Path, Db, DocId, Config).
@@ -83,7 +80,6 @@ do_push(Path, #db{server=Server}=Db, DocId, Config) ->
             Path]),
     ok.
 
-
 id_from_path(Path, Config) ->
     IdFile = filename:join(Path, "_id"),
     case filelib:is_regular(IdFile) of
@@ -105,7 +101,6 @@ id_from_path(Path, Config) ->
             end
     end.
         
-
 couchapp_from_fs(#couchapp{path=Path}=Couchapp) ->
     Files = filelib:wildcard("*", Path),
     process_path(Files, Path, Couchapp).
@@ -152,7 +147,6 @@ process_signatures(#couchapp{att_dir=AttDir, doc=Doc, old_doc=OldDoc,
             }
     end.
 
-
 process_attachments(#couchapp{att_dir=AttDir, doc=Doc, 
         attachments=Atts}=Couchapp) ->
     NewDoc = attach_files(Atts, Doc, AttDir),
@@ -193,8 +187,6 @@ make_doc(Couchapp) ->
     end,
     process_macros(Doc2).
     
-
-
 %% ===================================================================
 %% Internal functions
 %% ===================================================================
@@ -292,7 +284,6 @@ process_path([File|Rest], Dir, #couchapp{path=Path, doc=Doc,
     end,
     process_path(Rest, Dir, Couchapp1).
 
-
 process_dir([], _Dir, Doc, Manifest) ->
     {Doc, Manifest};
 process_dir(["."|Rest], Dir, Doc, Manifest) ->
@@ -332,7 +323,6 @@ process_file(File, Fname) ->
             PropName = filename:basename(Fname, Ext),
             {list_to_binary(PropName), Value}
     end.
-
 
 attachments_from_fs(#couchapp{path=Path}=Couchapp) ->
     AttPath = filename:join(Path, "_attachments"),
