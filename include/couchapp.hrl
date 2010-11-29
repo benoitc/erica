@@ -5,9 +5,9 @@
 
 -record(config, { dir,
                   opts,
-                  dbs,
-                  hooks,
-                  extensions }).
+                  dbs=[],
+                  hooks=[],
+                  extensions=[] }).
 
 -record(global_state, { working_dir }).
 
@@ -24,15 +24,9 @@
 
 -define(FMT(Str, Args), lists:flatten(io_lib:format(Str, Args))).
 
-
--record(push_options, {
-        force=true,
-        atomic=true,
-        is_ddoc=true
-}).
-
 -record(couchapp, {
         path,
+        att_dir,
         docid,
         doc,
         old_doc=nil,

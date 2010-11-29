@@ -20,7 +20,8 @@
          in_couchapp/1,
          db_from_string/1,
          db_from_config/2,
-         v2a/1]).
+         v2a/1,
+         relpath/2]).
 
 
 %% ====================================================================
@@ -54,13 +55,21 @@ db_from_string(DbString) ->
                     [{basic_auth, {Username, Password}}]
             end
     end,
-    couchbeam:open_or_create_db(Server, Url#url.path, Options).
+
+    "/" ++ DbName = Url#url.path,
+    {ok, Db} = couchbeam:open_or_create_db(Server, DbName, Options),
+    Db.
 
 
-db_from_config(DbString, Config) ->
+db_from_config(Config, DbString) ->
     case mochiweb_util:urlsplit(DbString) of 
         {[], [], _Path, _, _} ->
-            couchapp_config:get_db(Config, DbString);
+            case couchapp_config:get_db(Config, DbString) of
+                undefined ->
+                    db_from_string(DbString);
+                Db ->
+                    Db
+            end;
         _ ->
             db_from_string(DbString)
     end.
@@ -106,11 +115,21 @@ get_cwd() ->
     {ok, Dir} = file:get_cwd(),
     Dir.
 
+relpath(Path, Root) ->
+    {_, _, RelPath} = mochiweb_util:partition(Path, Root),
+    case string:left(RelPath, 1) of
+        "/" -> 
+            "/" ++ RelPath1 = RelPath,
+            RelPath1;
+        "\\" ->
+            "\\\\" ++ RelPath1 = RelPath,
+            RelPath1
+    end.
 
 %% function from pragmatic programmer book.
 md5_file(File) ->
     case file:open(File, [binary,raw,read]) of
-    {ok, P} -> loop(P, erlang:md5_init());
+    {ok, P} -> loop(P, crypto:md5_init());
     Error   -> Error
     end.
 
@@ -135,8 +154,8 @@ normalize_path1([Path|Rest], Acc) ->
 loop (P, C) ->
     case file:read(P, ?BLOCKSIZE) of
     {ok, Bin} ->
-        loop(P, erlang:md5_update(C, Bin));
+        loop(P, crypto:md5_update(C, Bin));
     eof ->
         file:close(P),
-        {ok, erlang:md5_final(C)}
+        {ok, crypto:md5_final(C)}
     end.

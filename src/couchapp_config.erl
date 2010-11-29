@@ -8,11 +8,16 @@
 -include("deps/couchbeam/include/couchbeam.hrl").
 -include("couchapp.hrl").
 
--export([new/0,
+-export([new/0, new/1,
          get_db/2,
+         get/2, get/3,
+         set/3,
          set_global/2, get_global/2]).
-
 new() ->
+    #config { dir = couchapp_util:get_cwd(),
+              opts = [] }.
+
+new(Options) ->
     UserConfFile = filename:join(couchapp_util:user_path(),
         ".couchapp.conf"),
     UserConf = case filelib:is_regular(UserConfFile) of
@@ -23,9 +28,9 @@ new() ->
             {[]}
     end,
     {Dbs, Hooks, Extensions} = parse_conf(UserConf),
-
+    
     #config { dir = couchapp_util:get_cwd(),
-              opts = [],
+              opts = Options,
               dbs = Dbs,
               hooks = Hooks,
               extensions = Extensions }.
@@ -43,6 +48,17 @@ get_global(Key, Default) ->
         {ok, Value} ->
             Value
     end.
+
+get(Config, Key) ->
+    get(Config, Key, undefined).
+
+get(Config, Key, Default) ->
+    proplists:get_value(Key, Config#config.opts, Default).
+
+set(Config, Key, Value) ->
+    Opts = proplists:delete(Key, Config#config.opts),
+    Config#config { opts = [{Key, Value} | Opts] }.
+
 
 parse_conf({[]}) ->
     {[], [], []};

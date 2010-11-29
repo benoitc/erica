@@ -23,7 +23,7 @@ run(RawArgs) ->
     ok = application:load(couchapp),
    
     %% parse arguments
-    Commands = parse_args(RawArgs),
+    {Options, Commands} = parse_args(RawArgs),
 
     %% load couchbeam
     {ok, _} = couchbeam:start(),
@@ -39,12 +39,12 @@ run(RawArgs) ->
     %% Note the top-level directory for reference
     couchapp_config:set_global(base_dir, filename:absname(couchapp_util:get_cwd())),
  
-    process_commands(Commands).
+    process_commands(Commands, Options).
 
 
-process_commands([Command|Args]) ->
+process_commands([Command|Args], Options) ->
     {ok, Modules} = application:get_env(couchapp, modules),
-    Config = couchapp_config:new(),
+    Config = couchapp_config:new(Options),
     execute(list_to_atom(Command), Args, Modules, Config).
 
 
@@ -99,10 +99,10 @@ parse_args(Args) ->
             %% Set global variables based on getopt options
             set_global_flag(Options, verbose),
             set_global_flag(Options, force),
-            
+
             %% Filter all the flags (i.e. strings of form key=value) from the
             %% command line arguments. What's left will be the commands to run.
-            filter_flags(NonOptArgs, []);
+            {Options, filter_flags(NonOptArgs, [])};
         {error, {Reason, Data}} ->
             ?ERROR("Error: ~s ~p~n~n", [Reason, Data]),
             help(),
@@ -120,8 +120,16 @@ option_spec_list() ->
      {commands, $c, "commands",   undefined, "Show available commands"},
      {verbose,  $v, "verbose",    undefined, "Be verbose about what gets done"},
      {force,    $f, "force",      undefined, "Force"},
-     {version,  $V, "version",    undefined, "Show version information"}
+     {version,  $V, "version",    undefined, "Show version
+         information"},
+       
+     {is_ddoc, undefined, "is-ddoc", {boolean, true}, "Tell to push command if you send a design document or not."}, 
+     {docid, undefined, "docid",  string, "Set docid with push command"},
+     {atomic, undefined, "atomic",  {boolean, true}, 
+         "Send attachments inline with push command"}
+
     ].
+
 
 %%
 %% set global flag based on getopt option boolean value

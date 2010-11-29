@@ -25,12 +25,12 @@ push([Path, DbString|_], Config) ->
     push1(Path, DbString, Config).
 
 push1(Path, DbString, Config) ->
-
-    case couchapp_util:in_couchapp(Path) of
-        {ok, Path} ->
-            Db = couchapp_util:db_from_config(DbString),
-            ?CONSOLE("push ~p to ~p", [Path, DbString]),
-            halt(0);
+    Path1 = filename:absname(Path),
+    case couchapp_util:in_couchapp(Path1) of
+        {ok, CouchappDir} ->
+            Db = couchapp_util:db_from_config(Config, DbString),
+            ?DEBUG("push ~p to ~p~n", [CouchappDir, DbString]),
+            do_push(CouchappDir, Db, Config); 
 
         {error, not_found} ->
             ?ERROR("Can't find initialized couchapp in '~p'~n", [Path]),
@@ -40,34 +40,35 @@ push1(Path, DbString, Config) ->
 
 
 
-do_push(Path, Db, Options) ->
-    DocId = id_from_path(Path, Options),
-    do_push(Path, Db, DocId, Options).
+do_push(Path, Db, Config) ->
+    DocId = id_from_path(Path, Config),
+    do_push(Path, Db, DocId, Config).
 
-do_push(Path, #db{server=Server}=Db, DocId, 
-        #push_options{atomic=Atomic}=Options) ->
-
+do_push(Path, #db{server=Server}=Db, DocId, Config) ->
     OldDoc = case couchbeam:open_doc(Db, DocId) of
         {ok, OldDoc1} ->
             OldDoc1;
         {error, not_found} -> 
-            nil
+            {[]} 
     end,
 
     Couchapp = #couchapp{
         path=Path,
+        att_dir=filename:join(Path, "_attachments"),
         docid=DocId,
         doc={[{<<"_id">>, DocId}]},
         old_doc = OldDoc
     },
 
     {ok, Couchapp1} = couchapp_from_fs(Couchapp),
-    case Atomic of
+    
+    case couchapp_config:get(Config, atomic) of
         true ->
             Couchapp2 = process_signatures(Couchapp1),
+            
             FinalCouchapp = process_attachments(Couchapp2),
-            #couchapp{doc=Doc} = FinalCouchapp,
             Doc = make_doc(FinalCouchapp),
+            ?DEBUG("Saved doc: ~p~n", [Doc]),
             couchbeam:save_doc(Db, Doc);
         false ->
             Doc = make_doc(Couchapp1),
@@ -83,19 +84,24 @@ do_push(Path, #db{server=Server}=Db, DocId,
     ok.
 
 
-id_from_path(Path, #push_options{is_ddoc=IsDdoc}) ->
+id_from_path(Path, Config) ->
     IdFile = filename:join(Path, "_id"),
     case filelib:is_regular(IdFile) of
         true ->
             {ok, Bin} = file:read_file(IdFile),
             Bin;
         false ->
-            Fname = list_to_binary(filename:basename(Path)),
-            case IsDdoc of
-                true ->
-                    <<"_design/", Fname/binary>>;
-                false ->
-                    Fname
+            case couchapp_config:get(Config, docid) of
+                undefined ->
+                    Fname = list_to_binary(filename:basename(Path)),
+                    case couchapp_config:get(Config, is_ddoc) of
+                        true ->
+                            <<"_design/", Fname/binary>>;
+                        false ->
+                            Fname
+                    end;
+                DocId ->
+                    DocId
             end
     end.
         
@@ -104,53 +110,57 @@ couchapp_from_fs(#couchapp{path=Path}=Couchapp) ->
     Files = filelib:wildcard("*", Path),
     process_path(Files, Path, Couchapp).
 
-process_signatures(#couchapp{old_doc=nil}=Couchapp) ->
-    Couchapp;
-process_signatures(#couchapp{doc=Doc, old_doc=OldDoc,
+process_signatures(#couchapp{att_dir=AttDir, doc=Doc, old_doc=OldDoc,
         attachments=Atts}=Couchapp) ->
-    case couchbeam_doc:get_value(<<"couchapp">>, OldDoc) of
+
+    Signatures = case couchbeam_doc:get_value(<<"couchapp">>, OldDoc) of
         undefined ->
-            %% oups it seems that old doc wasn't created
-            %% with couchapp
-            Couchapp;
+            [];
         Meta ->
             case couchbeam_doc:get_value(<<"signatures">>, Meta) of
                 undefined ->
                     %% not defined.
-                    Couchapp;
-                {Signatures} ->
-                    {Removed, NewAtts} = process_signatures1(Signatures,
-                        [], Atts),
-                    NewSignatures = [S || {_Fname, S} <- NewAtts],
-                    case Removed of 
-                        [] ->  
-                            Couchapp#couchapp{
-                                attachments=NewAtts,
-                                signatures=NewSignatures
-                            };
-                        _Else ->
-                            {OldAtts} = couchbeam_doc:get_value(
-                                <<"_attachments">>, OldDoc),
-                            OldAtts1 = clean_old_attachments(
-                                Removed, OldAtts),
-                            Doc1 = couchbeam_doc:set_value(<<"_attachments">>,
-                                {OldAtts1}, Doc),
-                            Couchapp#couchapp{
-                                doc=Doc1,
-                                attachments=NewAtts,
-                                signatures=NewSignatures
-                            }
-                    end
+                    []; 
+                {Signatures1} ->
+                    Signatures1
             end
+    end,
+    {Removed, NewAtts} = process_signatures1(Signatures, [], Atts,
+        AttDir),
+
+    NewSignatures = [{couchapp_util:relpath(F, AttDir), S} 
+        || {F, S} <- NewAtts],
+  
+    {OldAtts} = couchbeam_doc:get_value(<<"_attachments">>, OldDoc, {[]}), 
+    case Removed of 
+        [] ->
+            Doc1 = couchbeam_doc:set_value(<<"_attachments">>,
+                {OldAtts}, Doc),
+            Couchapp#couchapp{
+                doc=Doc1,
+                attachments=NewAtts,
+                signatures=NewSignatures
+            };
+        _Else -> 
+            OldAtts1 = clean_old_attachments(Removed, OldAtts),
+            Doc1 = couchbeam_doc:set_value(<<"_attachments">>,
+                {OldAtts1}, Doc),
+            Couchapp#couchapp{
+                doc=Doc1,
+                attachments=NewAtts,
+                signatures=NewSignatures
+            }
     end.
 
 
-process_attachments(#couchapp{doc=Doc, attachments=Atts}=Couchapp) ->
-    NewDoc = attach_files(Atts, Doc),
+process_attachments(#couchapp{att_dir=AttDir, doc=Doc, 
+        attachments=Atts}=Couchapp) ->
+    NewDoc = attach_files(Atts, Doc, AttDir),
     Couchapp#couchapp{doc=NewDoc}.
 
-send_attachments(Db, #couchapp{doc=Doc, attachments=Atts}=Couchapp) ->
-    NewDoc = send_attachments1(Atts, Doc, Db),
+send_attachments(Db, #couchapp{att_dir=AttDir, doc=Doc, 
+        attachments=Atts}=Couchapp) ->
+    NewDoc = send_attachments1(Atts, Doc, Db, AttDir),
     Couchapp#couchapp{doc=NewDoc}.
 
 make_doc(Couchapp) ->
@@ -160,10 +170,11 @@ make_doc(Couchapp) ->
         manifest=Manifest,
         signatures=Signatures} = Couchapp,
 
-    Doc1 = if OldDoc =:= nil ->
+    Doc1 = case OldDoc of
+        {[]} ->
             Doc;
-        true ->
-            couchbeam_doc:setvalue(<<"_rev">>,
+        _ ->
+            couchbeam_doc:set_value(<<"_rev">>,
                 couchbeam_doc:get_rev(OldDoc), Doc)
     end,
 
@@ -172,7 +183,7 @@ make_doc(Couchapp) ->
         undefined ->
             couchbeam_doc:set_value(<<"couchapp">>, {[
                         {<<"manifest">>, Manifest},
-                        {<<"signatures">>, Signatures}
+                        {<<"signatures">>, {Signatures}}
             ]}, Doc1);
         Meta ->
             Meta1 = couchbeam_doc:set_value(<<"manifest">>, Manifest, Meta),
@@ -198,22 +209,23 @@ clean_old_attachments([F|Rest], OldAtts) ->
     OldAtts1 = proplists:delete(F, OldAtts),
     clean_old_attachments(Rest, OldAtts1).
 
-process_signatures1([], Removed, Attachments) ->
+process_signatures1([], Removed, Attachments, _AttDir) ->
     {Removed, Attachments};
-process_signatures1([{F, S}|Rest], Removed, Attachments) ->
-    case proplists:get_value(F, Attachments) of
+process_signatures1([{F, S}|Rest], Removed, Attachments, AttDir) ->
+    F1 = filename:join(AttDir, binary_to_list(F)),
+    case proplists:get_value(F1, Attachments) of
         undefined ->
-            process_signatures1(Rest, [F|Removed], Attachments);
+            process_signatures1(Rest, [F|Removed], Attachments, AttDir);
         S1 when S =:= S1 ->
-            Attachments1 = proplists:delete(F, Attachments),
-            process_signatures1(Rest, Removed, Attachments1);
+            Attachments1 = proplists:delete(F1, Attachments),
+            process_signatures1(Rest, Removed, Attachments1, AttDir);
         _S1 ->
-            process_signatures1(Rest, [F|Removed], Attachments)
+            process_signatures1(Rest, [F|Removed], Attachments, AttDir)
     end.
 
-send_attachments1([], Doc, _Db) ->
+send_attachments1([], Doc, _Db, _AttDir) ->
     Doc;
-send_attachments1([{Fname, _Signature}|Rest], Doc, Db) ->
+send_attachments1([{Fname, _Signature}|Rest], Doc, Db, AttDir) ->
     {ok, FileInfo} = file:read_file_info(Fname),
     {ok, Fd} = file:open(Fname, [read]),
     Fun = fun() ->
@@ -229,16 +241,18 @@ send_attachments1([{Fname, _Signature}|Rest], Doc, Db) ->
         {content_length, FileInfo#file_info.size},
         {rev, couchbeam_doc:get_rev(Doc)}
     ],
+    RelPath = couchapp_util:relpath(Fname, AttDir),
     {ok, Doc1} = couchbeam:put_attachment(Db, couchbeam_doc:get_id(Doc),
-        Fun, Params),
-    send_attachments1(Rest, Doc1, Db).
+        RelPath, Fun, Params),
+    send_attachments1(Rest, Doc1, Db, AttDir).
 
-attach_files([], Doc) ->
+attach_files([], Doc, _AttDir) ->
     Doc;
-attach_files([{Fname, _Signature}|Rest], Doc) ->
-    Content = file:read_file(Fname),
-    Doc1 = couchbeam_attachments:add_inline(Doc, Content, Fname),
-    attach_files(Rest, Doc1).
+attach_files([{Fname, _Signature}|Rest], Doc, AttDir) ->
+    {ok, Content} = file:read_file(Fname),
+    RelPath = couchapp_util:relpath(Fname, AttDir),
+    Doc1 = couchbeam_attachments:add_inline(Doc, Content, RelPath),
+    attach_files(Rest, Doc1, AttDir).
 
 process_path([], _Dir, Couchapp) ->
     {ok, Couchapp};
@@ -246,12 +260,18 @@ process_path(["."|Rest], Dir, Couchapp) ->
     process_path(Rest, Dir, Couchapp);
 process_path([".."|Rest], Dir, Couchapp) ->
     process_path(Rest, Dir, Couchapp);
-process_path([File|Rest], Dir, #couchapp{doc=Doc, manifest=Manifest}=Couchapp) ->
+process_path([".couchapprc"|Rest], Dir, Couchapp) ->
+    process_path(Rest, Dir, Couchapp);
+process_path([".couchappignore"|Rest], Dir, Couchapp) ->
+    process_path(Rest, Dir, Couchapp);
+process_path([File|Rest], Dir, #couchapp{path=Path, doc=Doc, 
+        manifest=Manifest}=Couchapp) ->
     Fname = filename:join(Dir, File),
     File1 = list_to_binary(File),
+    RelPath = list_to_binary(couchapp_util:relpath(Fname, Path)),
     Couchapp1 = case filelib:is_dir(Fname) of
         true ->
-            case File of
+            case File1 of
                 <<"_attachments">> ->
                     attachments_from_fs(Couchapp);
                 <<"_", _/binary>> ->
@@ -261,13 +281,13 @@ process_path([File|Rest], Dir, #couchapp{doc=Doc, manifest=Manifest}=Couchapp) -
                     {SubDoc, SubManifest} = process_dir(Files, Fname, 
                         {[]}, []),
                     Doc1 = couchbeam_doc:set_value(File1, SubDoc, Doc),
-                    Manifest1 = [Fname|Manifest] ++ SubManifest,
+                    Manifest1 = [RelPath|Manifest] ++ SubManifest,
                     Couchapp#couchapp{doc=Doc1, manifest=Manifest1}
             end;
         false ->
-            Content = process_file(File1, Fname),
-            Doc1 = couchbeam_doc:set_value(File1, Content, Doc),
-            Couchapp#couchapp{doc=Doc1, manifest=[Fname|Manifest]}
+            {PropName, Value} = process_file(File1, Fname),
+            Doc1 = couchbeam_doc:set_value(PropName, Value, Doc),
+            Couchapp#couchapp{doc=Doc1, manifest=[RelPath|Manifest]}
 
     end,
     process_path(Rest, Dir, Couchapp1).
@@ -334,6 +354,9 @@ attachments_from_fs1([F|R], Dir, Att) ->
             SubAtt = attachments_from_fs1(Files, F1, []),
             Att ++ SubAtt;
         false ->
-            [{F1, couchap_util:md5_file(F1)}|Att]
+            {ok, Md5} = couchapp_util:md5_file(F1),
+            Md5Hash = lists:flatten([io_lib:format("~.16b",[N]) 
+                    || N <-binary_to_list(erlang:md5(Md5))]),
+            [{F1, list_to_binary(Md5Hash)}|Att]
     end,
     attachments_from_fs1(R, Dir, Att1).
