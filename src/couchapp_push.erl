@@ -58,19 +58,20 @@ do_push(Path, #db{server=Server}=Db, DocId, Config) ->
     },
 
     {ok, Couchapp1} = couchapp_from_fs(Couchapp),
-    
+
+    %% clean attachments and process signatures
+    Couchapp2 = process_signatures(Couchapp1),
+
     case couchapp_config:get(Config, atomic) of
         true ->
-            Couchapp2 = process_signatures(Couchapp1),
-            
             FinalCouchapp = process_attachments(Couchapp2),
             Doc = make_doc(FinalCouchapp),
             ?DEBUG("Saved doc: ~p~n", [Doc]),
             couchbeam:save_doc(Db, Doc);
         false ->
-            Doc = make_doc(Couchapp1),
+            Doc = make_doc(Couchapp2),
             Doc1 = couchbeam:save_doc(Db, Doc),
-            send_attachments(Db, Couchapp1#couchapp{doc=Doc1})
+            send_attachments(Db, Couchapp2#couchapp{doc=Doc1})
     end,
     CouchappUrl = couchbeam:make_url(Server, couchbeam:doc_url(Db,
             DocId), []),
@@ -105,9 +106,12 @@ couchapp_from_fs(#couchapp{path=Path}=Couchapp) ->
     Files = filelib:wildcard("*", Path),
     process_path(Files, Path, Couchapp).
 
+
+process_signatures(#couchapp{attachments=[]}=Couchapp) ->
+    Couchapp;
 process_signatures(#couchapp{att_dir=AttDir, doc=Doc, old_doc=OldDoc,
         attachments=Atts}=Couchapp) ->
-
+     
     Signatures = case couchbeam_doc:get_value(<<"couchapp">>, OldDoc) of
         undefined ->
             [];
@@ -122,6 +126,9 @@ process_signatures(#couchapp{att_dir=AttDir, doc=Doc, old_doc=OldDoc,
     end,
     {Removed, NewAtts} = process_signatures1(Signatures, [], Atts,
         AttDir),
+
+    ?DEBUG("removed attachments: ~p~n", [Removed]),
+    ?DEBUG("new attachments ~p~n", [NewAtts]),
 
     NewSignatures = [{couchapp_util:relpath(F, AttDir), S} 
         || {F, S} <- NewAtts],
