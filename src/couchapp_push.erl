@@ -224,6 +224,11 @@ process_macros_fun([Prop|Rest], Obj, Doc, AppDir) ->
     case couchbeam_doc:get_value(Prop, Obj) of
         undefined ->
             process_macros_fun(Rest, Obj, Doc, AppDir);
+        Source when is_binary(Source) ->
+            ?DEBUG("process function ~p~n", [Prop]),
+            Source1 = apply_macros(Source, Doc, AppDir),
+            Obj1 = couchbeam_doc:set_value(Prop, Source1, Obj),
+            process_macros_fun(Rest, Obj1, Doc, AppDir);
         Sources ->
             ?DEBUG("process function ~p~n", [Prop]),
             Sources1 = lists:foldl(fun(Source, Acc) ->
@@ -239,7 +244,7 @@ apply_macros(Source, Doc, AppDir) ->
     apply_json_macros(Source1, Doc, AppDir).
 
 apply_code_macros(Source, AppDir) ->
-    case re:run(Source, "^\s*\/\/\#\ ?!code (.*)$", 
+    case re:run(Source, "^\s*\/\/\ ?!code (.*)$", 
             [global, caseless, unicode, multiline, 
                 {capture, all, binary}]) of
         nomatch -> Source;
@@ -251,7 +256,7 @@ apply_code_macros1([], Source, _AppDir) ->
     Source;
 apply_code_macros1([Match|Rest], Source, AppDir) ->
     [Replacement, Path] = Match,
-    Path1 = filename:join(Path, Path),
+    Path1 = filename:join(AppDir, binary_to_list(Path)),
     Contents = lists:foldl(fun(File, Acc) ->
                 case file:read_file(File) of
                     {ok, Bin} ->
@@ -263,13 +268,13 @@ apply_code_macros1([Match|Rest], Source, AppDir) ->
                         Acc
                 end
         end, [], filelib:wildcard(Path1)), 
-    Content = iolist_to_binary(list:reverse(Contents)),
+    Content = iolist_to_binary(lists:reverse(Contents)),
     Source1 = re:replace(Source, Replacement, Content, [global, caseless, 
             multiline, {return, binary}]),
     apply_code_macros1(Rest, Source1, AppDir).
 
 apply_json_macros(Source, Doc, AppDir) ->
-    case re:run(Source, "^\s*\/\/\#\ ?!json (.*)$", 
+    case re:run(Source, "^\s*\/\/\ ?!json (.*)$", 
             [global, caseless, unicode, multiline, 
                 {capture, all, binary}]) of
         nomatch -> Source;
