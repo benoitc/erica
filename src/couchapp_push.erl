@@ -249,7 +249,7 @@ attach_files([{Fname, _Signature}|Rest], Doc, AttDir) ->
     Doc1 = couchbeam_attachments:add_inline(Doc, Content, RelPath),
     attach_files(Rest, Doc1, AttDir).
 
-process_path ([], _Dir, Couchapp) ->
+process_path([], _Dir, Couchapp) ->
     {ok, Couchapp};
 process_path([".couchapprc"|Rest], Dir, Couchapp) ->
     process_path(Rest, Dir, Couchapp);
