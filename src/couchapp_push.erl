@@ -427,10 +427,6 @@ attach_files([{Fname, _Signature}|Rest], Doc, AttDir) ->
 
 process_path([], _Dir, Couchapp) ->
     {ok, Couchapp};
-process_path(["."|Rest], Dir, Couchapp) ->
-    process_path(Rest, Dir, Couchapp);
-process_path([".."|Rest], Dir, Couchapp) ->
-    process_path(Rest, Dir, Couchapp);
 process_path([".couchapprc"|Rest], Dir, Couchapp) ->
     process_path(Rest, Dir, Couchapp);
 process_path([".couchappignore"|Rest], Dir, Couchapp) ->
@@ -449,10 +445,10 @@ process_path([File|Rest], Dir, #couchapp{path=Path, doc=Doc,
                     Couchapp;
                 _ ->
                     Files = filelib:wildcard("*", Fname),
-                    {SubDoc, SubManifest} = process_dir(Files, Fname, 
-                        {[]}, []),
+                    {SubDoc, SubManifest} = process_dir(Files, Fname,
+                        Path, {[]}, []),
                     Doc1 = couchbeam_doc:set_value(File1, SubDoc, Doc),
-                    Manifest1 = [RelPath|Manifest] ++ SubManifest,
+                    Manifest1 = [<<RelPath/binary, "/">>|Manifest] ++ SubManifest,
                     Couchapp#couchapp{doc=Doc1, manifest=Manifest1}
             end;
         false ->
@@ -463,34 +459,31 @@ process_path([File|Rest], Dir, #couchapp{path=Path, doc=Doc,
     end,
     process_path(Rest, Dir, Couchapp1).
 
-process_dir([], _Dir, Doc, Manifest) ->
+process_dir([], _Dir, _Path, Doc, Manifest) ->
     {Doc, Manifest};
-process_dir(["."|Rest], Dir, Doc, Manifest) ->
-    process_dir(Rest, Dir, Doc, Manifest);
-process_dir([".."|Rest], Dir, Doc, Manifest) ->
-    process_dir(Rest, Dir, Doc, Manifest);
-process_dir([File|Rest], Dir, Doc, Manifest) ->
+process_dir([File|Rest], Dir, Path, Doc, Manifest) ->
     Fname = filename:join(Dir, File),
     File1 = list_to_binary(File),
+    RelPath = list_to_binary(couchapp_util:relpath(Fname, Path)),
     {Doc1, Manifest1} = case filelib:is_dir(Fname) of
         true ->
             Files = filelib:wildcard("*", Fname),
-            {SubDoc, SubManifest} = process_dir(Files, Fname, {[]}, []),
+            {SubDoc, SubManifest} = process_dir(Files, Fname, Path, {[]}, []),
             NewDoc = couchbeam_doc:set_value(File1, SubDoc, Doc),
-            NewManifest = [Fname|Manifest] ++ SubManifest,
+            NewManifest = [<<RelPath/binary, "/">>|Manifest] ++ SubManifest,
             {NewDoc, NewManifest};
         false ->
             {PropName, Value} = process_file(File1, Fname),
             NewDoc = couchbeam_doc:set_value(PropName, Value, Doc),
-            {NewDoc, [Fname|Manifest]}
+            {NewDoc, [RelPath|Manifest]}
     end,
-    process_dir(Rest, Dir, Doc1, Manifest1).
+    process_dir(Rest, Dir, Path, Doc1, Manifest1).
 
 process_file(File, Fname) ->
     case filename:extension(Fname) of
         [] ->
             {ok, Value} = file:read_file(Fname),
-            {File, Value};
+            {list_to_binary(File), Value};
         Ext ->
             {ok, Bin} = file:read_file(Fname),
             Value = case Ext of
@@ -511,10 +504,6 @@ attachments_from_fs(#couchapp{path=Path}=Couchapp) ->
 
 attachments_from_fs1([], _Dir, Att) ->
     Att;
-attachments_from_fs1(["."|R], Dir, Att) ->
-    attachments_from_fs1(R, Dir, Att);
-attachments_from_fs1([".."|R], Dir, Att) ->
-    attachments_from_fs1(R, Dir, Att);
 attachments_from_fs1([F|R], Dir, Att) ->
     F1 = filename:join(Dir, F),
     Att1 = case filelib:is_dir(F1) of
