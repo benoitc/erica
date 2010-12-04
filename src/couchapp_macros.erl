@@ -62,8 +62,7 @@ process_macros_fun([Prop|Rest], Obj, Objects, Doc, AppDir) ->
             Sources1 = lists:foldl(fun({Fun1, Source}, Acc) ->
                     Source1 = apply_macros(Source, Doc, AppDir),
                     Parsed = if Source =/= Source1 ->
-                            SourceId = lists:flatten([io_lib:format("~.16b",[N]) 
-                                || N <-binary_to_list(crypto:md5(Source1))]),
+                            SourceId = get_source_id(Source1),
                             {Fun1, Source1, SourceId,
                                 base64:encode(Source)};
                         true ->
