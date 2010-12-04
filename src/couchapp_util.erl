@@ -22,7 +22,8 @@
          db_from_config/2,
          v2a/1,
          relpath/2,
-         parse_couchapp_url/1]).
+         parse_couchapp_url/1,
+         make_dir/1]).
 
 
 %% ====================================================================
@@ -126,11 +127,20 @@ find_executable(Name) ->
             "\"" ++ filename:nativename(Path) ++ "\""
     end.
 
-
 %% normalize path.
 normalize_path(Path)  ->
     "/" ++ string:join(normalize_path1(string:tokens(Path,
                 "/"), []), [?SEPARATOR]).
+
+
+make_dir(Dir) ->
+    ok = filelib:ensure_dir(Dir),
+
+    ok = case filelib:is_dir(Dir) of
+        true -> ok;
+        false ->
+            file:make_dir(Dir)
+    end.
 
 -spec abort(string(), [term()]) -> no_return().
 abort(String, Args) -> 

@@ -22,12 +22,7 @@ init([Path|_], Config) ->
 %% ====================================================================
 
 init1(Path, _Config) ->
-    case filelib:is_dir(Path) of
-        true ->
-            ok;
-        false ->
-            file:make_dir(Path)
-    end,
+    ok = couchapp_util:make_dir(Path),
     RcPath = filename:join(Path, ".couchapprc"),
     file:write_file(RcPath, couchbeam_util:json_encode({[]})).
 

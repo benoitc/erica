@@ -98,13 +98,9 @@ attachments_to_fs([AttName|Rest], Db, DocId, AttDir) ->
     AttName1 = binary_to_list(AttName),
     Path = filename:join(AttDir, filename:nativename(AttName1)),
     Dir = filename:dirname(Path),
-    ok = filelib:ensure_dir(Dir),
-    ok = case filelib:is_dir(Dir) of
-        true -> ok;
-        false ->
-            file:make_dir(Dir)
-    end,
+    ok = couchapp_util:make_dir(Dir),
 
+    %% we stream attachments.
     {ok, Fd} = file:open(Path, [write]),
     {ok, Ref} = couchbeam:stream_fetch_attachment(Db, DocId, AttName1,
         self()),
@@ -138,12 +134,7 @@ doc_to_fs([{<<"_attachments">>, _}|Rest], Dir, Manifest, Objects,
 doc_to_fs([{PropName, Value}|Rest], Dir, Manifest, Objects, Depth) ->
     Path = filename:join(Dir, binary_to_list(PropName)),
     Dir1 = filename:dirname(Path),
-    ok = filelib:ensure_dir(Dir1),
-    ok = case filelib:is_dir(Dir1) of
-        true -> ok;
-        _ ->
-            file:make_dir(Dir1)
-    end,
+    ok = couchapp_util:make_dir(Dir1), 
     case Value of
         {[_|_]} ->
             case proplists:get_value(Path, Manifest) of
