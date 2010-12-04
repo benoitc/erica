@@ -66,7 +66,6 @@ do_push(Path, #db{server=Server}=Db, DocId, Config) ->
         true ->
             FinalCouchapp = process_attachments(Couchapp2),
             Doc = make_doc(FinalCouchapp),
-            ?DEBUG("Saved doc: ~p~n", [Doc]),
             couchbeam:save_doc(Db, Doc);
         false ->
             Doc = make_doc(Couchapp2),
@@ -288,32 +287,12 @@ apply_json_macros1([Match|Rest], Source, Doc, AppDir) ->
     [Replacement, JsonPath] = Match,
     Content = case JsonPath of
         <<"_attachments", _/binary>> ->
+            AttDir = filename:join(AppDir, "_attachments"),
             JsonPath1 = binary_to_list(JsonPath),
             Path = filename:join(AppDir, JsonPath1),
-            Values = lists:foldl(fun(File, Att) ->
-                case file:file_read(File) of 
-                    {ok, Bin} ->
-                        {Path1, Value} = case filename:extension(File) of
-                            ".json" ->
-                                Bin1 =  couchbeam:json_decode(Bin),
-                                {filename:basename(JsonPath1,
-                                        ".json"), Bin1};
-                            [] ->
-                                {JsonPath1, Bin};
-                            Ext ->
-                                {filename:basename(JsonPath1, Ext),
-                                    Bin} 
-                        end,
-                        [_,VarName|Fields] = string:tokens(Path1, "/"),
-                        [{VarName, nested_value(Fields, Value)}|Att];
-                    Error ->
-                        ?ERROR("macro: can't read ~p, [~p]~n", [File,
-                            Error]),
-                        Att
-                end
-            end, [], filelib:wildcard(Path)),
+            Values = obj_from_dir(filelib:wildcard(Path), AttDir, []),
             lists:flatten(["var _attachments = ", 
-                    couchbeam_util:json_encode({Values})]);
+                    couchbeam_util:json_encode({Values}), ";\n"]);
         _ ->
             Props = [list_to_binary(P) || P <- string:tokens(binary_to_list(JsonPath), 
                     ".")],
@@ -322,7 +301,7 @@ apply_json_macros1([Match|Rest], Source, Doc, AppDir) ->
                     [VarName|Fields] = Props,
                     Value1 = nested_value(Fields, Value),
                     lists:flatten(["var ", VarName, " = ",
-                            couchbeam_util:json_encode(Value1)]);
+                            couchbeam_util:json_encode(Value1), ";\n"]);
                 _Error ->
                     ?ERROR("json macro: can't find ~p~n", [JsonPath]),
                     ""
@@ -331,7 +310,36 @@ apply_json_macros1([Match|Rest], Source, Doc, AppDir) ->
     Source1 = re:replace(Source, Replacement, Content, [global, caseless, 
             multiline, {return, binary}]),
     apply_json_macros1(Rest, Source1, Doc, AppDir).
-        
+      
+
+obj_from_dir([], _RootDir,  Att) ->
+    Att;
+obj_from_dir([File|Rest], RootDir, Att) ->
+    File1 = filename:join(RootDir, File),
+    Att1 = case filelib:is_dir(File) of
+        true ->
+            Value = obj_from_dir(filelib:wildcard("*", File), File, []),
+            [VarName|_] = lists:reverse(string:tokens(File, "/")),
+            [{VarName, Value}|Att];
+        false ->
+            case file:read_file(File1) of 
+                {ok, Bin} ->
+                    Bin1 = case filename:extension(File) of
+                        ".json" ->
+                            couchbeam:json_decode(Bin);
+                        _ ->
+                            Bin 
+                    end,
+                    [{filename:basename(File), Bin1}|Att];
+                Error ->
+                    ?ERROR("macro: can't read ~p, [~p]~n", [File,
+                        Error]),
+                    Att
+            end
+    end,
+
+    obj_from_dir(Rest, RootDir, Att1).
+
 nested_value(Fields, Value) ->
     case Fields of
         [] ->

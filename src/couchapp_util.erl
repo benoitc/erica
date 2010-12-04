@@ -118,6 +118,8 @@ get_cwd() ->
 relpath(Path, Root) ->
     {_, _, RelPath} = mochiweb_util:partition(Path, Root),
     case string:left(RelPath, 1) of
+        " " ->
+            "";
         "/" -> 
             "/" ++ RelPath1 = RelPath,
             RelPath1;
