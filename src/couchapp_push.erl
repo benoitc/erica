@@ -315,7 +315,8 @@ apply_json_macros1([Match|Rest], Source, Doc, AppDir) ->
             lists:flatten(["var _attachments = ", 
                     couchbeam_util:json_encode({Values})]);
         _ ->
-            Props = string:tokens(binary_to_list(JsonPath), "."),
+            Props = [list_to_binary(P) || P <- string:tokens(binary_to_list(JsonPath), 
+                    ".")],
             case get_value(Props, Doc) of
                 {ok, Value} ->
                     [VarName|Fields] = Props,
@@ -343,7 +344,7 @@ nested_value1([Field|Rest], Value, Len, Count) when Count < length(Rest) ->
     couchbeam_doc:set_value(Field, 
         nested_value1(Rest, Value, Len, Count+1), {[]});
 nested_value1([Field|_], Value, _Len, _Count) ->
-    {Field, Value}.
+    {[{Field, Value}]}.
 
 
 get_value(Props, Doc) ->
@@ -354,7 +355,7 @@ get_value([Name|Rest], Obj, Len, Count) when Count < Len ->
         undefined ->
             not_found;
         {[_]}=Value ->
-            couchbeam_doc:get_value(Rest, Value, Value, Len, Count + 1);
+            get_value(Rest, Value, Len, Count + 1);
         _ ->
             not_found
     end;
