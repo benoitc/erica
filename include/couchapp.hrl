@@ -7,6 +7,7 @@
                   opts,
                   dbs=[],
                   hooks=[],
+                  ignore=[],
                   extensions=[] }).
 
 -record(global_state, { working_dir }).
@@ -25,6 +26,7 @@
 -define(FMT(Str, Args), lists:flatten(io_lib:format(Str, Args))).
 
 -record(couchapp, {
+        config,
         path,
         att_dir,
         docid,

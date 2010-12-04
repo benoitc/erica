@@ -41,12 +41,10 @@ run(RawArgs) ->
  
     process_commands(Commands, Options).
 
-
 process_commands([Command|Args], Options) ->
     {ok, Modules} = application:get_env(couchapp, modules),
     Config = couchapp_config:new(Options),
     execute(list_to_atom(Command), Args, Modules, Config).
-
 
 execute(Command, Args, Modules, Config) ->
     case select_modules(Modules, Command, []) of
@@ -109,7 +107,6 @@ parse_args(Args) ->
             halt(1)
     end.
     
-
 %%
 %% options accepted via getopt
 %%
@@ -129,7 +126,6 @@ option_spec_list() ->
          "Send attachments inline with push command"}
 
     ].
-
 
 %%
 %% set global flag based on getopt option boolean value

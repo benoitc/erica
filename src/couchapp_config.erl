@@ -9,6 +9,7 @@
 -include("couchapp.hrl").
 
 -export([new/0, new/1,
+         update/2,
          get_db/2,
          get/2, get/3,
          set/3,
@@ -27,13 +28,39 @@ new(Options) ->
         false ->
             {[]}
     end,
-    {Dbs, Hooks, Extensions} = parse_conf(UserConf),
+    {Dbs, Hooks, Extensions, Ignore} = parse_conf(UserConf),
     
     #config { dir = couchapp_util:get_cwd(),
               opts = Options,
               dbs = Dbs,
               hooks = Hooks,
-              extensions = Extensions }.
+              extensions = Extensions,
+              ignore = Ignore }.
+
+
+update(AppDir, #config{dbs=Dbs, hooks=Hooks, extensions=Extensions,
+        ignore=Ignore}=Config) ->
+    RcFile = filename:join(AppDir, ".couchapprc"),
+
+    %% load .couchapprc
+    AppConf = case filelib:is_regular(RcFile) of 
+        true ->
+            {ok, Bin} = file:read_file(RcFile),
+            couchbeam_util:json_decode(Bin);
+        false ->
+            {[]}
+    end,
+
+    %% update conf from .couchapprc
+    {Dbs1, Hooks1, Extensions1, Ignore1} = parse_conf(AppConf),
+    Config1 = Config#config { dbs = Dbs ++ Dbs1,
+                        hooks = Hooks ++ Hooks1,
+                        extensions = Extensions ++ Extensions1,
+                        ignore = Ignore ++ Ignore1},
+
+    %% get ignore file patterns.
+    couchapp_ignore:init(AppDir, Config1).
+
 
 get_db(Config, DbString) ->
     proplists:get_value(DbString, Config#config.dbs).
@@ -59,9 +86,8 @@ set(Config, Key, Value) ->
     Opts = proplists:delete(Key, Config#config.opts),
     Config#config { opts = [{Key, Value} | Opts] }.
 
-
 parse_conf({[]}) ->
-    {[], [], []};
+    {[], [], [], []};
 parse_conf(Conf) ->
     Dbs = case couchbeam_doc:get_value(<<"env">>, Conf) of
         undefined -> [];
@@ -74,13 +100,19 @@ parse_conf(Conf) ->
             [{couchapp_util:v2a(Mod), couchapp_util:v2a(Command)} 
                 || {Mod, Command} <- Ext]
     end,
-    Hooks = case couchbeam_doc:get_value(<<"Hooks">>, Conf) of
+    Hooks = case couchbeam_doc:get_value(<<"hooks">>, Conf) of
         undefined ->
             [];
         H ->
             [{list_to_atom(Hook), Scripts} || {Hook, Scripts} <- H]
     end,
-    {Dbs, Hooks, Extensions}.
+    Ignore = case couchbeam_doc:get_value(<<"ignore">>, Conf) of
+        undefined ->
+            [];
+        I ->
+            I
+    end,
+    {Dbs, Hooks, Extensions, Ignore}.
 
 get_config_dbs([], Dbs) ->
     Dbs;
@@ -101,10 +133,3 @@ get_config_dbs([{Name, Obj}|Rest], Dbs) ->
             end,
             get_config_dbs(Rest, [{Name, Db1}|Dbs])
     end.
-                
-
-
-
-            
-
-
