@@ -229,13 +229,13 @@ process_macros_fun([Prop|Rest], Obj, Doc, AppDir) ->
             Source1 = apply_macros(Source, Doc, AppDir),
             Obj1 = couchbeam_doc:set_value(Prop, Source1, Obj),
             process_macros_fun(Rest, Obj1, Doc, AppDir);
-        Sources ->
-            ?DEBUG("process function ~p~n", [Prop]),
-            Sources1 = lists:foldl(fun(Source, Acc) ->
+        {Sources} ->
+            ?DEBUG("process function ~p ~n", [Prop]),
+            Sources1 = lists:foldl(fun({Fun1, Source}, Acc) ->
                     Source1 = apply_macros(Source, Doc, AppDir),
-                    [Source1|Acc]
+                    [{Fun1, Source1}|Acc]
                 end, [], Sources),
-            Obj1 = couchbeam_doc:set_value(Prop, Sources1, Obj),
+            Obj1 = couchbeam_doc:set_value(Prop, {Sources1}, Obj),
             process_macros_fun(Rest, Obj1, Doc, AppDir)
     end.
 
@@ -366,8 +366,6 @@ get_value([Name|_], Obj, _Len, _Count) ->
        Value ->
            {ok, Value}
     end.
-
-
 
 clean_old_attachments([],OldAtts) ->
     OldAtts;    
