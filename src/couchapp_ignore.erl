@@ -30,18 +30,6 @@ init(AppDir, #config{ignore=OldIgnore}=Config) ->
 ignore(Path, #config{ignore=Ignore}) ->
     ignore1(Ignore, Path).
 
-ignore1([], _Path) ->
-    false;
-ignore1([Pattern|Rest], Path) ->
-    case re:run(Path, Pattern, [global, caseless, unicode, multiline, 
-                {capture, all, binary}]) of
-            nomatch ->
-                ignore1(Rest, Path);
-            _ ->
-                ?DEBUG("File '~p' ignored.~n", [Path]),
-                true
-    end.
-
 %% ====================================================================
 %% Internal functions
 %% ====================================================================
@@ -56,6 +44,17 @@ load(File) ->
             []
     end.
 
+ignore1([], _Path) ->
+    false;
+ignore1([Pattern|Rest], Path) ->
+    case re:run(Path, Pattern, [global, caseless, unicode, multiline, 
+                {capture, all, binary}]) of
+            nomatch ->
+                ignore1(Rest, Path);
+            _ ->
+                ?DEBUG("File '~p' ignored.~n", [Path]),
+                true
+    end.
 
 remove_comments(Content) ->
     P = "(?:/\\*(?:[^*]|(?:\\*+[^*/]))*\\*+/)|(?://.*)",
