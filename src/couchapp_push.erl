@@ -130,7 +130,7 @@ process_signatures(#couchapp{att_dir=AttDir, doc=Doc, old_doc=OldDoc,
     ?DEBUG("new attachments ~p~n", [NewAtts]),
 
     NewSignatures = [{couchapp_util:relpath(F, AttDir), S} 
-        || {F, S} <- NewAtts],
+        || {F, S} <- Atts],
   
     {OldAtts} = couchbeam_doc:get_value(<<"_attachments">>, OldDoc, {[]}), 
     case Removed of 
@@ -337,7 +337,6 @@ obj_from_dir([File|Rest], RootDir, Att) ->
                     Att
             end
     end,
-
     obj_from_dir(Rest, RootDir, Att1).
 
 nested_value(Fields, Value) ->
