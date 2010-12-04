@@ -9,7 +9,6 @@
 
 -include("couchapp.hrl").
 
-
 -export([init/2,
          ignore/2]).
 

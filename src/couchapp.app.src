@@ -18,5 +18,6 @@
     {modules, [
         couchapp_init,
         couchapp_generate,
-        couchapp_push]}
+        couchapp_push,
+        couchapp_clone]}
   ]}]}.

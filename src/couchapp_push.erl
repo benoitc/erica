@@ -282,7 +282,7 @@ process_path([File|Rest], Dir, #couchapp{config=Config, path=Path,
                             Couchapp#couchapp{doc=Doc1, manifest=Manifest1}
                     end;
                 false ->
-                    {PropName, Value} = process_file(File1, Fname),
+                    {PropName, Value} = process_file(File, Fname),
                     Doc1 = couchbeam_doc:set_value(PropName, Value, Doc),
                     Couchapp#couchapp{doc=Doc1, manifest=[RelPath|Manifest]}
 
@@ -294,11 +294,12 @@ process_dir([], _Dir, _Path, _Config, Doc, Manifest) ->
     {Doc, Manifest};
 process_dir([File|Rest], Dir, Path, Config, Doc, Manifest) ->
     Fname = filename:join(Dir, File),
-     case couchapp_ignore:ignore(Fname, Config) of
+    case couchapp_ignore:ignore(Fname, Config) of
         true ->
             process_dir(Rest, Dir, Path, Config, Doc, Manifest);
         false ->
             File1 = list_to_binary(File),
+            
             RelPath = list_to_binary(couchapp_util:relpath(Fname, Path)),
             {Doc1, Manifest1} = case filelib:is_dir(Fname) of
                 true ->
@@ -310,7 +311,7 @@ process_dir([File|Rest], Dir, Path, Config, Doc, Manifest) ->
                         ++ SubManifest,
                     {NewDoc, NewManifest};
                 false ->
-                    {PropName, Value} = process_file(File1, Fname),
+                    {PropName, Value} = process_file(File, Fname),
                     NewDoc = couchbeam_doc:set_value(PropName, Value, 
                         Doc),
                     {NewDoc, [RelPath|Manifest]}

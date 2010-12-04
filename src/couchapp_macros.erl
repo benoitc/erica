@@ -9,7 +9,8 @@
 
 -include("couchapp.hrl").
 
--export([process_macros/2]).
+-export([process_macros/2,
+         get_source_id/1]).
 
 process_macros(Doc, AppDir) ->
     Funs = [<<"shows">>, <<"lists">>, <<"updates">>, <<"filters">>, 
@@ -49,8 +50,7 @@ process_macros_fun([Prop|Rest], Obj, Objects, Doc, AppDir) ->
             Source1 = apply_macros(Source, Doc, AppDir),
             Obj1 = couchbeam_doc:set_value(Prop, Source1, Obj),
             Objects1 = if Source =/= Source1 -> 
-                    SourceId = lists:flatten([io_lib:format("~.16b",[N]) 
-                            || N <-binary_to_list(crypto:md5(Source1))]),
+                    SourceId = get_source_id(Source1),
                     [{SourceId, base64:encode(Source)}|Objects];
                 true ->
                     Objects
@@ -219,3 +219,7 @@ get_value([Name|_], Obj, _Len, _Count) ->
        Value ->
            {ok, Value}
     end.
+
+get_source_id(Source) ->
+    lists:flatten([io_lib:format("~.16b",[N]) 
+            || N <-binary_to_list(crypto:md5(Source))]).

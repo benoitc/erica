@@ -21,7 +21,8 @@
          db_from_string/1,
          db_from_config/2,
          v2a/1,
-         relpath/2]).
+         relpath/2,
+         parse_couchapp_url/1]).
 
 
 %% ====================================================================
@@ -72,6 +73,31 @@ db_from_config(Config, DbString) ->
             end;
         _ ->
             db_from_string(DbString)
+    end.
+
+parse_couchapp_url(AppUrl) ->
+    Url = ibrowse_lib:parse_url(AppUrl),
+    PathParts = string:tokens(Url#url.path, "/"),
+
+    case parse_couchapp_path(PathParts) of
+        {DbName, AppName, DocId} ->
+            Server = couchbeam:server_connection(Url#url.host, 
+                Url#url.port),
+            Options = case Url#url.username of
+                undefined -> [];
+                Username ->
+                    case Url#url.password of
+                        undefined ->
+                            [{basic_auth, {Username, ""}}];
+                        Password ->
+                            [{basic_auth, {Username, Password}}]
+                    end
+            end,
+            {ok, Db} = couchbeam:open_or_create_db(Server, DbName, 
+                Options),
+            {ok, Db, AppName, DocId};
+        Error ->
+            Error
     end.
 
 in_couchapp("/") ->
@@ -138,6 +164,14 @@ md5_file(File) ->
 %% ====================================================================
 %% Internal functions
 %% ====================================================================
+
+
+parse_couchapp_path([DbName, "_design", AppName|_]) ->
+    {DbName, AppName, "_design/" ++ AppName};
+parse_couchapp_path([DbName, DocId]) ->
+    {DbName, DocId, DocId};
+parse_couchapp_path(_) ->
+    invalid_couchapp_url.
 
 normalize_path1([], Acc) ->
     lists:reverse(Acc);
