@@ -26,7 +26,7 @@ clone(_, _) ->
 %% Internal functions
 %% ====================================================================
 
-clone1(Path, Url, _Config) ->
+clone1(Path, Url, Config) ->
     case couchapp_util:parse_couchapp_url(Url) of
         {ok, Db, AppName, DocId} ->
             Path1 = case Path of
@@ -35,21 +35,26 @@ clone1(Path, Url, _Config) ->
                 _ ->
                     filename:absname(Path)
             end,
-            case couchapp_util:in_couchapp(Path) of
+            case couchapp_util:in_couchapp(Path1) of
                 {ok, _} ->
-                    ?ERROR("can't clone in an existing couchapp folder", 
+                    ?ERROR("Can't clone in an existing couchapp.~n", 
                         []),
                     halt(1);
                 _ ->
-                do_clone(Path1, DocId, Db)
+                do_clone(Path1, DocId, Db, Config)
             end;
         Error ->
             ?ERROR("clone: ~p~n", [Error])
     end.
 
-do_clone(Path, DocId, Db) ->
+do_clone(Path, DocId, Db, Config) ->
     case couchbeam:open_doc(Db, DocId) of
         {ok, Doc} ->
+            % initialize the couchapp directory
+            ok = filelib:ensure_dir(Path),
+            ?DEBUG("path ~p~n", [Path]),
+            couchapp_init:init([Path], Config),
+
             AttDir = filename:join(Path, "_attachments"),
             {Atts} = couchbeam_doc:get_value(<<"_attachments">>, Doc,
                 {[]}),
