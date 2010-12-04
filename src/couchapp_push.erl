@@ -198,44 +198,75 @@ process_macros(Doc, AppDir) ->
     Funs = [<<"shows">>, <<"lists">>, <<"updates">>, <<"filters">>, 
         <<"spatial">>, <<"validate_update_doc">>],
     %% apply macros too functions
-    Doc1 = process_macros_fun(Funs, Doc, Doc, AppDir),
-    Doc2 = case couchbeam_doc:get_value(<<"views">>, Doc1) of
+    {Doc1, Objects} = process_macros_fun(Funs, Doc, [], Doc, AppDir),
+    {Doc2, FinalObjects} = case couchbeam_doc:get_value(<<"views">>, Doc1) of
         undefined ->
-            Doc1;
+            {Doc1, Objects};
         {Views} -> 
             %% process macros in views
-            Views1 = lists:foldl(fun({ViewName, View}, Att) ->
-                        View1= process_macros_fun([<<"map">>, <<"reduce">>], 
-                            View, Doc1, AppDir),
-                        [{ViewName, View1}|Att]
+            {Views1, ViewObjects} = lists:mapfoldl(fun({ViewName, View}, Acc) ->
+                        {View1, Objects1} = process_macros_fun([<<"map">>, <<"reduce">>], 
+                            View, [], Doc1, AppDir),
+                        {{ViewName, View1}, Acc ++ Objects1}
                         end, [], Views),
-            couchbeam_doc:set_value(<<"views">>, {Views1}, Doc1)
+            {couchbeam_doc:set_value(<<"views">>, {Views1}, Doc1),
+                Objects ++ ViewObjects}
     end,
-    Doc2.
+    Meta = couchbeam_doc:get_value(<<"couchapp">>, Doc2),
+    Meta1 = couchbeam_doc:set_value(<<"objects">>, FinalObjects, Meta),
+
+    couchbeam_doc:set_value(<<"couchapp">>, Meta1, Doc2).
 
 %% ===================================================================
 %% Internal functions
 %% ===================================================================
 
-process_macros_fun([], Obj, _Doc, _AppDir) ->
-    Obj;
-process_macros_fun([Prop|Rest], Obj, Doc, AppDir) ->
+process_macros_fun([], Obj, Objects, _Doc, _AppDir) ->
+    {Obj, Objects};
+process_macros_fun([Prop|Rest], Obj, Objects, Doc, AppDir) ->
     case couchbeam_doc:get_value(Prop, Obj) of
         undefined ->
-            process_macros_fun(Rest, Obj, Doc, AppDir);
+            process_macros_fun(Rest, Obj, Objects, Doc, AppDir);
         Source when is_binary(Source) ->
             ?DEBUG("process function ~p~n", [Prop]),
             Source1 = apply_macros(Source, Doc, AppDir),
             Obj1 = couchbeam_doc:set_value(Prop, Source1, Obj),
-            process_macros_fun(Rest, Obj1, Doc, AppDir);
+            Objects1 = if Source =/= Source1 -> 
+                    SourceId = lists:flatten([io_lib:format("~.16b",[N]) 
+                            || N <-binary_to_list(crypto:md5(Source1))]),
+                    [{SourceId, base64:encode(Source)}|Objects];
+                true ->
+                    Objects
+            end,
+
+            process_macros_fun(Rest, Obj1, Objects1, Doc, AppDir);
         {Sources} ->
             ?DEBUG("process function ~p ~n", [Prop]),
             Sources1 = lists:foldl(fun({Fun1, Source}, Acc) ->
                     Source1 = apply_macros(Source, Doc, AppDir),
-                    [{Fun1, Source1}|Acc]
+                    Parsed = if Source =/= Source1 ->
+                            SourceId = lists:flatten([io_lib:format("~.16b",[N]) 
+                                || N <-binary_to_list(crypto:md5(Source1))]),
+                            {Fun1, Source1, SourceId,
+                                base64:encode(Source)};
+                        true ->
+                            {Fun1, Source1}
+                    end,
+
+                    [Parsed|Acc]
                 end, [], Sources),
-            Obj1 = couchbeam_doc:set_value(Prop, {Sources1}, Obj),
-            process_macros_fun(Rest, Obj1, Doc, AppDir)
+
+            {FinalsSources, Objects1} = lists:mapfoldl(fun(Parsed, Acc) ->
+                        case Parsed of
+                            {Fun1, Source1, SourceId, Source} ->
+                                {{Fun1, Source1}, [{SourceId,
+                                            Source}|Acc]};
+                            {Fun1, Source1} ->
+                                {{Fun1, Source1}, Acc}
+                        end
+                        end, Objects, Sources1),
+            Obj1 = couchbeam_doc:set_value(Prop, {FinalsSources}, Obj),
+            process_macros_fun(Rest, Obj1, Objects1, Doc, AppDir)
     end.
 
 apply_macros(Source, Doc, AppDir) ->
@@ -310,7 +341,6 @@ apply_json_macros1([Match|Rest], Source, Doc, AppDir) ->
     Source1 = re:replace(Source, Replacement, Content, [global, caseless, 
             multiline, {return, binary}]),
     apply_json_macros1(Rest, Source1, Doc, AppDir).
-      
 
 obj_from_dir([], _RootDir,  Att) ->
     Att;
@@ -514,7 +544,7 @@ attachments_from_fs1([F|R], Dir, Att) ->
         false ->
             {ok, Md5} = couchapp_util:md5_file(F1),
             Md5Hash = lists:flatten([io_lib:format("~.16b",[N]) 
-                    || N <-binary_to_list(erlang:md5(Md5))]),
+                    || N <-binary_to_list(Md5)]),
             [{F1, list_to_binary(Md5Hash)}|Att]
     end,
     attachments_from_fs1(R, Dir, Att1).
