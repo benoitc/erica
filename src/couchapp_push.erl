@@ -9,7 +9,7 @@
 
 -include_lib("kernel/include/file.hrl").
 -include("couchapp.hrl").
--include("deps/couchbeam/include/couchbeam.hrl").
+-include("couchbeam.hrl").
 
 -export([push/2]).
 

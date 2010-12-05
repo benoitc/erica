@@ -5,7 +5,7 @@
 
 -module(couchapp_util).
 
--include("deps/ibrowse/src/ibrowse.hrl").
+-include("ibrowse.hrl").
 -include("couchapp.hrl").
 
 -define(BLOCKSIZE, 32768).
@@ -45,8 +45,9 @@ db_from_string(DbString) ->
             DbString
     end,
     Url = ibrowse_lib:parse_url(DbUrl),
-    Server = couchbeam:server_connection(Url#url.host, Url#url.port),
 
+    Server = couchbeam:server_connection(Url#url.host, Url#url.port),
+    
     Options = case Url#url.username of
         undefined -> [];
         Username ->
