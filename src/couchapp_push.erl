@@ -71,7 +71,7 @@ do_push(Path, #db{server=Server}=Db, DocId, Config) ->
         true ->
             FinalCouchapp = process_attachments(Couchapp2),
             Doc = make_doc(FinalCouchapp),
-            couchbeam:save_doc(Db, Doc);
+            {ok, _} = couchbeam:save_doc(Db, Doc);
         false ->
             Doc = make_doc(Couchapp2),
             Doc1 = couchbeam:save_doc(Db, Doc),
@@ -129,9 +129,6 @@ process_signatures(#couchapp{att_dir=AttDir, doc=Doc, old_doc=OldDoc,
     end,
     {Removed, NewAtts} = process_signatures1(Signatures, [], Atts,
         AttDir),
-
-    ?DEBUG("removed attachments: ~p~n", [Removed]),
-    ?DEBUG("new attachments ~p~n", [NewAtts]),
 
     NewSignatures = [{couchapp_util:relpath(F, AttDir), S} 
         || {F, S} <- Atts],
@@ -246,7 +243,8 @@ attach_files([], Doc, _AttDir) ->
 attach_files([{Fname, _Signature}|Rest], Doc, AttDir) ->
     {ok, Content} = file:read_file(Fname),
     RelPath = couchapp_util:relpath(Fname, AttDir),
-    Doc1 = couchbeam_attachments:add_inline(Doc, Content, RelPath),
+    Doc1 = couchbeam_attachments:add_inline(Doc, Content,
+        encode_path(RelPath)),
     attach_files(Rest, Doc1, AttDir).
 
 process_path([], _Dir, Couchapp) ->
@@ -345,16 +343,34 @@ attachments_from_fs(#couchapp{path=Path}=Couchapp) ->
 attachments_from_fs1([], _Dir, Att) ->
     Att;
 attachments_from_fs1([F|R], Dir, Att) ->
-    F1 = filename:join(Dir, F),
-    Att1 = case filelib:is_dir(F1) of
+    Path = filename:join(Dir, F),
+
+    Att1 = case filelib:is_dir(Path) of
         true ->
-            Files = filelib:wildcard("*", F1),
-            SubAtt = attachments_from_fs1(Files, F1, []),
+            Files = filelib:wildcard("*", Path),
+            SubAtt = attachments_from_fs1(Files, Path, []),
             Att ++ SubAtt;
         false ->
-            {ok, Md5} = couchapp_util:md5_file(F1),
+            {ok, Md5} = couchapp_util:md5_file(Path),
             Md5Hash = lists:flatten([io_lib:format("~.16b",[N]) 
                     || N <-binary_to_list(Md5)]),
-            [{F1, list_to_binary(Md5Hash)}|Att]
+            [{Path, list_to_binary(Md5Hash)}|Att]
     end,
     attachments_from_fs1(R, Dir, Att1).
+
+is_utf8(S) ->
+	try lists:all(fun(C) -> xmerl_ucs:is_incharset(C, 'utf-8') end, S)
+	catch
+		exit:{ucs, {bad_utf8_character_code}} -> false
+	end.
+
+encode_path(P) ->
+    case is_utf8(P) of
+        true ->
+            P;
+        false ->
+            Parts = lists:foldl(fun(P1, Acc) ->
+                    [mochiweb_util:quote_plus(P1)|Acc]
+                end, [], string:tokens(P, "/")),
+            string:join(lists:reverse(Parts), "/") 
+    end.
