@@ -1,6 +1,6 @@
 %%% -*- erlang -*-
 %%%
-%%% This file is part of couchapp released under the Apache 2 license. 
+%%% This file is part of couchapp released under the Apache 2 license.
 %%% See the NOTICE for more information.
 
 -module(couchapp_core).
@@ -14,20 +14,20 @@ run(["compile"]) ->
     ok;
 run(["help"]) ->
     help(),
-    ok; 
+    ok;
 run(["version"]) ->
     ok = application:load(couchapp),
     version(),
     ok;
 run(RawArgs) ->
     ok = application:load(couchapp),
-   
+
     %% parse arguments
     {Options, Commands} = parse_args(RawArgs),
 
     %% load couchbeam
     {ok, _} = couchbeam:start(),
-    
+
     %% Initialize logging system
     couchapp_log:init(),
 
@@ -38,7 +38,7 @@ run(RawArgs) ->
 
     %% Note the top-level directory for reference
     couchapp_config:set_global(base_dir, filename:absname(couchapp_util:get_cwd())),
- 
+
     process_commands(Commands, Options).
 
 process_commands([Command|Args], Options) ->
@@ -48,7 +48,7 @@ process_commands([Command|Args], Options) ->
 
 execute(Command, Args, Modules, Config) ->
     case select_modules(Modules, Command, []) of
-        [] -> 
+        [] ->
             ?WARN("'~p' unkown command", [Command]);
         TargetModules ->
             Dir = couchapp_util:get_cwd(),
@@ -106,7 +106,7 @@ parse_args(Args) ->
             help(),
             halt(1)
     end.
-    
+
 %%
 %% options accepted via getopt
 %%
@@ -117,12 +117,11 @@ option_spec_list() ->
      {commands, $c, "commands",   undefined, "Show available commands"},
      {verbose,  $v, "verbose",    undefined, "Be verbose about what gets done"},
      {force,    $f, "force",      undefined, "Force"},
-     {version,  $V, "version",    undefined, "Show version
-         information"},
-       
-     {is_ddoc, undefined, "is-ddoc", {boolean, true}, "Tell to push command if you send a design document or not."}, 
+     {version,  $V, "version",    undefined, "Show version information"},
+
+     {is_ddoc, undefined, "is-ddoc", {boolean, true}, "Tell to push command if you send a design document or not."},
      {docid, undefined, "docid",  string, "Set docid with push command"},
-     {atomic, undefined, "atomic",  {boolean, true}, 
+     {atomic, undefined, "atomic",  {boolean, true},
          "Send attachments inline with push command"}
 
     ].
@@ -180,9 +179,9 @@ help() ->
 commands() ->
     S = <<"
 init                                 initialize a couchapp
-push        [options...] [dir] dest  push a document to couchdb                       
+push        [options...] [dir] dest  push a document to couchdb
 clone       [option] source dir      clone a document from couchdb
-pushapps    [option] source dest     push all CouchApps in a folder 
+pushapps    [option] source dest     push all CouchApps in a folder
                                      to couchdb
 pushdocs    [option] source dest     push all docs in a folder to
                                      couchdb
@@ -229,4 +228,4 @@ filter_flags([Item | Rest], Commands) ->
         Other ->
             ?CONSOLE("Ignoring command line argument: ~p\n", [Other]),
             filter_flags(Rest, Commands)
-    end. 
+    end.
