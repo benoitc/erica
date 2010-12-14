@@ -118,7 +118,6 @@ option_spec_list() ->
      {verbose,  $v, "verbose",    undefined, "Be verbose about what gets done"},
      {force,    $f, "force",      undefined, "Force"},
      {version,  $V, "version",    undefined, "Show version information"},
-
      {is_ddoc, undefined, "is-ddoc", {boolean, true}, "Tell to push command if you send a design document or not."},
      {docid, undefined, "docid",  string, "Set docid with push command"},
      {atomic, undefined, "atomic",  {boolean, true},
