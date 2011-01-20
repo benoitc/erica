@@ -91,8 +91,8 @@ parse_conf({[]}) ->
 parse_conf(Conf) ->
     Dbs = case couchbeam_doc:get_value(<<"env">>, Conf) of
         undefined -> [];
-        Env ->
-            get_config_dbs({Env}, [])
+        {Env} ->
+            get_config_dbs(Env, [])
     end,
     Extensions = case couchbeam_doc:get_value(<<"extensions">>, Conf) of
         undefined -> [];
