@@ -19,8 +19,12 @@
 %% Public API
 %% ====================================================================
 
+
+push([], Config) ->
+ 	push(["default"], Config);
 push([DbString], Config) ->
     push1(couchapp_util:get_cwd(), DbString, Config);
+
 push([Path, DbString|_], Config) ->
     push1(Path, DbString, Config).
 
