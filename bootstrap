@@ -6,7 +6,7 @@ main(Args) ->
  
     %% Add ebin/ to our path
     true = code:add_path("ebin"),
-    true = code:add_path("deps/mochiweb/ebin"),
+    true = code:add_path("deps/ejson/ebin"),
     true = code:add_path("deps/ibrowse/ebin"),
     true = code:add_path("deps/oauth/ebin"),
     true = code:add_path("deps/couchbeam/ebin"),
@@ -21,7 +21,8 @@ main(Args) ->
     %% all the beam files at the top level of the code archive so that code loading
     %% works properly.
     Files = load_files("*", "ebin") 
-            ++ load_files("*", "deps/mochiweb/ebin") 
+            ++ load_files("*", "deps/ejson/ebin")
+            ++ load_files("*", "deps/ejson/priv") 
             ++ load_files("*", "deps/ibrowse/ebin")
             ++ load_files("*", "deps/oauth/ebin")
             ++ load_files("*", "deps/couchbeam/ebin")

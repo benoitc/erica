@@ -37,7 +37,7 @@ load(File) ->
     case file:read_file(File) of
         {ok, Bin} ->
             Bin1 = remove_comments(Bin),
-            couchbeam_util:json_decode(Bin1);
+            ejson:decode(Bin1);
         Error ->
             ?ERROR("can't read '~p' [~p]~n", [File, Error]),
             []

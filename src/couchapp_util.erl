@@ -38,7 +38,7 @@ v2a(V) when is_binary(V) ->
     list_to_atom(binary_to_list(V)).
 
 db_from_string(DbString) ->
-    DbUrl = case mochiweb_util:urlsplit(DbString) of 
+    DbUrl = case couchbeam_util:urlsplit(DbString) of 
         {[], [], Path, _, _} ->
             "http://127.0.0.1:5984/" ++ Path;
         _ ->
@@ -65,7 +65,7 @@ db_from_string(DbString) ->
 
 
 db_from_config(Config, DbString) ->
-    case mochiweb_util:urlsplit(DbString) of 
+    case couchbeam_util:urlsplit(DbString) of 
         {[], [], _Path, _, _} ->
             case couchapp_config:get_db(Config, DbString) of
                 undefined ->
@@ -152,8 +152,38 @@ get_cwd() ->
     {ok, Dir} = file:get_cwd(),
     Dir.
 
+%% @spec partition(String, Sep) -> {String, [], []} | {Prefix, Sep, Postfix}
+%% @doc Inspired by Python 2.5's str.partition:
+%%      partition("foo/bar", "/") = {"foo", "/", "bar"},
+%%      partition("foo", "/") = {"foo", "", ""}.
+partition(String, Sep) ->
+    case partition(String, Sep, []) of
+        undefined ->
+            {String, "", ""};
+        Result ->
+            Result
+    end.
+
+partition("", _Sep, _Acc) ->
+    undefined;
+partition(S, Sep, Acc) ->
+    case partition2(S, Sep) of
+        undefined ->
+            [C | Rest] = S,
+            partition(Rest, Sep, [C | Acc]);
+        Rest ->
+            {lists:reverse(Acc), Sep, Rest}
+    end.
+
+partition2(Rest, "") ->
+    Rest;
+partition2([C | R1], [C | R2]) ->
+    partition2(R1, R2);
+partition2(_S, _Sep) ->
+    undefined.
+
 relpath(Path, Root) ->
-    {_, _, RelPath} = mochiweb_util:partition(Path, Root),
+    {_, _, RelPath} = partition(Path, Root),
     case string:left(RelPath, 1) of
         " " ->
             "";

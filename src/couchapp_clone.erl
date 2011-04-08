@@ -139,7 +139,7 @@ doc_to_fs([{PropName, Value}|Rest], Dir, Manifest, Objects, Depth) ->
         {[_|_]} ->
             case proplists:get_value(Path, Manifest) of
                 ".json"=Ext ->
-                    JsonValue = couchbeam_util:json_encode(Value),
+                    JsonValue = ejson:encode(Value),
                     file:write_file(Path ++ Ext, JsonValue),
                     doc_to_fs(Rest, Dir, Manifest, Objects, Depth);
                 _ ->
@@ -170,7 +170,7 @@ doc_to_fs([{PropName, Value}|Rest], Dir, Manifest, Objects, Depth) ->
             file:write_file(Path1, Value1),
             doc_to_fs(Rest, Dir, Manifest, Objects, Depth);
         _ ->
-            JsonValue = couchbeam_util:json_encode(Value),
+            JsonValue = ejson:encode(Value),
 
             Path1 = case proplists:get_value(Path, Manifest) of
                 undefined ->

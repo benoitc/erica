@@ -330,7 +330,7 @@ process_file(File, Fname) ->
             {ok, Bin} = file:read_file(Fname),
             Value = case Ext of
                 ".json" ->
-                    couchbeam_util:json_decode(Bin);
+                    ejson:decode(Bin);
                 _ ->
                     Bin
             end,

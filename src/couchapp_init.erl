@@ -24,5 +24,5 @@ init([Path|_], Config) ->
 init1(Path, _Config) ->
     ok = couchapp_util:make_dir(Path),
     RcPath = filename:join(Path, ".couchapprc"),
-    file:write_file(RcPath, couchbeam_util:json_encode({[]})).
+    file:write_file(RcPath, ejson:encode({[]})).
 
