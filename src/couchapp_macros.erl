@@ -1,6 +1,6 @@
 %%% -*- erlang -*-
 %%%
-%%% This file is part of couchapp released under the Apache 2 license. 
+%%% This file is part of couchapp released under the Apache 2 license.
 %%% See the NOTICE for more information.
 
 -module(couchapp_macros).
@@ -13,17 +13,17 @@
          get_source_id/1]).
 
 process_macros(Doc, AppDir) ->
-    Funs = [<<"shows">>, <<"lists">>, <<"updates">>, <<"filters">>, 
+    Funs = [<<"shows">>, <<"lists">>, <<"updates">>, <<"filters">>,
         <<"spatial">>, <<"validate_update_doc">>],
     %% apply macros too functions
     {Doc1, Objects} = process_macros_fun(Funs, Doc, [], Doc, AppDir),
     {Doc2, FinalObjects} = case couchbeam_doc:get_value(<<"views">>, Doc1) of
         undefined ->
             {Doc1, Objects};
-        {Views} -> 
+        {Views} ->
             %% process macros in views
             {Views1, ViewObjects} = lists:mapfoldl(fun({ViewName, View}, Acc) ->
-                        {View1, Objects1} = process_macros_fun([<<"map">>, <<"reduce">>], 
+                        {View1, Objects1} = process_macros_fun([<<"map">>, <<"reduce">>],
                             View, [], Doc1, AppDir),
                         {{ViewName, View1}, Acc ++ Objects1}
                         end, [], Views),
@@ -49,7 +49,7 @@ process_macros_fun([Prop|Rest], Obj, Objects, Doc, AppDir) ->
             ?DEBUG("process function ~p~n", [Prop]),
             Source1 = apply_macros(Source, Doc, AppDir),
             Obj1 = couchbeam_doc:set_value(Prop, Source1, Obj),
-            Objects1 = if Source =/= Source1 -> 
+            Objects1 = if Source =/= Source1 ->
                     SourceId = get_source_id(Source1),
                     [{SourceId, base64:encode(Source)}|Objects];
                 true ->
@@ -90,8 +90,8 @@ apply_macros(Source, Doc, AppDir) ->
     apply_json_macros(Source1, Doc, AppDir).
 
 apply_code_macros(Source, AppDir) ->
-    case re:run(Source, "^\s*\/\/\ ?!code (.*)$", 
-            [global, caseless, unicode, multiline, 
+    case re:run(Source, "^\s*\/\/\ ?!code (.*)$",
+            [global, caseless, unicode, multiline,
                 {capture, all, binary}]) of
         nomatch -> Source;
         {match, Matches} ->
@@ -113,15 +113,15 @@ apply_code_macros1([Match|Rest], Source, AppDir) ->
                                 Error]),
                         Acc
                 end
-        end, [], filelib:wildcard(Path1)), 
+        end, [], filelib:wildcard(Path1)),
     Content = iolist_to_binary(lists:reverse(Contents)),
-    Source1 = re:replace(Source, Replacement, Content, [global, caseless, 
+    Source1 = re:replace(Source, Replacement, Content, [global, caseless,
             multiline, {return, binary}]),
     apply_code_macros1(Rest, Source1, AppDir).
 
 apply_json_macros(Source, Doc, AppDir) ->
-    case re:run(Source, "^\s*\/\/\ ?!json (.*)$", 
-            [global, caseless, unicode, multiline, 
+    case re:run(Source, "^\s*\/\/\ ?!json (.*)$",
+            [global, caseless, unicode, multiline,
                 {capture, all, binary}]) of
         nomatch -> Source;
         {match, Matches} ->
@@ -138,10 +138,10 @@ apply_json_macros1([Match|Rest], Source, Doc, AppDir) ->
             JsonPath1 = binary_to_list(JsonPath),
             Path = filename:join(AppDir, JsonPath1),
             Values = obj_from_dir(filelib:wildcard(Path), AttDir, []),
-            lists:flatten(["var _attachments = ", 
+            lists:flatten(["var _attachments = ",
                     ejson:encode({Values}), ";\n"]);
         _ ->
-            Props = [list_to_binary(P) || P <- string:tokens(binary_to_list(JsonPath), 
+            Props = [list_to_binary(P) || P <- string:tokens(binary_to_list(JsonPath),
                     ".")],
             case get_value(Props, Doc) of
                 {ok, Value} ->
@@ -154,7 +154,7 @@ apply_json_macros1([Match|Rest], Source, Doc, AppDir) ->
                     ""
             end
     end,
-    Source1 = re:replace(Source, Replacement, Content, [global, caseless, 
+    Source1 = re:replace(Source, Replacement, Content, [global, caseless,
             multiline, {return, binary}]),
     apply_json_macros1(Rest, Source1, Doc, AppDir).
 
@@ -168,13 +168,13 @@ obj_from_dir([File|Rest], RootDir, Att) ->
             [VarName|_] = lists:reverse(string:tokens(File, "/")),
             [{VarName, Value}|Att];
         false ->
-            case file:read_file(File1) of 
+            case file:read_file(File1) of
                 {ok, Bin} ->
                     Bin1 = case filename:extension(File) of
                         ".json" ->
                             couchbeam:json_decode(Bin);
                         _ ->
-                            Bin 
+                            Bin
                     end,
                     [{filename:basename(File), Bin1}|Att];
                 Error ->
@@ -194,7 +194,7 @@ nested_value(Fields, Value) ->
     end.
 
 nested_value1([Field|Rest], Value, Len, Count) when Count < length(Rest) ->
-    couchbeam_doc:set_value(Field, 
+    couchbeam_doc:set_value(Field,
         nested_value1(Rest, Value, Len, Count+1), {[]});
 nested_value1([Field|_], Value, _Len, _Count) ->
     {[{Field, Value}]}.
@@ -220,5 +220,5 @@ get_value([Name|_], Obj, _Len, _Count) ->
     end.
 
 get_source_id(Source) ->
-    lists:flatten([io_lib:format("~.16b",[N]) 
+    lists:flatten([io_lib:format("~.16b",[N])
             || N <-binary_to_list(crypto:md5(Source))]).

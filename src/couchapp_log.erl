@@ -1,6 +1,6 @@
 %%% -*- erlang -*-
 %%%
-%%% This file is part of couchapp released under the Apache 2 license. 
+%%% This file is part of couchapp released under the Apache 2 license.
 %%% See the NOTICE for more information.
 
 -module(couchapp_log).
@@ -60,6 +60,3 @@ log_prefix(debug) -> "DEBUG: ";
 log_prefix(info)  -> "INFO:  ";
 log_prefix(warn)  -> "WARN:  ";
 log_prefix(error) -> "ERROR: ".
-
-
-

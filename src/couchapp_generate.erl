@@ -1,13 +1,13 @@
 %%% -*- erlang -*-
 %%%
-%%% This file is part of couchapp released under the Apache 2 license. 
+%%% This file is part of couchapp released under the Apache 2 license.
 %%% See the NOTICE for more information.
 
 -module(couchapp_generate).
 
 generate([AppName]) ->
     generate_app(AppName, ".");
-    
+
 generate([AppName, AppPath]) ->
     generate_app(AppName, AppPath).
 
@@ -26,5 +26,3 @@ generate_app(AppName, Path) ->
             P1 = filename:join(Path1, P),
             ok = file:make_dir(P1)
         end, ["_attachments", "shows", "lists", "views"]).
-
-    

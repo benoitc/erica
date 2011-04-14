@@ -1,6 +1,6 @@
 %%% -*- erlang -*-
 %%%
-%%% This file is part of couchapp released under the Apache 2 license. 
+%%% This file is part of couchapp released under the Apache 2 license.
 %%% See the NOTICE for more information.
 
 -module(couchapp_push).
@@ -21,7 +21,7 @@
 
 
 push([], Config) ->
- 	push(["default"], Config);
+    push(["default"], Config);
 push([DbString], Config) ->
     push1(couchapp_util:get_cwd(), DbString, Config);
 
@@ -38,7 +38,7 @@ push1(Path, DbString, Config) ->
 
             Db = couchapp_util:db_from_config(Config1, DbString),
             ?DEBUG("push ~p to ~p~n", [CouchappDir, DbString]),
-            do_push(CouchappDir, Db, Config1); 
+            do_push(CouchappDir, Db, Config1);
 
         {error, not_found} ->
             ?ERROR("Can't find initialized couchapp in '~p'~n", [Path]),
@@ -53,8 +53,8 @@ do_push(Path, #db{server=Server}=Db, DocId, Config) ->
     OldDoc = case couchbeam:open_doc(Db, DocId) of
         {ok, OldDoc1} ->
             OldDoc1;
-        {error, not_found} -> 
-            {[]} 
+        {error, not_found} ->
+            {[]}
     end,
 
     Couchapp = #couchapp{
@@ -83,7 +83,7 @@ do_push(Path, #db{server=Server}=Db, DocId, Config) ->
     end,
     CouchappUrl = couchbeam:make_url(Server, couchbeam:doc_url(Db,
             DocId), []),
-    
+
     % log info
     couchapp_log:log(info, "~p has been pushed from ~s.~n", [CouchappUrl,
             Path]),
@@ -109,7 +109,7 @@ id_from_path(Path, Config) ->
                     DocId
             end
     end.
-        
+
 couchapp_from_fs(#couchapp{path=Path}=Couchapp) ->
     Files = filelib:wildcard("*", Path),
     process_path(Files, Path, Couchapp).
@@ -118,7 +118,7 @@ process_signatures(#couchapp{attachments=[]}=Couchapp) ->
     Couchapp;
 process_signatures(#couchapp{att_dir=AttDir, doc=Doc, old_doc=OldDoc,
         attachments=Atts}=Couchapp) ->
-     
+
     Signatures = case couchbeam_doc:get_value(<<"couchapp">>, OldDoc) of
         undefined ->
             [];
@@ -126,7 +126,7 @@ process_signatures(#couchapp{att_dir=AttDir, doc=Doc, old_doc=OldDoc,
             case couchbeam_doc:get_value(<<"signatures">>, Meta) of
                 undefined ->
                     %% not defined.
-                    []; 
+                    [];
                 {Signatures1} ->
                     Signatures1
             end
@@ -134,11 +134,11 @@ process_signatures(#couchapp{att_dir=AttDir, doc=Doc, old_doc=OldDoc,
     {Removed, NewAtts} = process_signatures1(Signatures, [], Atts,
         AttDir),
 
-    NewSignatures = [{couchapp_util:relpath(F, AttDir), S} 
+    NewSignatures = [{couchapp_util:relpath(F, AttDir), S}
         || {F, S} <- Atts],
-  
-    {OldAtts} = couchbeam_doc:get_value(<<"_attachments">>, OldDoc, {[]}), 
-    case Removed of 
+
+    {OldAtts} = couchbeam_doc:get_value(<<"_attachments">>, OldDoc, {[]}),
+    case Removed of
         [] ->
             Doc1 = couchbeam_doc:set_value(<<"_attachments">>,
                 {OldAtts}, Doc),
@@ -147,7 +147,7 @@ process_signatures(#couchapp{att_dir=AttDir, doc=Doc, old_doc=OldDoc,
                 attachments=NewAtts,
                 signatures=NewSignatures
             };
-        _Else -> 
+        _Else ->
             OldAtts1 = clean_old_attachments(Removed, OldAtts),
             Doc1 = couchbeam_doc:set_value(<<"_attachments">>,
                 {OldAtts1}, Doc),
@@ -158,12 +158,12 @@ process_signatures(#couchapp{att_dir=AttDir, doc=Doc, old_doc=OldDoc,
             }
     end.
 
-process_attachments(#couchapp{att_dir=AttDir, doc=Doc, 
+process_attachments(#couchapp{att_dir=AttDir, doc=Doc,
         attachments=Atts}=Couchapp) ->
     NewDoc = attach_files(Atts, Doc, AttDir),
     Couchapp#couchapp{doc=NewDoc}.
 
-send_attachments(Db, #couchapp{att_dir=AttDir, doc=Doc, 
+send_attachments(Db, #couchapp{att_dir=AttDir, doc=Doc,
         attachments=Atts}=Couchapp) ->
     NewDoc = send_attachments1(Atts, Doc, Db, AttDir),
     Couchapp#couchapp{doc=NewDoc}.
@@ -200,7 +200,7 @@ make_doc(Couchapp) ->
     couchapp_macros:process_macros(Doc2, AppDir).
 
 clean_old_attachments([],OldAtts) ->
-    OldAtts;    
+    OldAtts;
 clean_old_attachments([F|Rest], OldAtts) ->
     OldAtts1 = proplists:delete(F, OldAtts),
     clean_old_attachments(Rest, OldAtts1).
@@ -226,9 +226,9 @@ send_attachments1([{Fname, _Signature}|Rest], Doc, Db, AttDir) ->
     {ok, Fd} = file:open(Fname, [read]),
     Fun = fun() ->
             case file:read(Fd, 4096) of
-                {ok, Data} -> 
+                {ok, Data} ->
                     {ok, iolist_to_binary(Data)};
-                _ -> 
+                _ ->
                     file:close(Fd),
                     eof
             end
@@ -257,7 +257,7 @@ process_path([".couchapprc"|Rest], Dir, Couchapp) ->
     process_path(Rest, Dir, Couchapp);
 process_path([".couchappignore"|Rest], Dir, Couchapp) ->
     process_path(Rest, Dir, Couchapp);
-process_path([File|Rest], Dir, #couchapp{config=Config, path=Path, 
+process_path([File|Rest], Dir, #couchapp{config=Config, path=Path,
         doc=Doc, manifest=Manifest}=Couchapp) ->
     Fname = filename:join(Dir, File),
     case couchapp_ignore:ignore(Fname, Config) of
@@ -275,11 +275,11 @@ process_path([File|Rest], Dir, #couchapp{config=Config, path=Path,
                             Couchapp;
                         _ ->
                             Files = filelib:wildcard("*", Fname),
-                            {SubDoc, SubManifest} = process_dir(Files, 
+                            {SubDoc, SubManifest} = process_dir(Files,
                                 Fname, Path, Config, {[]}, []),
-                            Doc1 = couchbeam_doc:set_value(File1, SubDoc, 
+                            Doc1 = couchbeam_doc:set_value(File1, SubDoc,
                                 Doc),
-                            Manifest1 = [<<RelPath/binary, "/">>|Manifest] 
+                            Manifest1 = [<<RelPath/binary, "/">>|Manifest]
                                 ++ SubManifest,
                             Couchapp#couchapp{doc=Doc1, manifest=Manifest1}
                     end;
@@ -301,20 +301,20 @@ process_dir([File|Rest], Dir, Path, Config, Doc, Manifest) ->
             process_dir(Rest, Dir, Path, Config, Doc, Manifest);
         false ->
             File1 = list_to_binary(File),
-            
+
             RelPath = list_to_binary(couchapp_util:relpath(Fname, Path)),
             {Doc1, Manifest1} = case filelib:is_dir(Fname) of
                 true ->
                     Files = filelib:wildcard("*", Fname),
-                    {SubDoc, SubManifest} = process_dir(Files, Fname, 
+                    {SubDoc, SubManifest} = process_dir(Files, Fname,
                         Path, Config, {[]}, []),
                     NewDoc = couchbeam_doc:set_value(File1, SubDoc, Doc),
-                    NewManifest = [<<RelPath/binary, "/">>|Manifest] 
+                    NewManifest = [<<RelPath/binary, "/">>|Manifest]
                         ++ SubManifest,
                     {NewDoc, NewManifest};
                 false ->
                     {PropName, Value} = process_file(File, Fname),
-                    NewDoc = couchbeam_doc:set_value(PropName, Value, 
+                    NewDoc = couchbeam_doc:set_value(PropName, Value,
                         Doc),
                     {NewDoc, [RelPath|Manifest]}
             end,
@@ -356,17 +356,17 @@ attachments_from_fs1([F|R], Dir, Att) ->
             Att ++ SubAtt;
         false ->
             {ok, Md5} = couchapp_util:md5_file(Path),
-            Md5Hash = lists:flatten([io_lib:format("~.16b",[N]) 
+            Md5Hash = lists:flatten([io_lib:format("~.16b",[N])
                     || N <-binary_to_list(Md5)]),
             [{Path, list_to_binary(Md5Hash)}|Att]
     end,
     attachments_from_fs1(R, Dir, Att1).
 
 is_utf8(S) ->
-	try lists:all(fun(C) -> xmerl_ucs:is_incharset(C, 'utf-8') end, S)
-	catch
-		exit:{ucs, {bad_utf8_character_code}} -> false
-	end.
+    try lists:all(fun(C) -> xmerl_ucs:is_incharset(C, 'utf-8') end, S)
+    catch
+        exit:{ucs, {bad_utf8_character_code}} -> false
+    end.
 
 encode_path(P) ->
     case is_utf8(P) of
@@ -376,5 +376,5 @@ encode_path(P) ->
             Parts = lists:foldl(fun(P1, Acc) ->
                     [mochiweb_util:quote_plus(P1)|Acc]
                 end, [], string:tokens(P, "/")),
-            string:join(lists:reverse(Parts), "/") 
+            string:join(lists:reverse(Parts), "/")
     end.

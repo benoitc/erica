@@ -1,6 +1,6 @@
 %%% -*- erlang -*-
 %%%
-%%% This file is part of couchapp released under the Apache 2 license. 
+%%% This file is part of couchapp released under the Apache 2 license.
 %%% See the NOTICE for more information.
 
 -module(couchapp_init).
@@ -25,4 +25,3 @@ init1(Path, _Config) ->
     ok = couchapp_util:make_dir(Path),
     RcPath = filename:join(Path, ".couchapprc"),
     file:write_file(RcPath, ejson:encode({[]})).
-

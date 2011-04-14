@@ -1,6 +1,6 @@
 %%% -*- erlang -*-
 %%%
-%%% This file is part of couchapp released under the Apache 2 license. 
+%%% This file is part of couchapp released under the Apache 2 license.
 %%% See the NOTICE for more information.
 
 -module(couchapp_util).
@@ -11,7 +11,7 @@
 -define(BLOCKSIZE, 32768).
 -define(SEPARATOR, $\/).
 
--export([md5_file/1, 
+-export([md5_file/1,
          abort/2,
          get_cwd/0,
          find_executable/1,
@@ -38,7 +38,7 @@ v2a(V) when is_binary(V) ->
     list_to_atom(binary_to_list(V)).
 
 db_from_string(DbString) ->
-    DbUrl = case couchbeam_util:urlsplit(DbString) of 
+    DbUrl = case couchbeam_util:urlsplit(DbString) of
         {[], [], Path, _, _} ->
             "http://127.0.0.1:5984/" ++ Path;
         _ ->
@@ -47,7 +47,7 @@ db_from_string(DbString) ->
     Url = ibrowse_lib:parse_url(DbUrl),
 
     Server = couchbeam:server_connection(Url#url.host, Url#url.port),
-    
+
     Options = case Url#url.username of
         undefined -> [];
         Username ->
@@ -65,7 +65,7 @@ db_from_string(DbString) ->
 
 
 db_from_config(Config, DbString) ->
-    case couchbeam_util:urlsplit(DbString) of 
+    case couchbeam_util:urlsplit(DbString) of
         {[], [], _Path, _, _} ->
             case couchapp_config:get_db(Config, DbString) of
                 undefined ->
@@ -83,7 +83,7 @@ parse_couchapp_url(AppUrl) ->
 
     case parse_couchapp_path(PathParts) of
         {DbName, AppName, DocId} ->
-            Server = couchbeam:server_connection(Url#url.host, 
+            Server = couchbeam:server_connection(Url#url.host,
                 Url#url.port),
             Options = case Url#url.username of
                 undefined -> [];
@@ -95,7 +95,7 @@ parse_couchapp_url(AppUrl) ->
                             [{basic_auth, {Username, Password}}]
                     end
             end,
-            {ok, Db} = couchbeam:open_or_create_db(Server, DbName, 
+            {ok, Db} = couchbeam:open_or_create_db(Server, DbName,
                 Options),
             {ok, Db, AppName, DocId};
         Error ->
@@ -144,7 +144,7 @@ make_dir(Dir) ->
     end.
 
 -spec abort(string(), [term()]) -> no_return().
-abort(String, Args) -> 
+abort(String, Args) ->
     ?ERROR(String, Args),
     halt(1).
 
@@ -187,7 +187,7 @@ relpath(Path, Root) ->
     case string:left(RelPath, 1) of
         " " ->
             "";
-        "/" -> 
+        "/" ->
             "/" ++ RelPath1 = RelPath,
             RelPath1;
         "\\" ->

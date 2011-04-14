@@ -1,6 +1,6 @@
 %%% -*- erlang -*-
 %%%
-%%% This file is part of couchapp released under the Apache 2 license. 
+%%% This file is part of couchapp released under the Apache 2 license.
 %%% See the NOTICE for more information.
 
 -module(couchapp).
@@ -18,4 +18,3 @@ main(Args) ->
             io:format("Uncaught error in couchapp_core: ~p\n", [Error]),
             halt(1)
     end.
-

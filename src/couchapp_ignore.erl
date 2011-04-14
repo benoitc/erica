@@ -1,6 +1,6 @@
 %%% -*- erlang -*-
 %%%
-%%% This file is part of couchapp released under the Apache 2 license. 
+%%% This file is part of couchapp released under the Apache 2 license.
 %%% See the NOTICE for more information.
 
 -module(couchapp_ignore).
@@ -18,7 +18,7 @@
 
 init(AppDir, #config{ignore=OldIgnore}=Config) ->
     IgnoreFile = filename:join(AppDir, ".couchappignore"),
-    Ignore = case filelib:is_regular(IgnoreFile) of 
+    Ignore = case filelib:is_regular(IgnoreFile) of
         true ->
             load(IgnoreFile);
         _ ->
@@ -46,7 +46,7 @@ load(File) ->
 ignore1([], _Path) ->
     false;
 ignore1([Pattern|Rest], Path) ->
-    case re:run(Path, Pattern, [global, caseless, unicode, multiline, 
+    case re:run(Path, Pattern, [global, caseless, unicode, multiline,
                 {capture, all, binary}]) of
             nomatch ->
                 ignore1(Rest, Path);
@@ -58,4 +58,3 @@ ignore1([Pattern|Rest], Path) ->
 remove_comments(Content) ->
     P = "(?:/\\*(?:[^*]|(?:\\*+[^*/]))*\\*+/)|(?://.*)",
     re:replace(Content, P, "").
-

@@ -1,6 +1,6 @@
 %%% -*- erlang -*-
 %%%
-%%% This file is part of couchapp released under the Apache 2 license. 
+%%% This file is part of couchapp released under the Apache 2 license.
 %%% See the NOTICE for more information.
 
 -module(couchapp_config).
@@ -29,7 +29,7 @@ new(Options) ->
             {[]}
     end,
     {Dbs, Hooks, Extensions, Ignore} = parse_conf(UserConf),
-    
+
     #config { dir = couchapp_util:get_cwd(),
               opts = Options,
               dbs = Dbs,
@@ -43,7 +43,7 @@ update(AppDir, #config{dbs=Dbs, hooks=Hooks, extensions=Extensions,
     RcFile = filename:join(AppDir, ".couchapprc"),
 
     %% load .couchapprc
-    AppConf = case filelib:is_regular(RcFile) of 
+    AppConf = case filelib:is_regular(RcFile) of
         true ->
             {ok, Bin} = file:read_file(RcFile),
             ejson:decode(Bin);
@@ -97,7 +97,7 @@ parse_conf(Conf) ->
     Extensions = case couchbeam_doc:get_value(<<"extensions">>, Conf) of
         undefined -> [];
         {Ext} ->
-            [{couchapp_util:v2a(Mod), couchapp_util:v2a(Command)} 
+            [{couchapp_util:v2a(Mod), couchapp_util:v2a(Command)}
                 || {Mod, Command} <- Ext]
     end,
     Hooks = case couchbeam_doc:get_value(<<"hooks">>, Conf) of
@@ -127,7 +127,7 @@ get_config_dbs([{Name, Obj}|Rest], Dbs) ->
                     Db;
                 {OauthProps} ->
                     #db{options=Options} = Db,
-                    Options1 = Db#db{options=[{oauth, 
+                    Options1 = Db#db{options=[{oauth,
                                 OauthProps}|Options]},
                     Db#db{options=Options1}
             end,

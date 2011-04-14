@@ -1,6 +1,6 @@
 %%% -*- erlang -*-
 %%%
-%%% This file is part of couchapp released under the Apache 2 license. 
+%%% This file is part of couchapp released under the Apache 2 license.
 %%% See the NOTICE for more information.
 
 -module(couchapp_clone).
@@ -30,14 +30,14 @@ clone1(Path, Url, Config) ->
     case couchapp_util:parse_couchapp_url(Url) of
         {ok, Db, AppName, DocId} ->
             Path1 = case Path of
-                "." -> 
+                "." ->
                     filename:join(couchapp_util:get_cwd(), AppName);
                 _ ->
                     filename:absname(Path)
             end,
             case couchapp_util:in_couchapp(Path1) of
                 {ok, _} ->
-                    ?ERROR("Can't clone in an existing couchapp.~n", 
+                    ?ERROR("Can't clone in an existing couchapp.~n",
                         []),
                     halt(1);
                 _ ->
@@ -62,7 +62,7 @@ do_clone(Path, DocId, Db, Config) ->
             Meta = couchbeam_doc:get_value(<<"couchapp">>, Doc, {[]}),
             Manifest = couchbeam_doc:get_value(<<"manifest">>, Meta),
 
-            %% get extension associated 
+            %% get extension associated
             Manifest1 = lists:foldl(fun(P, Acc) ->
                         P1 = binary_to_list(P),
                         case filename:extension(P1) of
@@ -122,10 +122,10 @@ wait_for_attachment(Ref, Fd, AttName, Rest, Db, DocId, AttDir) ->
 
 doc_to_fs([], _Dir, _Manifest, _Objects, _Depth) ->
     ok;
-doc_to_fs([{<<"couchapp">>, _}|Rest], Dir, Manifest, Objects, 
+doc_to_fs([{<<"couchapp">>, _}|Rest], Dir, Manifest, Objects,
         Depth) when Depth < 1 ->
     doc_to_fs(Rest, Dir, Manifest, Objects, Depth);
-doc_to_fs([{<<"_rev">>, _}|Rest], Dir, Manifest, Objects, 
+doc_to_fs([{<<"_rev">>, _}|Rest], Dir, Manifest, Objects,
         Depth) when Depth < 1 ->
     doc_to_fs(Rest, Dir, Manifest, Objects, Depth);
 doc_to_fs([{<<"_attachments">>, _}|Rest], Dir, Manifest, Objects,
@@ -134,7 +134,7 @@ doc_to_fs([{<<"_attachments">>, _}|Rest], Dir, Manifest, Objects,
 doc_to_fs([{PropName, Value}|Rest], Dir, Manifest, Objects, Depth) ->
     Path = filename:join(Dir, binary_to_list(PropName)),
     Dir1 = filename:dirname(Path),
-    ok = couchapp_util:make_dir(Dir1), 
+    ok = couchapp_util:make_dir(Dir1),
     case Value of
         {[_|_]} ->
             case proplists:get_value(Path, Manifest) of
@@ -156,7 +156,7 @@ doc_to_fs([{PropName, Value}|Rest], Dir, Manifest, Objects, Depth) ->
                 Ext when Ext =:= ".js" ->
                     SourceId = list_to_binary(
                         couchapp_macros:get_source_id(Value)),
-                    V1 = case proplists:get_value(SourceId, 
+                    V1 = case proplists:get_value(SourceId,
                             Objects) of
                         undefined ->
                             Value;
