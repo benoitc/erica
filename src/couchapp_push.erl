@@ -21,14 +21,14 @@
 
 
 push([], Config) ->
-    push(["default"], Config);
-push([DbString], Config) ->
-    push1(couchapp_util:get_cwd(), DbString, Config);
+    push([<<"default">>], Config);
+push([DbKey], Config) ->
+    push1(couchapp_util:get_cwd(), DbKey, Config);
 
-push([Path, DbString|_], Config) ->
-    push1(Path, DbString, Config).
+push([Path, DbKey|_], Config) ->
+    push1(Path, DbKey, Config).
 
-push1(Path, DbString, Config) ->
+push1(Path, DbKey, Config) ->
     Path1 = filename:absname(Path),
     case couchapp_util:in_couchapp(Path1) of
         {ok, CouchappDir} ->
@@ -36,8 +36,8 @@ push1(Path, DbString, Config) ->
             %% patterns.
             Config1 = couchapp_config:update(CouchappDir, Config),
 
-            Db = couchapp_util:db_from_config(Config1, DbString),
-            ?DEBUG("push ~p to ~p~n", [CouchappDir, DbString]),
+            Db = couchapp_util:db_from_key(Config1, DbKey),
+            ?DEBUG("push ~p to ~p~n", [DbKey, CouchappDir]),
             do_push(CouchappDir, Db, Config1);
 
         {error, not_found} ->

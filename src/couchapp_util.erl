@@ -20,6 +20,7 @@
          in_couchapp/1,
          db_from_string/1,
          db_from_config/2,
+         db_from_key/2,
          v2a/1,
          relpath/2,
          parse_couchapp_url/1,
@@ -63,6 +64,14 @@ db_from_string(DbString) ->
     {ok, Db} = couchbeam:open_or_create_db(Server, DbName, Options),
     Db.
 
+%% @doc fetch a couchbeam database handler by being given a url (string) or
+%% a key to lookup the url from the config (binary)
+db_from_key(_Config, Key) when is_list(Key) ->
+    db_from_string(Key);
+db_from_key(Config, Key) when is_binary(Key) ->
+    Doc = couchapp_config:get_db(Config, Key),
+    Url = couchbeam_doc:get_value(<<"db">>, Doc),
+    db_from_string(binary_to_list(Url)).
 
 db_from_config(Config, DbString) ->
     case couchbeam_util:urlsplit(DbString) of
