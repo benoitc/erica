@@ -121,7 +121,7 @@ get_config_dbs([{Name, Obj}|Rest], Dbs) ->
         undefined ->
             get_config_dbs(Rest, Dbs);
         DbString ->
-            Db = couchapp_util:db_from_string(DbString),
+            Db = couchapp_util:db_from_string(binary_to_list(DbString)),
             Db1 = case couchbeam_doc:get_value(<<"oauth">>, Obj) of
                 undefined ->
                     Db;
