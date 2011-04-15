@@ -12,6 +12,10 @@
 -export([init/2,
          ignore/2]).
 
+-define(DEFAULT_IGNORE,
+        [<<"^.git*">>, <<"^.DS_Store$">>, <<"\\.swp$">>, <<"~$">>,
+         <<"^.svn$">>, <<"^.CVS$">>, <<"^.CVS$">>, <<"^.hg$">>]). %"
+
 %% ====================================================================
 %% Public API
 %% ====================================================================
@@ -24,7 +28,7 @@ init(AppDir, #config{ignore=OldIgnore}=Config) ->
         _ ->
             []
     end,
-    Config#config{ignore=OldIgnore ++ Ignore}.
+    Config#config{ignore=OldIgnore ++ Ignore ++ ?DEFAULT_IGNORE}.
 
 ignore(Path, #config{ignore=Ignore}) ->
     ignore1(Ignore, Path).
