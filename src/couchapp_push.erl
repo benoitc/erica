@@ -37,7 +37,6 @@ push1(Path, DbKey, Config) ->
             Config1 = couchapp_config:update(CouchappDir, Config),
 
             Db = couchapp_util:db_from_key(Config1, DbKey),
-            exit(Db),
             ?DEBUG("push ~p to ~p~n", [DbKey, CouchappDir]),
             do_push(CouchappDir, Db, Config1);
 
