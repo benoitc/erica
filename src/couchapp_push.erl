@@ -21,7 +21,7 @@
 
 
 push([], Config) ->
-    push([<<"default">>], Config);
+    push(["default"], Config);
 push([DbKey], Config) ->
     push1(couchapp_util:get_cwd(), DbKey, Config);
 
@@ -37,6 +37,7 @@ push1(Path, DbKey, Config) ->
             Config1 = couchapp_config:update(CouchappDir, Config),
 
             Db = couchapp_util:db_from_key(Config1, DbKey),
+            exit(Db),
             ?DEBUG("push ~p to ~p~n", [DbKey, CouchappDir]),
             do_push(CouchappDir, Db, Config1);
 
