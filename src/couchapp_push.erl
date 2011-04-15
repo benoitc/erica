@@ -260,7 +260,7 @@ process_path([".couchappignore"|Rest], Dir, Couchapp) ->
 process_path([File|Rest], Dir, #couchapp{config=Config, path=Path,
         doc=Doc, manifest=Manifest}=Couchapp) ->
     Fname = filename:join(Dir, File),
-    case couchapp_ignore:ignore(Fname, Config) of
+    case couchapp_ignore:ignore(couchapp_util:relpath(Fname, Path), Config) of
         true ->
             process_path(Rest, Dir, Couchapp);
         false ->
@@ -296,7 +296,7 @@ process_dir([], _Dir, _Path, _Config, Doc, Manifest) ->
     {Doc, Manifest};
 process_dir([File|Rest], Dir, Path, Config, Doc, Manifest) ->
     Fname = filename:join(Dir, File),
-    case couchapp_ignore:ignore(Fname, Config) of
+    case couchapp_ignore:ignore(couchapp_util:relpath(Fname, Path), Config) of
         true ->
             process_dir(Rest, Dir, Path, Config, Doc, Manifest);
         false ->
@@ -341,26 +341,30 @@ process_file(File, Fname) ->
 attachments_from_fs(#couchapp{path=Path}=Couchapp) ->
     AttPath = filename:join(Path, "_attachments"),
     Files = filelib:wildcard("*", AttPath),
-    Attachments = attachments_from_fs1(Files, AttPath, []),
+    Attachments = attachments_from_fs1(Files, AttPath, Couchapp, []),
     Couchapp#couchapp{attachments=Attachments}.
 
-attachments_from_fs1([], _Dir, Att) ->
+attachments_from_fs1([], _Dir, _Couchapp, Att) ->
     Att;
-attachments_from_fs1([F|R], Dir, Att) ->
+attachments_from_fs1([F|R], Dir, #couchapp{path=Root, config=Conf}=Couchapp, Att) ->
     Path = filename:join(Dir, F),
-
-    Att1 = case filelib:is_dir(Path) of
+    case couchapp_ignore:ignore(couchapp_util:relpath(Path, Root), Conf) of
         true ->
-            Files = filelib:wildcard("*", Path),
-            SubAtt = attachments_from_fs1(Files, Path, []),
-            Att ++ SubAtt;
+            attachments_from_fs1(R, Dir, Couchapp, Att);
         false ->
-            {ok, Md5} = couchapp_util:md5_file(Path),
-            Md5Hash = lists:flatten([io_lib:format("~.16b",[N])
-                    || N <-binary_to_list(Md5)]),
-            [{Path, list_to_binary(Md5Hash)}|Att]
-    end,
-    attachments_from_fs1(R, Dir, Att1).
+            Att1 = case filelib:is_dir(Path) of
+                       true ->
+                           Files = filelib:wildcard("*", Path),
+                           SubAtt = attachments_from_fs1(Files, Path, Couchapp, []),
+                           Att ++ SubAtt;
+                       false ->
+                           {ok, Md5} = couchapp_util:md5_file(Path),
+                           Md5Hash = lists:flatten([io_lib:format("~.16b",[N])
+                                                    || N <-binary_to_list(Md5)]),
+                           [{Path, list_to_binary(Md5Hash)}|Att]
+                   end,
+            attachments_from_fs1(R, Dir, Couchapp, Att1)
+    end.
 
 is_utf8(S) ->
     try lists:all(fun(C) -> xmerl_ucs:is_incharset(C, 'utf-8') end, S)
