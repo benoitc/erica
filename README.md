@@ -24,6 +24,8 @@ connectivity.
 
 Couchapp requires Erlang R13B04 or sup.
 
+    $ git clone git://github.com/benoitc/erlca.git
+    $ cd erlca
     $ make
 
 Then you can use the generated script **couchapp** .
