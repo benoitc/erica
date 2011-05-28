@@ -1,12 +1,12 @@
 %%% -*- erlang -*-
 %%%
-%%% This file is part of couchapp released under the Apache 2 license.
+%%% This file is part of erlca released under the Apache 2 license.
 %%% See the NOTICE for more information.
 
--module(couchapp_core).
+-module(erlca_core).
 -author('Benoît Chesneau <benoitc@e-engura.org>').
 
--include("couchapp.hrl").
+-include("erlca.hrl").
 
 -export([run/1]).
 
@@ -16,11 +16,11 @@ run(["help"]) ->
     help(),
     ok;
 run(["version"]) ->
-    ok = application:load(couchapp),
+    ok = application:load(erlca),
     version(),
     ok;
 run(RawArgs) ->
-    ok = application:load(couchapp),
+    ok = application:load(erlca),
 
     %% parse arguments
     {Options, Commands} = parse_args(RawArgs),
@@ -29,21 +29,21 @@ run(RawArgs) ->
     {ok, _} = couchbeam:start(),
 
     %% Initialize logging system
-    couchapp_log:init(),
+    erlca_log:init(),
 
     %% Determine the location of the rebar executable; important for pulling
     %% resources out of the escript
-    couchapp_config:set_global(escript, filename:absname(escript:script_name())),
-    ?DEBUG("Couchapp location: ~p\n", [couchapp_config:get_global(escript, undefined)]),
+    erlca_config:set_global(escript, filename:absname(escript:script_name())),
+    ?DEBUG("Couchapp location: ~p\n", [erlca_config:get_global(escript, undefined)]),
 
     %% Note the top-level directory for reference
-    couchapp_config:set_global(base_dir, filename:absname(couchapp_util:get_cwd())),
+    erlca_config:set_global(base_dir, filename:absname(erlca_util:get_cwd())),
 
     process_commands(Commands, Options).
 
 process_commands([Command|Args], Options) ->
-    {ok, Modules} = application:get_env(couchapp, modules),
-    Config = couchapp_config:new(Options),
+    {ok, Modules} = application:get_env(erlca, modules),
+    Config = erlca_config:new(Options),
     execute(list_to_atom(Command), Args, Modules, Config).
 
 execute(Command, Args, Modules, Config) ->
@@ -51,7 +51,7 @@ execute(Command, Args, Modules, Config) ->
         [] ->
             ?WARN("'~p' unkown command", [Command]);
         TargetModules ->
-            Dir = couchapp_util:get_cwd(),
+            Dir = erlca_util:get_cwd(),
             ?CONSOLE("==> ~s (~s)\n", [filename:basename(Dir), Command]),
             case catch(run_modules(TargetModules, Command, Args, Config)) of
                 ok ->
@@ -135,7 +135,7 @@ set_global_flag(Options, Flag) ->
                 false ->
                     "0"
             end,
-    couchapp_config:set_global(Flag, Value).
+    erlca_config:set_global(Flag, Value).
 
 %%
 %% show info and maybe halt execution
@@ -169,7 +169,7 @@ show_info_maybe_halt(Opts, NonOptArgs) ->
     end.
 help() ->
     OptSpecList = option_spec_list(),
-    getopt:usage(OptSpecList, "couchapp",
+    getopt:usage(OptSpecList, "erlca",
                  "[...] <command,...>",
                  [{"command", "Command to run (e.g. push)"}]).
 %%
@@ -177,19 +177,19 @@ help() ->
 %%
 commands() ->
     S = <<"
-init                                 initialize a couchapp
+init                                 initialize a erlca
 push        [options...] [dir] dest  push a document to couchdb
 clone       [option] source dir      clone a document from couchdb
 pushapps    [option] source dest     push all CouchApps in a folder
                                      to couchdb
 pushdocs    [option] source dest     push all docs in a folder to
                                      couchdb
-generate    [option] func [dir] name generate a new couchapp or a
+generate    [option] func [dir] name generate a new erlca or a
                                      function from a template
 vendor                               install or update a vendor
             install [opts] dir src
             update  [opts] dir src
-browse                               display the couchapp in the
+browse                               display the erlca in the
                                      browser.
 
 help                                 Show the program options
@@ -206,8 +206,8 @@ version                              Show version information
 %% show version information and halt
 %%
 version() ->
-    {ok, Vsn} = application:get_key(couchapp, vsn),
-    ?CONSOLE("couchapp version: ~s\n", [Vsn]).
+    {ok, Vsn} = application:get_key(erlca, vsn),
+    ?CONSOLE("erlca version: ~s\n", [Vsn]).
 
 
 %%
@@ -222,7 +222,7 @@ filter_flags([Item | Rest], Commands) ->
             filter_flags(Rest, [Command | Commands]);
         [KeyStr, Value] ->
             Key = list_to_atom(KeyStr),
-            couchapp_config:set_global(Key, Value),
+            erlca_config:set_global(Key, Value),
             filter_flags(Rest, Commands);
         Other ->
             ?CONSOLE("Ignoring command line argument: ~p\n", [Other]),

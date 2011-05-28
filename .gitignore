@@ -1,7 +1,6 @@
 *.gem
 *.swp
 *.pyc
-Couchapp.egg-info
 build
 dist
 setuptools-*
@@ -11,5 +10,4 @@ setuptools-*
 deps
 ebin/*
 erl_crash.dump
-debian/python-couchapp
-debian/couchapp
+erlca

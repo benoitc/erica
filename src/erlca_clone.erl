@@ -1,11 +1,11 @@
 %%% -*- erlang -*-
 %%%
-%%% This file is part of couchapp released under the Apache 2 license.
+%%% This file is part of erlca released under the Apache 2 license.
 %%% See the NOTICE for more information.
 
--module(couchapp_clone).
+-module(erlca_clone).
 
--include("couchapp.hrl").
+-include("erlca.hrl").
 
 -export([clone/2]).
 
@@ -18,7 +18,7 @@ clone([Url], Config) ->
 clone([Url, Path|_], Config) ->
     clone1(filename:absname(Path), Url, Config);
 clone(_, _) ->
-    ?ERROR("missing arguments. Command line should be :'couchapp clone "
+    ?ERROR("missing arguments. Command line should be :'erlca clone "
        ++ "URL [CouchappDir]", []),
     halt(1).
 
@@ -27,17 +27,17 @@ clone(_, _) ->
 %% ====================================================================
 
 clone1(Path, Url, Config) ->
-    case couchapp_util:parse_couchapp_url(Url) of
+    case erlca_util:parse_erlca_url(Url) of
         {ok, Db, AppName, DocId} ->
             Path1 = case Path of
                 "." ->
-                    filename:join(couchapp_util:get_cwd(), AppName);
+                    filename:join(erlca_util:get_cwd(), AppName);
                 _ ->
                     filename:absname(Path)
             end,
-            case couchapp_util:in_couchapp(Path1) of
+            case erlca_util:in_erlca(Path1) of
                 {ok, _} ->
-                    ?ERROR("Can't clone in an existing couchapp.~n",
+                    ?ERROR("Can't clone in an existing erlca.~n",
                         []),
                     halt(1);
                 _ ->
@@ -50,10 +50,10 @@ clone1(Path, Url, Config) ->
 do_clone(Path, DocId, Db, Config) ->
     case couchbeam:open_doc(Db, DocId) of
         {ok, Doc} ->
-            % initialize the couchapp directory
+            % initialize the erlca directory
             ok = filelib:ensure_dir(Path),
             ?DEBUG("path ~p~n", [Path]),
-            couchapp_init:init([Path], Config),
+            erlca_init:init([Path], Config),
 
             AttDir = filename:join(Path, "_attachments"),
             {Atts} = couchbeam_doc:get_value(<<"_attachments">>, Doc,
@@ -98,7 +98,7 @@ attachments_to_fs([AttName|Rest], Db, DocId, AttDir) ->
     AttName1 = binary_to_list(AttName),
     Path = filename:join(AttDir, filename:nativename(AttName1)),
     Dir = filename:dirname(Path),
-    ok = couchapp_util:make_dir(Dir),
+    ok = erlca_util:make_dir(Dir),
 
     %% we stream attachments.
     {ok, Fd} = file:open(Path, [write]),
@@ -134,7 +134,7 @@ doc_to_fs([{<<"_attachments">>, _}|Rest], Dir, Manifest, Objects,
 doc_to_fs([{PropName, Value}|Rest], Dir, Manifest, Objects, Depth) ->
     Path = filename:join(Dir, binary_to_list(PropName)),
     Dir1 = filename:dirname(Path),
-    ok = couchapp_util:make_dir(Dir1),
+    ok = erlca_util:make_dir(Dir1),
     case Value of
         {[_|_]} ->
             case proplists:get_value(Path, Manifest) of
@@ -155,7 +155,7 @@ doc_to_fs([{PropName, Value}|Rest], Dir, Manifest, Objects, Depth) ->
                     {Path, V};
                 Ext when Ext =:= ".js" ->
                     SourceId = list_to_binary(
-                        couchapp_macros:get_source_id(Value)),
+                        erlca_macros:get_source_id(Value)),
                     V1 = case proplists:get_value(SourceId,
                             Objects) of
                         undefined ->

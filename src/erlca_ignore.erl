@@ -1,13 +1,13 @@
 %%% -*- erlang -*-
 %%%
-%%% This file is part of couchapp released under the Apache 2 license.
+%%% This file is part of erlca released under the Apache 2 license.
 %%% See the NOTICE for more information.
 
--module(couchapp_ignore).
+-module(erlca_ignore).
 
 -author('Benoît Chesneau <benoitc@e-engura.org>').
 
--include("couchapp.hrl").
+-include("erlca.hrl").
 
 -export([init/2,
          ignore/2]).
@@ -21,7 +21,7 @@
 %% ====================================================================
 
 init(AppDir, #config{ignore=OldIgnore}=Config) ->
-    IgnoreFile = filename:join(AppDir, ".couchappignore"),
+    IgnoreFile = filename:join(AppDir, ".erlcaignore"),
     Ignore = case filelib:is_regular(IgnoreFile) of
         true ->
             load(IgnoreFile);

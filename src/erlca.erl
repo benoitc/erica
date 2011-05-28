@@ -1,6 +1,6 @@
 %%% -*- erlang -*-
 %%%
-%%% This file is part of couchapp released under the Apache 2 license.
+%%% This file is part of erlca released under the Apache 2 license.
 %%% See the NOTICE for more information.
 
 -module(erlca).
@@ -9,7 +9,7 @@
 -export([main/1]).
 
 main(Args) ->
-    case catch(couchapp_core:run(Args)) of
+    case catch(erlca_core:run(Args)) of
         ok ->
             ok;
         {error, failed} ->

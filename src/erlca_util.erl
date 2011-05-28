@@ -1,12 +1,12 @@
 %%% -*- erlang -*-
 %%%
-%%% This file is part of couchapp released under the Apache 2 license.
+%%% This file is part of erlca released under the Apache 2 license.
 %%% See the NOTICE for more information.
 
--module(couchapp_util).
+-module(erlca_util).
 
 -include("ibrowse.hrl").
--include("couchapp.hrl").
+-include("erlca.hrl").
 
 -define(BLOCKSIZE, 32768).
 -define(SEPARATOR, $\/).
@@ -17,13 +17,13 @@
          find_executable/1,
          normalize_path/1,
          user_path/0,
-         in_couchapp/1,
+         in_erlca/1,
          db_from_string/1,
          db_from_config/2,
          db_from_key/2,
          v2a/1,
          relpath/2,
-         parse_couchapp_url/1,
+         parse_erlca_url/1,
          make_dir/1]).
 
 
@@ -67,7 +67,7 @@ db_from_string(DbString) ->
 %% @doc fetch a couchbeam database handler by being given a url or
 %% a key to lookup the url from the config
 db_from_key(Config, Key) ->
-    case couchapp_config:get_db(Config, list_to_binary(Key)) of
+    case erlca_config:get_db(Config, list_to_binary(Key)) of
         undefined ->
             db_from_string(Key);
         Doc ->
@@ -79,7 +79,7 @@ db_from_key(Config, Key) ->
 db_from_config(Config, DbString) ->
     case couchbeam_util:urlsplit(DbString) of
         {[], [], _Path, _, _} ->
-            case couchapp_config:get_db(Config, DbString) of
+            case erlca_config:get_db(Config, DbString) of
                 undefined ->
                     db_from_string(DbString);
                 Db ->
@@ -89,11 +89,11 @@ db_from_config(Config, DbString) ->
             db_from_string(DbString)
     end.
 
-parse_couchapp_url(AppUrl) ->
+parse_erlca_url(AppUrl) ->
     Url = ibrowse_lib:parse_url(AppUrl),
     PathParts = string:tokens(Url#url.path, "/"),
 
-    case parse_couchapp_path(PathParts) of
+    case parse_erlca_path(PathParts) of
         {DbName, AppName, DocId} ->
             Server = couchbeam:server_connection(Url#url.host,
                 Url#url.port),
@@ -114,15 +114,15 @@ parse_couchapp_url(AppUrl) ->
             Error
     end.
 
-in_couchapp("/") ->
+in_erlca("/") ->
     {error, not_found};
-in_couchapp(Path) ->
-    RcPath = filename:join(Path, ".couchapprc"),
+in_erlca(Path) ->
+    RcPath = filename:join(Path, ".erlcarc"),
     case filelib:is_regular(RcPath) of
         true ->
             {ok, Path};
         false ->
-            in_couchapp(normalize_path(filename:join(Path, "../")))
+            in_erlca(normalize_path(filename:join(Path, "../")))
     end.
 
 user_path() ->
@@ -219,12 +219,12 @@ md5_file(File) ->
 %% ====================================================================
 
 
-parse_couchapp_path([DbName, "_design", AppName|_]) ->
+parse_erlca_path([DbName, "_design", AppName|_]) ->
     {DbName, AppName, "_design/" ++ AppName};
-parse_couchapp_path([DbName, DocId]) ->
+parse_erlca_path([DbName, DocId]) ->
     {DbName, DocId, DocId};
-parse_couchapp_path(_) ->
-    invalid_couchapp_url.
+parse_erlca_path(_) ->
+    invalid_erlca_url.
 
 normalize_path1([], Acc) ->
     lists:reverse(Acc);

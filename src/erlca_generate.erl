@@ -1,9 +1,9 @@
 %%% -*- erlang -*-
 %%%
-%%% This file is part of couchapp released under the Apache 2 license.
+%%% This file is part of erlca released under the Apache 2 license.
 %%% See the NOTICE for more information.
 
--module(couchapp_generate).
+-module(erlca_generate).
 
 generate([AppName]) ->
     generate_app(AppName, ".");

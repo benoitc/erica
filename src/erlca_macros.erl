@@ -1,13 +1,13 @@
 %%% -*- erlang -*-
 %%%
-%%% This file is part of couchapp released under the Apache 2 license.
+%%% This file is part of erlca released under the Apache 2 license.
 %%% See the NOTICE for more information.
 
--module(couchapp_macros).
+-module(erlca_macros).
 
 -author('Benoît Chesneau <benoitc@e-engura.org>').
 
--include("couchapp.hrl").
+-include("erlca.hrl").
 
 -export([process_macros/2,
          get_source_id/1]).

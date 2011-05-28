@@ -13,8 +13,8 @@ main(Args) ->
 
 
 
-    %% Run couchapp to do proper .app validation and such
-    couchapp:main(["compile"] ++ Args),
+    %% Run erlca to do proper .app validation and such
+    erlca:main(["compile"] ++ Args),
 
 
     %% Read the contents of the files in ebin and templates; note that we place
@@ -58,7 +58,7 @@ main(Args) ->
     io:format("Congratulations! You now have a self-contained script called \"erlca\" in\n"
               "your current working directory. Place this script anywhere in your path\n"
               "and you can use build and push your design docs and docs
-              like couchapp.\n").
+              like erlca.\n").
 
 load_files(Wildcard, Dir) ->
     [read_file(Filename, Dir) || Filename <- filelib:wildcard(Wildcard,
