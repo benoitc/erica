@@ -3,7 +3,7 @@
 %%% This file is part of couchapp released under the Apache 2 license.
 %%% See the NOTICE for more information.
 
--module(couchapp).
+-module(erlca).
 -author('Benoît Chesneau <benoitc@e-engura.org>').
 
 -export([main/1]).
@@ -15,6 +15,6 @@ main(Args) ->
         {error, failed} ->
             halt(1);
         Error ->
-            io:format("Uncaught error in couchapp_core: ~p\n", [Error]),
+            io:format("Uncaught error in erlca: ~p\n", [Error]),
             halt(1)
     end.
