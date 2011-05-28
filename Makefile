@@ -13,11 +13,11 @@ deps:
 doc:
 	@mkdir -p doc
 	@$(ERL) -noshell -run edoc_run application '$(APP)' '"."' '[{preprocess, true},{includes, ["."]}, {dir, "./doc"}]'
-	
 
-clean: 
+
+clean:
 	@./rebar clean
-	@rm -f couchapp
+	@rm -f erlca
 
 distclean: clean
 	@./rebar delete-deps
