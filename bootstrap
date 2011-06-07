@@ -6,6 +6,7 @@ main(Args) ->
 
     %% Add ebin/ to our path
     true = code:add_path("ebin"),
+    true = code:add_path("deps/mochiweb/ebin"),
     true = code:add_path("deps/ejson/ebin"),
     true = code:add_path("deps/ibrowse/ebin"),
     true = code:add_path("deps/oauth/ebin"),
