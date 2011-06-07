@@ -1,31 +1,58 @@
-CouchApp: Standalone CouchDB Application Development Made Simple
+#Erica
 
-CouchApp is designed to structure standalone CouchDB application
-development for maximum application portability.
+## Made couchapp development easy
+ 
+Erica is a tool compatible with
+[couchapp](http://github.com/couchapp/couchapp) that helps you to create
+and manage your couchapps (CouchDB embedded applications).
 
-CouchApp is a set of scripts and a jQuery plugin designed to bring
-clarity and order to the freedom of CouchDB's document-based approach.
-Write apps using just JavaScript and HTML
+##Requirements
 
-Render HTML documents using JavaScript templates run by CouchDB. You'll
-get parallelism and cacheability, using only HTML and JS. Building
-standalone CouchDB applications according to correct principles affords
-you options not found on other platforms.
-Deploy your apps to the client
-
-CouchDB's replication means that programs running locally, can still be
-social. Applications control replication data-flows, so publishing
-messages and subscribing to other people is easy. Your users will see
-the benefits of the web without the hassle of requiring always-on
-connectivity.
-
+* Erlang R13B04 or sup
+* gcc
 
 ##Installation
 
 Couchapp requires Erlang R13B04 or sup.
 
-    $ git clone git://github.com/benoitc/erlca.git
-    $ cd erlca
+    $ git clone git://github.com/benoitc/erica.git
+    $ cd erica
     $ make
 
-Then you can use the generated script **couchapp** .
+Then you can use the generated script **erica** .
+
+To install it on your system, run the command line:
+
+    $ make install
+
+Usage:
+
+    $ erica -h
+    Usage: erica [-h] [-c] [-v] [-f] [-V] [--is-ddoc <is_ddoc>] [--docid <docid>] [--atomic <atomic>] [...] <command,...>
+
+      -h, --help		Show the program options
+      -c, --commands	Show available commands
+      -v, --verbose		Be verbose about what gets done
+      -f, --force		Force
+      -V, --version		Show version information
+      --is-ddoc		Tell to push command if you send a design document or not.
+      --docid		Set docid with push command
+      --atomic		Send attachments inline with push command
+      command		Command to run (e.g. push)
+
+Available commands are:
+
+    init                                 initialize a erica
+    push        [options...] [dir] dest  push a document to couchdb
+    clone       [option] source dir      clone a document from couchdb
+    browse                               display the erica in the
+                                         browser.
+    create-app  appid=AppID lang=Lang    Create a blank couchapp, Default:
+                                         appid=myapp, lang=javascript
+    create      template= [vars...]      create an application using a
+                                         template
+    help                                 Show the program options
+    version                              Show version information
+    
+
+## First steps

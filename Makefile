@@ -1,11 +1,16 @@
 
 .PHONY: deps doc
 
+PREFIX?= /usr/local
+
 all: deps compile
 
+install: all
+	@install -m 0755 -c erica $(PREFIX)/bin
+	
 compile:
 	@./rebar compile
-	./bootstrap
+	@./bootstrap
 
 deps:
 	@./rebar get-deps

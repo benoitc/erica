@@ -180,20 +180,15 @@ commands() ->
 init                                 initialize a erica
 push        [options...] [dir] dest  push a document to couchdb
 clone       [option] source dir      clone a document from couchdb
-pushapps    [option] source dest     push all CouchApps in a folder
-                                     to couchdb
-pushdocs    [option] source dest     push all docs in a folder to
-                                     couchdb
-generate    [option] func [dir] name generate a new erica or a
-                                     function from a template
-vendor                               install or update a vendor
-            install [opts] dir src
-            update  [opts] dir src
 browse                               display the erica in the
                                      browser.
-
+create-app  appid=AppID lang=Lang    Create a blank couchapp, Default:
+                                     appid=myapp, lang=javascript
+create      template= [vars...]      create an application using a
+                                     template
 help                                 Show the program options
 version                              Show version information
+
 ">>,
     io:put_chars(S),
     %% workaround to delay exit until all output is written
