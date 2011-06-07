@@ -10,4 +10,4 @@ setuptools-*
 deps
 ebin/*
 erl_crash.dump
-erlca
+erica

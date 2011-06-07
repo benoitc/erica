@@ -26,9 +26,9 @@ main(Args) ->
             ++ load_files("*", "deps/ibrowse/ebin")
             ++ load_files("*", "deps/oauth/ebin")
             ++ load_files("*", "deps/couchbeam/ebin")
-            ++ load_files("*", "priv/templates"),
+            ++ load_files("priv/templates/*", "."),
 
-            case zip:create("mem", Files, [memory]) of
+    case zip:create("mem", Files, [memory]) of
         {ok, {"mem", ZipBin}} ->
             %% Archive was successfully created. Prefix that binary with our
             %% header and write to "rebar" file

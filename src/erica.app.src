@@ -19,5 +19,6 @@
         erica_init,
         erica_generate,
         erica_push,
-        erica_clone]}
+        erica_clone,
+        erica_templater]}
   ]}]}.

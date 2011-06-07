@@ -24,7 +24,9 @@
          v2a/1,
          relpath/2,
          parse_couchapp_url/1,
-         make_dir/1]).
+         make_dir/1,
+         escript_foldl/3,
+         find_files/2]).
 
 
 %% ====================================================================
@@ -249,6 +251,9 @@ loop (P, C) ->
         {ok, crypto:md5_final(C)}
     end.
 
+%% TODO: Rename emulate_escript_foldl to escript_foldl and remove
+%% this function when the time is right. escript:foldl/3 was an
+%% undocumented exported fun and has been removed in R14.
 
 escript_foldl(Fun, Acc, File) ->
     {module, zip} = code:ensure_loaded(zip),
@@ -258,3 +263,27 @@ escript_foldl(Fun, Acc, File) ->
         false ->
             escript:foldl(Fun, Acc, File)
     end.
+
+
+
+emulate_escript_foldl(Fun, Acc, File) ->
+    case escript:extract(File, [compile_source]) of
+        {ok, [_Shebang, _Comment, _EmuArgs, Body]} ->
+            case Body of
+                {source, BeamCode} ->
+                    GetInfo = fun() -> file:read_file_info(File) end,
+                    GetBin = fun() -> BeamCode end,
+                    {ok, Fun(".", GetInfo, GetBin, Acc)};
+                {beam, BeamCode} ->
+                    GetInfo = fun() -> file:read_file_info(File) end,
+                    GetBin = fun() -> BeamCode end,
+                    {ok, Fun(".", GetInfo, GetBin, Acc)};
+                {archive, ArchiveBin} ->
+                    zip:foldl(Fun, Acc, {File, ArchiveBin})
+            end;
+        {error, _} = Error ->
+            Error
+    end.
+
+find_files(Dir, Regex) ->
+    filelib:fold_files(Dir, Regex, true, fun(F, Acc) -> [F | Acc] end, []).
