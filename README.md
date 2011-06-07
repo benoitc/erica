@@ -71,10 +71,10 @@ usages of commands.
 ### 1 . create your first application
 
 You can use a template to create your first application. Like the
-genetic one. It will create a simple project that you cna use for a
+generic one. It will create a simple project that you can use for a
 start:
 
-    $ erlica create-app appid=myapp lang=javascript
+    $ erica create-app appid=myapp lang=javascript
     ==> tmp (create-app)
     Writing myapp/_id
     Writing myapp/language
@@ -89,7 +89,7 @@ start:
     -rw-r--r--   1 benoitc  wheel   13 Jun  7 11:13 _id
     -rw-r--r--   1 benoitc  wheel   10 Jun  7 11:13 language
 
-Erlica has created an _attachments folder in the myapp folder. This is
+Erica has created an _attachments folder in the myapp folder. This is
 where you can put all the attachments. You can put your views functions in
 `views/viewname/{map,reduce}.js` , shows in `shows` folder, lists in
 `lists`, ... See the wiki for more info (soon).
@@ -100,7 +100,7 @@ where you can put all the attachments. You can put your views functions in
     
 Note: **erica** is language agnostic, so if you want to create your couchapp in
 coffescript, just replace javascript by coffescript or yuse the language
-you want if an couchapp server exist for it.
+you want if an couchapp server exists for it.
 
 ### 2. Let's create a simple hello world
 
@@ -120,7 +120,7 @@ Then visit the result on
 That's it.
 
 Note: By default the CouchDB Node uri is 127.0.0.1:5984 so you could
-just use the db num in push command line if you want:
+just use the db name in push command line if you want:
 
     $ erica push testdb
 
