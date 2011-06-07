@@ -111,6 +111,12 @@ Then visit the result on
 
 That's it.
 
+Note: By default the CouchDB Node uri is 127.0.0.1:5984 so you could
+just use the db num in push command line if you want:
+
+    $ erica push testdb
+
+This is fully configurable in your .couchapprc.
 
 If you have any question contact us on irc freenode **#couchapp** or on
 the mailing-list: http://groups.google.com/group/couchapp .
