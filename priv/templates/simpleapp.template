@@ -1,4 +1,5 @@
 {variables, [{appid, "myapp"}, {lang, "javascript"}]}.
 {template, "_id", "{{appid}}/_id"}.
 {template, "language", "{{appid}}/language"}.
+{file, "couchapp_rc", "{{appid}}/.couchapprc"}.
 {dir, "{{appid}}/_attachments"}.
