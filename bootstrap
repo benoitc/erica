@@ -21,6 +21,7 @@ main(Args) ->
     %% all the beam files at the top level of the code archive so that code loading
     %% works properly.
     Files = load_files("*", "ebin")
+            ++ load_files("*", "deps/mochiweb/ebin")
             ++ load_files("*", "deps/ejson/ebin")
             ++ load_files("*", "deps/ejson/priv")
             ++ load_files("*", "deps/ibrowse/ebin")
@@ -61,14 +62,25 @@ main(Args) ->
               like erica.\n").
 
 load_files(Wildcard, Dir) ->
-    [read_file(Filename, Dir) || Filename <- filelib:wildcard(Wildcard,
-            Dir), not lists:member(Filename, [".", ".."])].
+    lists:foldl(fun(Filename, Acc) ->
+            case lists:member(Filename, [".", ".."]) of
+                true ->
+                    Acc;
+                _ ->
+                    case read_file(Filename, Dir) of
+                        {Filename, Bin} ->
+                            [{Filename, Bin}|Acc];
+                        Bins ->
+                            Bins ++ Acc
+                    end
+            end
+        end, [], filelib:wildcard(Wildcard, Dir)).
 
 read_file(Filename, Dir) ->
     Filename1 = filename:join(Dir, Filename),
     case filelib:is_dir(Filename1) of
         true ->
-            load_files("*", Filename1);
+            load_files(Filename ++ "/*", Dir);
         false ->
             {ok, Bin} = file:read_file(filename:join(Dir, Filename)),
             {Filename, Bin}

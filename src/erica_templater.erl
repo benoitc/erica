@@ -145,7 +145,16 @@ render(Bin, Context) ->
     ReOpts = [global, {return, list}],
     Str0 = re:replace(Bin, "\\\\", "\\\\\\", ReOpts),
     Str1 = re:replace(Str0, "\"", "\\\\\"", ReOpts),
-    mustache:render(Str1, Context).
+    Rendered = mustache:render(Str1, Context),
+
+    %% inneficient method to remove trailing new line.
+    case lists:reverse(Rendered) of
+        [$\n|Rendered1] -> 
+            lists:reverse(Rendered1);
+        _ -> 
+            Rendered
+    end.
+
 
 
 %% ===================================================================
@@ -305,10 +314,7 @@ execute_template([], _TemplateType, _TemplateName, _Context,
     end;
 execute_template([{template, Input, Output} | Rest], TemplateType,
                  TemplateName, Context, Force, ExistingFiles) ->
-    ?DEBUG("loaded file: ~p ~n", [filename:join(filename:dirname(TemplateName), Input)]),
-    
     InputName = filename:join(filename:dirname(TemplateName), Input),
-    ?DEBUG("load file ~p ~n", [load_file(TemplateType, InputName)]),
     case write_file(Output, render(load_file(TemplateType, InputName), Context),
                     Force) of
         ok ->
@@ -320,7 +326,6 @@ execute_template([{template, Input, Output} | Rest], TemplateType,
     end;
 execute_template([{file, Input, Output} | Rest], TemplateType, TemplateName,
                  Context, Force, ExistingFiles) ->
-                 ?DEBUG("ICI ~p~n", [filename:dirname(TemplateName)]),
     InputName = filename:join(filename:dirname(TemplateName), Input),
     case write_file(Output, load_file(TemplateType, InputName), Force) of
         ok ->

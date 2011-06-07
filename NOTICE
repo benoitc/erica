@@ -15,9 +15,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-erica_log, erica_templater
------------------------------
-from rebar tool.
+erica_log, erica_templater, erica_file_utils
+--------------------------------------------
+from rebar tool with some changes.
 
 Copyright (c) 2009 Dave Smith (dizzyd@dizzyd.com)
 

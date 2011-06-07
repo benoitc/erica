@@ -134,7 +134,7 @@ process_signatures(#couchapp{att_dir=AttDir, doc=Doc, old_doc=OldDoc,
     {Removed, NewAtts} = process_signatures1(Signatures, [], Atts,
         AttDir),
 
-    NewSignatures = [{erica_util:relpath(F, AttDir), S}
+    NewSignatures = [{list_to_binary(erica_util:relpath(F, AttDir)), S}
         || {F, S} <- Atts],
 
     {OldAtts} = couchbeam_doc:get_value(<<"_attachments">>, OldDoc, {[]}),
@@ -194,7 +194,7 @@ make_doc(Couchapp) ->
         Meta ->
             Meta1 = couchbeam_doc:set_value(<<"manifest">>, Manifest, Meta),
             FinalMeta = couchbeam_doc:set_value(<<"signatures">>,
-                Signatures, Meta1),
+                {Signatures}, Meta1),
             couchbeam_doc:set_value(<<"couchapp">>, FinalMeta, Doc1)
     end,
     erica_macros:process_macros(Doc2, AppDir).
