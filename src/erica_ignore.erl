@@ -1,13 +1,13 @@
 %%% -*- erlang -*-
 %%%
-%%% This file is part of erlca released under the Apache 2 license.
+%%% This file is part of erica released under the Apache 2 license.
 %%% See the NOTICE for more information.
 
--module(erlca_ignore).
+-module(erica_ignore).
 
 -author('Benoît Chesneau <benoitc@e-engura.org>').
 
--include("erlca.hrl").
+-include("erica.hrl").
 
 -export([init/2,
          ignore/2]).
@@ -21,7 +21,7 @@
 %% ====================================================================
 
 init(AppDir, #config{ignore=OldIgnore}=Config) ->
-    IgnoreFile = filename:join(AppDir, ".erlcaignore"),
+    IgnoreFile = filename:join(AppDir, ".ericaignore"),
     Ignore = case filelib:is_regular(IgnoreFile) of
         true ->
             load(IgnoreFile);

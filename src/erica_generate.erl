@@ -1,9 +1,9 @@
 %%% -*- erlang -*-
 %%%
-%%% This file is part of erlca released under the Apache 2 license.
+%%% This file is part of erica released under the Apache 2 license.
 %%% See the NOTICE for more information.
 
--module(erlca_generate).
+-module(erica_generate).
 
 generate([AppName]) ->
     generate_app(AppName, ".");

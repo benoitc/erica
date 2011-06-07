@@ -17,7 +17,7 @@ doc:
 
 clean:
 	@./rebar clean
-	@rm -f erlca
+	@rm -f erica
 
 distclean: clean
 	@./rebar delete-deps

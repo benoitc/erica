@@ -1,9 +1,9 @@
 %%% -*- erlang -*-
 %%%
-%%% This file is part of erlca released under the Apache 2 license.
+%%% This file is part of erica released under the Apache 2 license.
 %%% See the NOTICE for more information.
 
--module(erlca_log).
+-module(erica_log).
 
 -export([init/0,
          set_level/1, get_level/0,
@@ -14,7 +14,7 @@
 %% ===================================================================
 
 init() ->
-    case erlca_config:get_global(verbose, "0") of
+    case erica_config:get_global(verbose, "0") of
         "1" ->
             set_level(debug);
         _ ->
@@ -23,10 +23,10 @@ init() ->
 
 
 set_level(Level) ->
-    ok = application:set_env(erlca, log_level, Level).
+    ok = application:set_env(erica, log_level, Level).
 
 get_level() ->
-    case application:get_env(erlca, log_level) of
+    case application:get_env(erica, log_level) of
         undefined ->
             error;
         {ok, Value} ->
@@ -34,7 +34,7 @@ get_level() ->
     end.
 
 log(Level, Str, Args) ->
-    {ok, LogLevel} = application:get_env(erlca, log_level),
+    {ok, LogLevel} = application:get_env(erica, log_level),
     case should_log(LogLevel, Level) of
         true ->
             io:format(log_prefix(Level) ++ Str, Args);

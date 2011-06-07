@@ -13,8 +13,8 @@ main(Args) ->
 
 
 
-    %% Run erlca to do proper .app validation and such
-    erlca:main(["compile"] ++ Args),
+    %% Run erica to do proper .app validation and such
+    erica:main(["compile"] ++ Args),
 
 
     %% Read the contents of the files in ebin and templates; note that we place
@@ -33,32 +33,32 @@ main(Args) ->
             %% Archive was successfully created. Prefix that binary with our
             %% header and write to "rebar" file
             Script = <<"#!/usr/bin/env escript\n%%! -pa . -noshell -noinput -sasl errlog_type error\n", ZipBin/binary>>,
-            case file:write_file("erlca", Script) of
+            case file:write_file("erica", Script) of
                 ok ->
                     ok;
                 {error, WriteError} ->
-                    io:format("Failed to write erlca script: ~p\n", [WriteError]),
+                    io:format("Failed to write erica script: ~p\n", [WriteError]),
                     halt(1)
             end;
         {error, ZipError} ->
-            io:format("Failed to construct erlca archive: ~p\n", [ZipError]),
+            io:format("Failed to construct erica archive: ~p\n", [ZipError]),
             halt(1)
     end,
 
     %% Finally, update executable perms for our script
     case os:type() of
         {unix,_} ->
-            [] = os:cmd("chmod u+x erlca"),
+            [] = os:cmd("chmod u+x erica"),
             ok;
         _ ->
             ok
     end,
 
     %% Add a helpful message
-    io:format("Congratulations! You now have a self-contained script called \"erlca\" in\n"
+    io:format("Congratulations! You now have a self-contained script called \"erica\" in\n"
               "your current working directory. Place this script anywhere in your path\n"
               "and you can use build and push your design docs and docs
-              like erlca.\n").
+              like erica.\n").
 
 load_files(Wildcard, Dir) ->
     [read_file(Filename, Dir) || Filename <- filelib:wildcard(Wildcard,

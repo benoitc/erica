@@ -1,13 +1,13 @@
 %%% -*- erlang -*-
 %%%
-%%% This file is part of erlca released under the Apache 2 license.
+%%% This file is part of erica released under the Apache 2 license.
 %%% See the NOTICE for more information.
 
--module(erlca_macros).
+-module(erica_macros).
 
 -author('Benoît Chesneau <benoitc@e-engura.org>').
 
--include("erlca.hrl").
+-include("erica.hrl").
 
 -export([process_macros/2,
          get_source_id/1]).

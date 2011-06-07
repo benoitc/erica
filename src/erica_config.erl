@@ -1,12 +1,12 @@
 %%% -*- erlang -*-
 %%%
-%%% This file is part of erlca released under the Apache 2 license.
+%%% This file is part of erica released under the Apache 2 license.
 %%% See the NOTICE for more information.
 
--module(erlca_config).
+-module(erica_config).
 
 -include("deps/couchbeam/include/couchbeam.hrl").
--include("erlca.hrl").
+-include("erica.hrl").
 
 -export([new/0, new/1,
          update/2,
@@ -15,12 +15,12 @@
          set/3,
          set_global/2, get_global/2]).
 new() ->
-    #config { dir = erlca_util:get_cwd(),
+    #config { dir = erica_util:get_cwd(),
               opts = [] }.
 
 new(Options) ->
-    UserConfFile = filename:join(erlca_util:user_path(),
-        ".erlca.conf"),
+    UserConfFile = filename:join(erica_util:user_path(),
+        ".erica.conf"),
     UserConf = case filelib:is_regular(UserConfFile) of
         true ->
             {ok, Bin} = file:read_file(UserConfFile),
@@ -30,7 +30,7 @@ new(Options) ->
     end,
     {Dbs, Hooks, Extensions, Ignore} = parse_conf(UserConf),
 
-    #config { dir = erlca_util:get_cwd(),
+    #config { dir = erica_util:get_cwd(),
               opts = Options,
               dbs = Dbs,
               hooks = Hooks,
@@ -40,9 +40,9 @@ new(Options) ->
 
 update(AppDir, #config{dbs=Dbs, hooks=Hooks, extensions=Extensions,
         ignore=Ignore}=Config) ->
-    RcFile = filename:join(AppDir, ".erlcarc"),
+    RcFile = filename:join(AppDir, ".couchapprc"),
 
-    %% load .erlcarc
+    %% load .couchapprc
     AppConf = case filelib:is_regular(RcFile) of
         true ->
             {ok, Bin} = file:read_file(RcFile),
@@ -51,7 +51,7 @@ update(AppDir, #config{dbs=Dbs, hooks=Hooks, extensions=Extensions,
             {[]}
     end,
 
-    %% update conf from .erlcarc
+    %% update conf from .couchapprc
     {Dbs1, Hooks1, Extensions1, Ignore1} = parse_conf(AppConf),
     Config1 = Config#config { dbs = Dbs ++ Dbs1,
                         hooks = Hooks ++ Hooks1,
@@ -59,17 +59,17 @@ update(AppDir, #config{dbs=Dbs, hooks=Hooks, extensions=Extensions,
                         ignore = Ignore ++ Ignore1},
 
     %% get ignore file patterns.
-    erlca_ignore:init(AppDir, Config1).
+    erica_ignore:init(AppDir, Config1).
 
 
 get_db(Config, DbString) ->
     proplists:get_value(DbString, Config#config.dbs).
 
 set_global(Key, Value) ->
-    application:set_env(erlca_global, Key, Value).
+    application:set_env(erica_global, Key, Value).
 
 get_global(Key, Default) ->
-    case application:get_env(erlca_global, Key) of
+    case application:get_env(erica_global, Key) of
         undefined ->
             Default;
         {ok, Value} ->
@@ -96,7 +96,7 @@ parse_conf(Conf) ->
     Extensions = case couchbeam_doc:get_value(<<"extensions">>, Conf) of
         undefined -> [];
         {Ext} ->
-            [{erlca_util:v2a(Mod), erlca_util:v2a(Command)}
+            [{erica_util:v2a(Mod), erica_util:v2a(Command)}
                 || {Mod, Command} <- Ext]
     end,
     Hooks = case couchbeam_doc:get_value(<<"hooks">>, Conf) of
@@ -120,7 +120,7 @@ get_config_dbs([{Name, Obj}|Rest], Dbs) ->
         undefined ->
             get_config_dbs(Rest, Dbs);
         DbString ->
-            Db = erlca_util:db_from_string(binary_to_list(DbString)),
+            Db = erica_util:db_from_string(binary_to_list(DbString)),
             Db1 = case couchbeam_doc:get_value(<<"oauth">>, Obj) of
                 undefined ->
                     Db;

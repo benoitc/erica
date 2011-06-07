@@ -1,12 +1,12 @@
 %%% -*- erlang -*-
 %%%
-%%% This file is part of erlca released under the Apache 2 license.
+%%% This file is part of erica released under the Apache 2 license.
 %%% See the NOTICE for more information.
 
--module(erlca_util).
+-module(erica_util).
 
 -include("ibrowse.hrl").
--include("erlca.hrl").
+-include("erica.hrl").
 
 -define(BLOCKSIZE, 32768).
 -define(SEPARATOR, $\/).
@@ -17,13 +17,13 @@
          find_executable/1,
          normalize_path/1,
          user_path/0,
-         in_erlca/1,
+         in_couchapp/1,
          db_from_string/1,
          db_from_config/2,
          db_from_key/2,
          v2a/1,
          relpath/2,
-         parse_erlca_url/1,
+         parse_couchapp_url/1,
          make_dir/1]).
 
 
@@ -67,7 +67,7 @@ db_from_string(DbString) ->
 %% @doc fetch a couchbeam database handler by being given a url or
 %% a key to lookup the url from the config
 db_from_key(Config, Key) ->
-    case erlca_config:get_db(Config, list_to_binary(Key)) of
+    case erica_config:get_db(Config, list_to_binary(Key)) of
         undefined ->
             db_from_string(Key);
         Doc ->
@@ -79,7 +79,7 @@ db_from_key(Config, Key) ->
 db_from_config(Config, DbString) ->
     case couchbeam_util:urlsplit(DbString) of
         {[], [], _Path, _, _} ->
-            case erlca_config:get_db(Config, DbString) of
+            case erica_config:get_db(Config, DbString) of
                 undefined ->
                     db_from_string(DbString);
                 Db ->
@@ -89,11 +89,11 @@ db_from_config(Config, DbString) ->
             db_from_string(DbString)
     end.
 
-parse_erlca_url(AppUrl) ->
+parse_couchapp_url(AppUrl) ->
     Url = ibrowse_lib:parse_url(AppUrl),
     PathParts = string:tokens(Url#url.path, "/"),
 
-    case parse_erlca_path(PathParts) of
+    case parse_couchapp_path(PathParts) of
         {DbName, AppName, DocId} ->
             Server = couchbeam:server_connection(Url#url.host,
                 Url#url.port),
@@ -114,15 +114,15 @@ parse_erlca_url(AppUrl) ->
             Error
     end.
 
-in_erlca("/") ->
+in_couchapp("/") ->
     {error, not_found};
-in_erlca(Path) ->
-    RcPath = filename:join(Path, ".erlcarc"),
+in_couchapp(Path) ->
+    RcPath = filename:join(Path, ".couchapprc"),
     case filelib:is_regular(RcPath) of
         true ->
             {ok, Path};
         false ->
-            in_erlca(normalize_path(filename:join(Path, "../")))
+            in_couchapp(normalize_path(filename:join(Path, "../")))
     end.
 
 user_path() ->
@@ -219,12 +219,12 @@ md5_file(File) ->
 %% ====================================================================
 
 
-parse_erlca_path([DbName, "_design", AppName|_]) ->
+parse_couchapp_path([DbName, "_design", AppName|_]) ->
     {DbName, AppName, "_design/" ++ AppName};
-parse_erlca_path([DbName, DocId]) ->
+parse_couchapp_path([DbName, DocId]) ->
     {DbName, DocId, DocId};
-parse_erlca_path(_) ->
-    invalid_erlca_url.
+parse_couchapp_path(_) ->
+    invalid_erica_url.
 
 normalize_path1([], Acc) ->
     lists:reverse(Acc);
@@ -247,4 +247,14 @@ loop (P, C) ->
     eof ->
         file:close(P),
         {ok, crypto:md5_final(C)}
+    end.
+
+
+escript_foldl(Fun, Acc, File) ->
+    {module, zip} = code:ensure_loaded(zip),
+    case erlang:function_exported(zip, foldl, 3) of
+        true ->
+            emulate_escript_foldl(Fun, Acc, File);
+        false ->
+            escript:foldl(Fun, Acc, File)
     end.
