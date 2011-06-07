@@ -1,0 +1,16 @@
+{variables, [{appid, "myapp"}, {lang, "javascript"}]}.
+
+{template, "_id", "{{appid}}/_id"}.
+{template, "language", "{{appid}}/language"}.
+{file, "couchapp_rc", "{{appid}}/.couchapprc"}.
+{dir, "{{appid}}/_attachments"}.
+
+% couchapp
+{file, "couchapp/_attachments/jquery.couch.app.js", "{{appid}}/_attachments/couchapp/jquery.couch.app.js"}.
+{file, "couchapp/_attachments/jquery.couch.app.util.js", "{{appid}}/_attachments/couchapp/jquery.couch.app.util.js"}. 
+{file, "couchapp/_attachments/jquery.couchForm.js", "{{appid}}/_attachments/couchapp/jquery.couchForm.js"}.
+{file, "couchapp/_attachments/jquery.couchLogin.js", "{{appid}}/_attachments/couchapp/jquery.couchLogin.js"}.
+{file, "couchapp/_attachments/jquery.couchProfile.js", "{{appid}}/_attachments/couchapp/jquery.couchProfile.js"}.
+{file, "couchapp/_attachments/jquery.mustache.js", "{{appid}}/_attachments/couchapp/jquery.mustache.js"}.
+{file, "couchapp/_attachments/md5.js", "{{appid}}/_attachments/couchapp/md5.js"}.
+
