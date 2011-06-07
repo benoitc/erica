@@ -54,6 +54,14 @@ Available commands are:
     help                                 Show the program options
     version                              Show version information
     
+Provided templates are for now:
+
+* simpleapp (the default create used for create-app command)
+* example: a simple couchapp exampole
+* couchapp: a simple template with the good old couchapp javascript
+  library.
+
+You can add your own template in ~/.erica/templates.
 
 ## First steps
 
