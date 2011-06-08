@@ -13,7 +13,7 @@
          get_db/2,
          get/2, get/3,
          set/3,
-         set_global/2, get_global/2]).
+         set_global/2, get_global/2, get_global/1]).
 new() ->
     #config { dir = erica_util:get_cwd(),
               opts = [] }.
@@ -67,6 +67,9 @@ get_db(Config, DbString) ->
 
 set_global(Key, Value) ->
     application:set_env(erica_global, Key, Value).
+
+get_global(Key) ->
+    get_global(Key, undefined).
 
 get_global(Key, Default) ->
     case application:get_env(erica_global, Key) of

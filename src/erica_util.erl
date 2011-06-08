@@ -95,26 +95,51 @@ parse_couchapp_url(AppUrl) ->
     Url = ibrowse_lib:parse_url(AppUrl),
     PathParts = string:tokens(Url#url.path, "/"),
 
+    Server = couchbeam:server_connection(Url#url.host,
+        Url#url.port),
+    DbOptions = db_options_from_url(Url),
+
     case parse_couchapp_path(PathParts) of
         {DbName, AppName, DocId} ->
-            Server = couchbeam:server_connection(Url#url.host,
-                Url#url.port),
-            Options = case Url#url.username of
-                undefined -> [];
-                Username ->
-                    case Url#url.password of
-                        undefined ->
-                            [{basic_auth, {Username, ""}}];
-                        Password ->
-                            [{basic_auth, {Username, Password}}]
-                    end
-            end,
             {ok, Db} = couchbeam:open_or_create_db(Server, DbName,
-                Options),
-            {ok, Db, AppName, DocId};
+                DbOptions),
+            AppName1 = erica_config:get_global(appid, AppName),
+            {ok, Db, AppName1, DocId};
+        invalid_url ->
+            %% did we set dbname & other things in args?
+            case erica_config:get_global(db) of
+                undefined ->
+                    {error, 
+                        "clone: invalid url and db name not provided"};
+                DbName ->
+                    case erica_config:get_global(appid) of
+                        undefined ->
+                            {error, 
+                                "invalid url and app name not provided"};
+                        AppId ->
+                            {ok, Db} = couchbeam:open_or_create_db(Server, 
+                                DbName, DbOptions),
+                            DocId = erica_config:get_global(docid, AppId),
+                            {ok, Db, AppId, DocId}
+                    end
+            end;
+            
         Error ->
             Error
     end.
+
+db_options_from_url(Url) ->
+    case Url#url.username of
+        undefined -> [];
+        Username ->
+            case Url#url.password of
+                undefined ->
+                    [{basic_auth, {Username, ""}}];
+                Password ->
+                    [{basic_auth, {Username, Password}}]
+            end
+    end.
+
 
 in_couchapp("/") ->
     {error, not_found};
@@ -226,7 +251,7 @@ parse_couchapp_path([DbName, "_design", AppName|_]) ->
 parse_couchapp_path([DbName, DocId]) ->
     {DbName, DocId, DocId};
 parse_couchapp_path(_) ->
-    invalid_erica_url.
+    invalid_url.
 
 normalize_path1([], Acc) ->
     lists:reverse(Acc);
