@@ -126,7 +126,7 @@ just use the db name in push command line if you want:
 
 This is fully configurable in your .couchapprc.
 
-## 3. Clone
+### 3. Clone
 
 Did you see an interresting couchapp you want to reuse? Or just working
 with a friend on the same couchapp ? With the `clone` command you can
