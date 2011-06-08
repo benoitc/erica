@@ -9,7 +9,6 @@
 {file, "example/couchapp.json", "{{appid}}/couchapp.json"}.
 {file, "example/views/recent-items/map.js", "{{appid}}/views/recent-items/map.js"}.
 {file, "example/_attachments/index.html", "{{appid}}/_attachments/index.html"}.
-{file, "example/_attachments/index.html", "{{appid}}/_attachments/index.html"}.
 {file, "example/_attachments/script/app.js", "{{appid}}/_attachments/script/app.js"}.
 {file, "example/_attachments/style/main.css", "{{appid}}/_attachments/style/main.css"}.
 
