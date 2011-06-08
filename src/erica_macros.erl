@@ -31,7 +31,7 @@ process_macros(Doc, AppDir) ->
                 Objects ++ ViewObjects}
     end,
     Meta = couchbeam_doc:get_value(<<"couchapp">>, Doc2),
-    Meta1 = couchbeam_doc:set_value(<<"objects">>, FinalObjects, Meta),
+    Meta1 = couchbeam_doc:set_value(<<"objects">>, {FinalObjects}, Meta),
 
     couchbeam_doc:set_value(<<"couchapp">>, Meta1, Doc2).
 
