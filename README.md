@@ -126,6 +126,22 @@ just use the db name in push command line if you want:
 
 This is fully configurable in your .couchapprc.
 
+## 3. Clone
+
+Did you see an interresting couchapp you want to reuse? Or just working
+with a friend on the same couchapp ? With the `clone` command you can
+replicate a couchapp on your filesystem, edit it and push the results
+after:
+
+    $ erica clone http://127.0.0.1:5984/testdb/_design/myapp 
+
+This command will clone the couchapp `myapp` in the `myapp` folder. If
+you want to clone it to another folder, just do:
+
+    $ erica clone http://127.0.0.1:5984/testdb/_design/myapp mynewapp
+
+## More
+
 If you have any question contact us on irc freenode **#couchapp** or on
 the mailing-list: http://groups.google.com/group/couchapp .
 
