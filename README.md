@@ -13,7 +13,7 @@ and manage your couchapps (CouchDB embedded applications).
 
 ##Installation
 
-Couchapp requires Erlang R13B04 or sup.
+Couchapp requires Erlang Erlang R13B04 (or higher) with crypto support.
 
     $ git clone git://github.com/benoitc/erica.git
     $ cd erica
