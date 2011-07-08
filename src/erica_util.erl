@@ -41,7 +41,7 @@ v2a(V) when is_binary(V) ->
     list_to_atom(binary_to_list(V)).
 
 db_from_string(DbString) ->
-    DbUrl = case couchbeam_util:urlsplit(DbString) of
+    DbUrl = case mochiweb_util:urlsplit(DbString) of
         {[], [], Path, _, _} ->
             "http://127.0.0.1:5984/" ++ Path;
         _ ->
@@ -79,7 +79,7 @@ db_from_key(Config, Key) ->
 
 
 db_from_config(Config, DbString) ->
-    case couchbeam_util:urlsplit(DbString) of
+    case mochiweb_util:urlsplit(DbString) of
         {[], [], _Path, _, _} ->
             case erica_config:get_db(Config, DbString) of
                 undefined ->
