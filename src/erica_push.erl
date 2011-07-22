@@ -81,13 +81,24 @@ do_push(Path, #db{server=Server}=Db, DocId, Config) ->
             Doc1 = couchbeam:save_doc(Db, Doc),
             send_attachments(Db, Couchapp2#couchapp{doc=Doc1})
     end,
-    CouchappUrl = couchbeam:make_url(Server, couchbeam:doc_url(Db,
-            DocId), []),
+    CouchappUrl = couchbeam:make_url(Server, couchbeam:doc_url(Db, DocId), []),
+
+    DisplayUrl = case has_index_file(Couchapp1) of
+        true -> CouchappUrl ++ "/index.html";
+        false -> CouchappUrl
+    end,
+
+    ?CONSOLE("==> Successfully pushed to: ~s~n", [DisplayUrl]),
 
     % log info
-    erica_log:log(info, "~p has been pushed from ~s.~n", [CouchappUrl,
-            Path]),
+    erica_log:log(info, "~p has been pushed from ~s.~n", [CouchappUrl, Path]),
     ok.
+
+
+has_index_file(#couchapp{attachments=List}) ->
+   lists:any(fun({File, _}) ->
+       filename:basename(File) =:= "index.html"
+   end, List).
 
 id_from_path(Path, Config) ->
     IdFile = filename:join(Path, "_id"),
