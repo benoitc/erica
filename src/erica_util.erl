@@ -5,8 +5,8 @@
 
 -module(erica_util).
 
--include("ibrowse.hrl").
--include("erica.hrl").
+-include_lib("ibrowse/src/ibrowse.hrl").
+-include_lib("erica/include/erica.hrl").
 
 -define(BLOCKSIZE, 32768).
 -define(SEPARATOR, $\/).

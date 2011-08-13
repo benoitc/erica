@@ -5,7 +5,7 @@
 
 -module(erica_clone).
 
--include("erica.hrl").
+-include_lib("erica/include/erica.hrl").
 
 -export([clone/2]).
 

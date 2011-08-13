@@ -6,7 +6,7 @@
 -module(erica_core).
 -author('Benoît Chesneau <benoitc@e-engura.org>').
 
--include("erica.hrl").
+-include_lib("erica/include/erica.hrl").
 
 -export([run/1]).
 

@@ -13,7 +13,7 @@
 -export([resolve_variables/2,
          render/2]).
 
--include("erica.hrl").
+-include_lib("erica/include/erica.hrl").
 
 -define(TEMPLATE_RE, ".*\\.template\$").
 
