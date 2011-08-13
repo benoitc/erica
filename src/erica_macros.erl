@@ -7,7 +7,7 @@
 
 -author('Benoît Chesneau <benoitc@e-engura.org>').
 
--include("erica.hrl").
+-include_lib("erica/include/erica.hrl").
 
 -export([process_macros/2,
          get_source_id/1]).

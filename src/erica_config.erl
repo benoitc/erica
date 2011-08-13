@@ -5,8 +5,8 @@
 
 -module(erica_config).
 
--include("deps/couchbeam/include/couchbeam.hrl").
--include("erica.hrl").
+-include_lib("couchbeam/include/couchbeam.hrl").
+-include_lib("erica/include/erica.hrl").
 
 -export([new/0, new/1,
          update/2,

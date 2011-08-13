@@ -8,8 +8,8 @@
 -author('Benoît Chesneau <benoitc@e-engura.org>').
 
 -include_lib("kernel/include/file.hrl").
--include("erica.hrl").
--include("couchbeam.hrl").
+-include_lib("erica/include/erica.hrl").
+-include_lib("couchbeam/include/couchbeam.hrl").
 
 -export([push/2]).
 
