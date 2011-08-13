@@ -10,7 +10,6 @@ install: all
 	
 compile:
 	@./rebar compile
-	@./bootstrap
 
 deps:
 	@./rebar get-deps
