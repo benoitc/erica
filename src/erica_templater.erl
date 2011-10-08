@@ -5,7 +5,6 @@
 -module(erica_templater).
 
 -export(['create-app'/2,
-         'create-evently'/2,
          'list-templates'/2,
          create/2]).
 
@@ -24,11 +23,6 @@
 'create-app'(Args, Config) ->
     %% Alias for create w/ template=simpleapp
     erica_config:set_global(template, "simpleapp"),
-    create(Args, Config).
-
-'create-evently'(Args, Config) ->
-    %% Alias for create w/ template=simplenode
-    erica_config:set_global(template, "eventlyapp"),
     create(Args, Config).
 
 'list-templates'(_Argsg, _Config) ->
@@ -190,8 +184,7 @@ find_disk_templates() ->
     HomeFiles = erica_util:find_files(filename:join(os:getenv("HOME"),
                                                      ".erica/templates"),
                                        ?TEMPLATE_RE),
-    LocalFiles = erica_util:find_files(".", ?TEMPLATE_RE),
-    [{file, F} || F <- OtherTemplates ++ HomeFiles ++ LocalFiles].
+    [{file, F} || F <- OtherTemplates ++ HomeFiles].
 
 find_other_templates() ->
     case erica_config:get_global(template_dir, undefined) of
