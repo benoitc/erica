@@ -188,7 +188,7 @@ find_escript_templates() ->
 find_disk_templates() ->
     OtherTemplates = find_other_templates(),
     HomeFiles = erica_util:find_files(filename:join(os:getenv("HOME"),
-                                                     ".couchapp/templates"),
+                                                     ".erica/templates"),
                                        ?TEMPLATE_RE),
     LocalFiles = erica_util:find_files(".", ?TEMPLATE_RE),
     [{file, F} || F <- OtherTemplates ++ HomeFiles ++ LocalFiles].
