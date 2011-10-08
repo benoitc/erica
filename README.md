@@ -8,7 +8,7 @@ and manage your couchapps (CouchDB embedded applications).
 
 ##Requirements
 
-* Erlang R13B04 or sup
+* Erlang R14 or sup
 * gcc
 
 ##Installation
