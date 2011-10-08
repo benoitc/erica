@@ -56,7 +56,7 @@ do_push(Path, #db{server=Server}=Db, DocId, Config) ->
         {error, not_found} ->
             {[]}
     end,
-
+    
     Couchapp = #couchapp{
         config=Config,
         path=Path,
@@ -77,7 +77,7 @@ do_push(Path, #db{server=Server}=Db, DocId, Config) ->
             Doc = make_doc(FinalCouchapp),
             {ok, _} = couchbeam:save_doc(Db, Doc);
         false ->
-            Doc = make_doc(Couchapp2),
+            Doc = make_doc(Couchapp2), 
             Doc1 = couchbeam:save_doc(Db, Doc),
             send_attachments(Db, Couchapp2#couchapp{doc=Doc1})
     end,
@@ -105,7 +105,8 @@ id_from_path(Path, Config) ->
     case filelib:is_regular(IdFile) of
         true ->
             {ok, Bin} = file:read_file(IdFile),
-            Bin;
+            [Id|_] = binary:split(Bin, <<"\n">>, [trim]),
+            Id;
         false ->
             case erica_config:get(Config, docid) of
                 undefined ->
@@ -268,6 +269,8 @@ process_path([".couchapprc"|Rest], Dir, Couchapp) ->
     process_path(Rest, Dir, Couchapp);
 process_path([".ericaignore"|Rest], Dir, Couchapp) ->
     process_path(Rest, Dir, Couchapp);
+process_path(["_id"|Rest], Dir, Couchapp) ->
+    process_path(Rest, Dir, Couchapp);
 process_path([File|Rest], Dir, #couchapp{config=Config, path=Path,
         doc=Doc, manifest=Manifest}=Couchapp) ->
     Fname = filename:join(Dir, File),
@@ -332,6 +335,11 @@ process_dir([File|Rest], Dir, Path, Config, Doc, Manifest) ->
             process_dir(Rest, Dir, Path, Config, Doc1, Manifest1)
     end.
 
+
+process_file("language", FName) ->
+    {ok, Bin} = file:read_file(FName),
+    [Value|_] = binary:split(Bin, <<"\n">>, [trim]),
+    {<<"language">>, Value};
 process_file(File, Fname) ->
     case filename:extension(Fname) of
         [] ->
