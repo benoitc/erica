@@ -1,0 +1,95 @@
+<ul class="eactions">
+  <li><a href="/add{{rel_path}}" class="btn small" id="bmkdir"  
+    title="Add a directory" data-content="Add a new directory." 
+    data-controls-modal="wmkdir" data-backdrop="false">New
+    Directory</a></li>
+  <li><a href="/add{{rel_path}}" class="btn small" id="badd"  
+    title="Add a file" data-content="Create a new file on the filesystem
+    and send you to the edit page" 
+    data-controls-modal="wadd" data-backdrop="false">Add a file</a></li>
+  <li><a href="/add{{rel_path}}" class="btn small" id="bupload"  
+    title="Upload a file" data-content="Upload a file" 
+    data-controls-modal="wupload" data-backdrop="false">Upload</a></li>
+  <li><a href="/add{{rel_path}}" class="btn small" id="bview"  
+    title="Add a view" data-content="Add a view" 
+    data-controls-modal="wview" data-backdrop="false">Add a view</a></li>
+
+</ul>
+
+<div id="wmkdir" class="modal hide face">
+  <form id="fmkdir" class="form-stacked">
+    <input type="hidden" name="relpath" id="relpath" value="{{rel_path}}">
+    <div class="modal-header">
+      <h1>Add a new directory</h1>
+    </div>
+    <div class="modal-body">
+      <label for="dirname">Name of the directory</label>
+      <input type="text" id="dirname" name="dirname" value="">          
+
+    </div>
+    <div class="modal-footer">
+      <input type="submit" value="Add" class="btn primary">
+      <a href="#" class="btn secondary cancel">Cancel</a>
+    </div>
+  </form>
+</div>
+
+
+<div id="wadd" class="modal hide face">
+  <form id="fadd" class="form-stacked">
+
+    <div class="modal-header">
+      <h1>Add a new file</h1>
+    </div>
+    <div class="modal-body">
+      <label for="filename">File name</label>
+      <input type="text" id="filename" name="filename" value="">          
+
+    </div>
+    <div class="modal-footer">
+      <input type="submit" value="Add" class="btn primary">
+      <a href="#" class="btn secondary cancel">Cancel</a>
+    </div>
+  </form>
+</div>
+
+
+<div id="wupload" class="modal hide face">
+  <form id="fupload" enctype="multipart/form-data" action="/upload"
+    class="form-stacked" method="POST">
+    <input type="hidden" name="path" id="path" value="{{rel_path}}">
+    <div class="modal-header">
+      <h1>Add a new file</h1>
+    </div>
+    <div class="modal-body">
+      <label for="file">File</label>
+      <input type="file" name="file" id="file">      
+
+    </div>
+    <div class="modal-footer">
+      <input type="submit" value="Upload" class="btn primary">
+      <a href="#" class="btn secondary cancel">Cancel</a>
+    </div>
+  </form>
+</div>
+
+
+<div id="wview" class="modal hide face">
+  <form id="fview" class="form-stacked">
+
+    <div class="modal-header">
+      <h1>Add a new view</h1>
+    </div>
+    <div class="modal-body">
+      <label for="vname">View name</label>
+      <input type="text" id="vname" name="vname" value="">          
+
+      <input type="checkbox" value="1" name="reduce" id="reduce"
+      checked> with reduce.
+    </div>
+    <div class="modal-footer">
+      <input type="submit" value="Add" class="btn primary">
+      <a href="#" class="btn secondary cancel">Cancel</a>
+    </div>
+  </form>
+</div>

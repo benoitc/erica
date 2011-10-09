@@ -19,5 +19,7 @@
         erica_init,
         erica_push,
         erica_clone,
-        erica_templater]}
+        erica_templater,
+        erica_webbrowser,
+        erica_web]}
   ]}]}.

@@ -1,0 +1,28 @@
+<div class="file type-text">
+  <div class="meta">
+    <div class="info">
+      <span class="icon"><img src="/img/txt.png"></span>
+      <span class="mode" title="mode">{{ mode }}</span>
+      <span>{{ size }} b</span>
+    </div>
+    <ul class="factions">
+      <li><a href="/edit{{rel_path}}" class="edit" 
+title="Edit content" data-content="Edit the content and save
+it">edit</a></li>
+      <li><a href="{{{href}}}">raw</a></li>
+    </ul>
+  </div>
+  <pre class="prettyprint linenums">{{{bin}}}</pre>
+</div>
+
+<script>
+    $(function () {
+
+      $('.edit')
+      .popover({
+        placement: "left",
+        offset: 10
+      });
+
+    });
+</script>

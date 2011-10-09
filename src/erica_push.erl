@@ -13,7 +13,8 @@
 
 -export([push/2]).
 
--export([make_doc/1, couchapp_from_fs/1, process_signatures/1]).
+-export([make_doc/1, couchapp_from_fs/1, process_signatures/1,
+        id_from_path/2, index_url/2, do_push/3, do_push/4]).
 
 %% ====================================================================
 %% Public API
@@ -38,7 +39,8 @@ push1(Path, DbKey, Config) ->
 
             Db = erica_util:db_from_key(Config1, DbKey),
             ?DEBUG("push ~p to ~p~n", [DbKey, CouchappDir]),
-            do_push(CouchappDir, Db, Config1);
+            {ok, _} = do_push(CouchappDir, Db, Config1),
+            ok;
 
         {error, not_found} ->
             ?ERROR("Can't find initialized couchapp in '~p'~n", [Path]),
@@ -83,17 +85,28 @@ do_push(Path, #db{server=Server}=Db, DocId, Config) ->
     end,
     CouchappUrl = couchbeam:make_url(Server, couchbeam:doc_url(Db, DocId), []),
 
-    DisplayUrl = case has_index_file(Couchapp1) of
-        true -> CouchappUrl ++ "/index.html";
-        false -> CouchappUrl
-    end,
+    DisplayUrl = index_url(CouchappUrl, Couchapp1),
 
-    ?CONSOLE("==> Successfully pushed to: ~s~n", [DisplayUrl]),
+    ?CONSOLE("==> Successfully pushed. You can browse it at: ~s~n", [DisplayUrl]),
 
     % log info
     erica_log:log(info, "~p has been pushed from ~s.~n", [CouchappUrl, Path]),
-    ok.
+    {ok, DisplayUrl}.
 
+index_url(CouchappUrl, #couchapp{doc=Doc}=Couchapp) ->
+    CouchappObj = couchbeam_doc:get_value(<<"couchapp">>, Doc, {[]}),
+    FinalIndex = case couchbeam_doc:get_value(<<"index">>, CouchappObj) of
+        undefined ->
+             case has_index_file(Couchapp) of
+                 true ->
+                     "/index.html";
+                 false ->
+                     ""
+             end;
+        Index ->
+            Index
+    end,
+    CouchappUrl ++ FinalIndex.
 
 has_index_file(#couchapp{attachments=List}) ->
    lists:any(fun({File, _}) ->

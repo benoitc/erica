@@ -26,7 +26,9 @@
          parse_couchapp_url/1,
          make_dir/1,
          escript_foldl/3,
-         find_files/2]).
+         find_files/2,
+         sh/2,
+         os_env/0]).
 
 
 %% ====================================================================
@@ -312,3 +314,41 @@ emulate_escript_foldl(Fun, Acc, File) ->
 
 find_files(Dir, Regex) ->
     filelib:fold_files(Dir, Regex, true, fun(F, Acc) -> [F | Acc] end, []).
+
+
+sh(Command, Env) ->
+    PortSettings = [exit_status, {line, 16384}, use_stdio,
+        stderr_to_stdout, hide, {env, Env}],
+
+    Port = open_port({spawn, Command}, PortSettings),
+    sh_loop(Port).
+
+sh_loop(Port) ->
+    receive
+        {Port, {data, {_, "_port_cmd_status_ " ++ Status}}} ->
+            (catch erlang:port_close(Port)), % sigh () for indentation
+            case list_to_integer(Status) of
+                0  -> 
+                    ok;
+                Rc -> 
+                    io:format("error, ~p~n", [Rc]),
+                    erlang:halt(1)
+            end;
+        {Port, {data, {eol, Line}}} ->
+            io:format("~s~n", [Line]),
+            sh_loop(Port);
+        {Port, {data, {noeol, Line}}} ->
+            io:format("~s", [Line]),
+            sh_loop(Port);
+        {Port, {exit_status, 0}} ->
+            ok;
+        {Port, {exit_status, Rc}} ->
+            io:format("error, ~p~n", [Rc]),
+            erlang:halt(1)
+    end.
+
+os_env() ->
+    Os = [list_to_tuple(re:split(S, "=", [{return, list}, {parts, 2}])) ||
+             S <- os:getenv()],
+    %% Drop variables without a name (win32)
+    [T1 || {K, _V} = T1 <- Os, K =/= []].

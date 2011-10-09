@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>erica: Edit {{app_name}} </title>
+    <meta name="description" content="refuge project website">
+    <meta name="author" content="">
+    <link rel="stylesheet" href="/bootstrap.min.css">
+    <link  rel="stylesheet" href="/js/google-code-prettify/prettify.css">
+    <link rel="stylesheet" href="/erica.css">
+
+    <script src="/js/jquery-1.6.4.min.js"></script>
+    <script src="/js/google-code-prettify/prettify.js"></script>
+    <script>$(function () { prettyPrint() })</script>
+
+    <script src="/js/bootstrap-alerts.js"></script> 
+    <script src="/js/bootstrap-tabs.js"></script>
+    <script src="/js/bootstrap-twipsy.js"></script>
+    <script src="/js/bootstrap-popover.js"></script>
+    <script src="/js/bootstrap-scrollspy.js"></script>
+    <script src="/js/bootstrap-modal.js"></script>
+  </head>
+  <body>
+    <div class="topbar" data-scrollspy="scrollspy" >
+      <div class="topbar-inner">
+        <div class="container-fluid">
+          <a class="brand" href="#">Erica Editor</a>
+          <ul class="nav">
+            <li><a href="#">Documentation</a></li>
+            <li><a
+                    href="https://github.com/benoitc/erica/issues">Issues</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+
+
+    <div class="container-fluid">
+
+      <div class="content">
+        <div class="page-header">
+          <h1>{{app_name}} 
+            <a href="#" id="bpush" class="btn primary" title="Push"
+              data-content="Push this couchapp to a CouchDB node" data-controls-modal="wpush" data-backdrop="false">Push</a></h1>
+        </div>
+
+        <div id="notifyBox"></div>
+
+        <div id="action_wrapper">
+          {{{actions}}}
+
+          <ul class="breadcrumb">
+            <li><a href="/">{{app_name}}</a> <span
+              class="divider">/</span></li>
+            {{#breadcrumb}}
+            <li><a href="{{href}}" class="{{active}}">{{name}}</a> <span
+              class="divider">/</span></li>
+            {{/breadcrumb}}
+            <li>{{file_name}}</li>
+          </ul>
+        </div>
+      
+        
+        {{{content}}}  
+
+       </div>
+
+   </div> <!-- /container -->
+
+
+    <footer class="footer">
+      <p>Erica is licensed under <a
+        href="http://www.apache.org/licenses/LICENSE-2.0.html">Apache
+        License 2</a><br>2011 &copy; Beno&icirc;t Chesneau</p>
+      </footer>
+
+      <div id="wpush" class="modal hide face">
+        <form id="fpush" class="form-stacked">
+          <div class="modal-header">
+            <h1>Push this couchapp</h1>
+          </div>
+          <div class="modal-body">
+            <label for="push_url">Fill this input box with an url or <a
+                href="#" rel="twipsy" title="db name or name of an environement in .couchapprc">db string</a></label>
+            <input type="text" id="push_url" name="push_url" value="">          
+          
+          </div>
+          <div class="modal-footer">
+            <input type="submit" value="Push" class="btn primary">
+            <a href="#" id="cpush" class="btn secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+      <script src="/js/app.js"></script>
+  </body>
+
+</html>
+
+
