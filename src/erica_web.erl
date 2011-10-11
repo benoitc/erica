@@ -46,7 +46,7 @@ do_web(Path, Config) ->
 
     %% get port from params, default to autodetect
     Port = list_to_integer(erica_config:get_global(port, "0")),
-
+    Ip = erica_config:get_global(ip, "127.0.0.1"),
     
     %% docid of document
     DocId = erica_push:id_from_path(Path, Config),
@@ -60,6 +60,7 @@ do_web(Path, Config) ->
     
     Options = [
         {port, Port},
+        {ip, Ip},
         {name, erica_http},
         {loop, Loop}],
 
