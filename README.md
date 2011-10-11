@@ -47,6 +47,7 @@ Available commands are:
     clone       [option] source dir      clone a document from couchdb
     browse                               display the erica in the
                                          browser.
+    web         port=Port [dir]          launch the web ui
     create-app  appid=AppID lang=Lang    Create a blank couchapp, Default:
                                          appid=myapp, lang=javascript
     create      template= [vars...]      create an application using a
