@@ -13,6 +13,8 @@
 -define(IMG_TYPES, [".png", ".jpeg", ".jpg", ".gif", ".ico", ".tiff",
         ".svg"]).
 
+-define(UNQUOTE(V), mochiweb_util:unquote(V)).
+
 -record(httpd, {
         mochi_req,
         method,
@@ -168,7 +170,7 @@ handle_request(#httpd{path_parts=["upload"], app_dir=Dir, mochi_req=MochiReq}) -
                 Form),
             
             FName = RelPath ++ "/" ++ Name,
-            AName = filename:absname(FName, Dir),
+            AName = ?UNQUOTE(filename:absname(FName, Dir)),
             ?DEBUG("Upload file ~p~n", [AName]),
             ok = check_path(AName, Dir),
             case filelib:ensure_dir(AName) of
@@ -205,16 +207,16 @@ handle_request(#httpd{path_parts=["create"], app_dir=Dir, mochi_req=MochiReq}) -
                         ({[{<<"dir">>, {Props}}]}) ->
                             DName = proplists:get_value(<<"dirname">>,
                                 Props),
-                            AName = filename:absname(binary_to_list(DName), 
-                                Dir),
+                            DName1 = ?UNQUOTE(binary_to_list(DName)),
+                            AName = filename:absname(DName1, Dir),
                             ?DEBUG("Create dir ~p~n", [AName]),
                             ok = check_path(AName, Dir),
                             os:cmd("mkdir -p " ++ AName);
                         ({[{<<"file">>, {Props}}]}) ->
                             FName = proplists:get_value(<<"filename">>,
                                 Props),
-                            AName = filename:absname(binary_to_list(FName), 
-                                Dir),
+                            FName1 = ?UNQUOTE(binary_to_list(FName)),
+                            AName = filename:absname(FName1, Dir),
                             ?DEBUG("Create file ~p~n", [AName]),
                             ok = check_path(AName, Dir),
 
@@ -256,8 +258,9 @@ handle_request(#httpd{path_parts=["delete"], app_dir=Dir, mochi_req=MochiReq}) -
                     {Props} = ejson:decode(MochiReq:recv_body()),
                     Files = proplists:get_value(<<"files">>, Props),
                     lists:foreach(fun(File) ->
-                               FName = filename:absname(binary_to_list(File), 
-                                   Dir),
+                               FName =
+                               ?UNQUOTE(filename:absname(binary_to_list(File),
+                                       Dir)),
                                ?INFO("fname to delete ~p~n", [FName]),
                                ok = check_path(FName, Dir),
 
@@ -284,7 +287,7 @@ handle_request(#httpd{path_parts=["tree"|PathParts], app_name=Name,
 
     {Tmpl, Ctx} = case filelib:is_dir(FName) of
         true ->
-            RelPath = string:join(PathParts, "/"),
+            RelPath = fix_evently(string:join(PathParts, "/")),
             Actions = render(Req, "tree_actions.html", [{rel_path, RelPath}]),
             BreadCrumb = breadcrumb(PathParts),
             Tree = [dict:from_list(Props) || Props <- tree(FName, Dir)],
@@ -302,24 +305,26 @@ handle_request(#httpd{path_parts=["tree"|PathParts], app_name=Name,
 
             {ok, #file_info{size=S, mode=M}} = file:read_file_info(FName),
 
-            RelPath = "/" ++ string:join(PathParts, "/"),
+            RelPath = fix_evently("/" ++ string:join(PathParts, "/")),
             Href = "/raw" ++ RelPath,
 
             Extra = case lists:member(Ext, ?IMG_TYPES) of
                 true ->
-                    Content = render(Req, "file_img.html", [{href, Href},
-                                                  {size, S},
-                                                  {mode, M}]),
+                    Content = render(Req, "file_img.html", [
+                            {href, Href},
+                            {size, S},
+                            {mode, M}]),
                     [{content, Content}];
                     
                 false ->
                     {ok, Bin0} = file:read_file(FName),
                     Bin = mochiweb_html:escape(Bin0),
-                    Content = render(Req, "file.html", [{bin, Bin},
-                                              {rel_path, RelPath},
-                                              {href, Href},
-                                              {size, S},
-                                              {mode, M}]),
+                    Content = render(Req, "file.html", [
+                            {bin, Bin},
+                            {rel_path, RelPath},
+                            {href, Href},
+                            {size, S},
+                            {mode, M}]),
                     Actions = render(Req, "file_actions.html", [
                             {rel_path, RelPath},
                             {href, Href}]),
@@ -338,7 +343,7 @@ handle_request(#httpd{path_parts=["tree"|PathParts], app_name=Name,
 handle_request(#httpd{method='GET', path_parts=["edit"|PathParts], 
         app_name=Name, app_dir=Dir, mochi_req=MochiReq, path=Path}=Req) ->
 
-    FName = filename:join([Dir|PathParts]),
+    FName = ?UNQUOTE(filename:join([Dir|PathParts])),
     ok = check_path(FName, Dir),
 
     case filelib:is_dir(FName) of
@@ -349,7 +354,7 @@ handle_request(#httpd{method='GET', path_parts=["edit"|PathParts],
             [FileName|Rest] = lists:reverse(PathParts),
             BreadCrumb = breadcrumb(lists:reverse(Rest)),
             Ext = filename:extension(FName),
-            RelPath = "/" ++ string:join(PathParts, "/"),
+            RelPath = fix_evently("/" ++ string:join(PathParts, "/")),
             {ok, Bin0} = file:read_file(FName),
             Bin = mochiweb_html:escape(Bin0),
             %% find ace mode
@@ -367,7 +372,7 @@ handle_request(#httpd{method='GET', path_parts=["edit"|PathParts],
 handle_request(#httpd{method='POST', path_parts=["edit"|PathParts], 
         app_dir=Dir, mochi_req=MochiReq}) ->
 
-    FName = filename:join([Dir|PathParts]),
+    FName = ?UNQUOTE(filename:join([Dir|PathParts])),
     ok = check_path(FName, Dir),
 
     case filelib:is_dir(FName) of
@@ -399,11 +404,11 @@ handle_request(#httpd{method='POST', path_parts=["edit"|PathParts],
 
 handle_request(#httpd{path_parts=["raw"|PathParts],
         mochi_req=MochiReq, app_dir=Dir}) ->
-    Path = string:join(PathParts, "/"),
+    Path = ?UNQUOTE(string:join(PathParts, "/")),
     MochiReq:serve_file(Path, Dir);
 
 handle_request(#httpd{path=Path}=Req) ->
-    serve_file(Req, Path).
+    serve_file(Req, ?UNQUOTE(Path)).
 
 
 json_respond(MochiReq, Status, JsonObj) ->
@@ -547,12 +552,14 @@ tree(Path, AppDir) ->
                         [MTime] = calendar:local_time_to_universal_time_dst(T),
                         case filelib:is_dir(Name1) of
                             true ->
-                                Item = tree_item(Name, RelPath ++ "/", "dir",
-                                    "dir.png", MTime),
+                                Item = tree_item(Name,
+                                    fix_evently(RelPath),
+                                    "dir","dir.png", MTime),
                                 {[Item|D], F};
                             false ->
-                                Item = tree_item(Name, RelPath, "file", "txt.png",
-                                    MTime),
+                                Item = tree_item(Name,
+                                    fix_evently(RelPath),
+                                    "file", "txt.png", MTime),
                                 {D, [Item|F]}
                         end;
                     {error, _} ->
@@ -577,7 +584,7 @@ breadcrumb(PathParts) ->
                     true -> ""
                 end,
             
-                Prop = [{href, Href1}, 
+                Prop = [{href, fix_evently(Href1)}, 
                         {name, Path},
                         {active, Active}],
                 {Href1, [dict:from_list(Prop)|Paths]}
@@ -636,4 +643,6 @@ check_path(Path, CouchappDir) ->
             throw({forbidden, Path1})
     end.
 
-
+%% Evently directory can start with a # ....
+fix_evently(P) ->
+    re:replace(P, "\#", "%23", [{return, list}]).
