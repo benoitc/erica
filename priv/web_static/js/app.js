@@ -46,7 +46,7 @@ function file_action(filename, content) {
                  "content": content}};
 }
 
-function fix_erica(p) {
+function fix_evently(p) {
     return p.replace("#", "%23");
 }
 
@@ -111,7 +111,7 @@ $(document).ready(function() {
             file_action(path, "")
         ];
         create(actions, "#wadd", function() {
-            window.location.href="/edit/" + fix_erica(path);
+            window.location.href="/edit/" + fix_evently(path);
         });
         return false;
     });
