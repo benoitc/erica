@@ -125,7 +125,7 @@ just use the db name in push command line if you want:
 
     $ erica push testdb
 
-This is fully configurable in your .couchapprc.
+This is fully configurable in `.couchapprc` or in `~/.erica.conf` .
 
 ### 3. Clone
 
