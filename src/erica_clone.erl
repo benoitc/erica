@@ -60,7 +60,10 @@ do_clone(Path, DocId, Db, Config) ->
                 {[]}),
             Atts1 = [AName || {AName, _} <- Atts],
             Meta = couchbeam_doc:get_value(<<"couchapp">>, Doc, {[]}),
-            Manifest = couchbeam_doc:get_value(<<"manifest">>, Meta),
+            Manifest = case couchbeam_doc:get_value(<<"manifest">>, Meta) of
+              undefined -> [];
+              Else -> Else
+            end,
 
             %% get extension associated
             Manifest1 = lists:foldl(fun(P, Acc) ->
@@ -77,8 +80,7 @@ do_clone(Path, DocId, Db, Config) ->
                         end
                 end, [], Manifest),
 
-            {Objects} = couchbeam_doc:get_value(<<"objects">>, Meta,
-                {[]}),
+            {Objects} = couchbeam_doc:get_value(<<"objects">>, Meta, {[]}),
             % save doc to the fs, create approriate paths if needed
             {DocProps} = Doc,
             ok = doc_to_fs(DocProps, Path, Manifest1, Objects, 0),
