@@ -38,7 +38,7 @@ push1(Path, DbKey, Config) ->
             Config1 = erica_config:update(CouchappDir, Config),
 
             Db = erica_util:db_from_key(Config1, DbKey),
-            ?DEBUG("push ~p to ~p~n", [DbKey, CouchappDir]),
+            ?DEBUG("push ~s => ~s~n", [CouchappDir, DbKey]),
             {ok, _} = do_push(CouchappDir, Db, Config1),
             ok;
 
@@ -58,7 +58,7 @@ do_push(Path, #db{server=Server}=Db, DocId, Config) ->
         {error, not_found} ->
             {[]}
     end,
-    
+
     Couchapp = #couchapp{
         config=Config,
         path=Path,
@@ -79,7 +79,7 @@ do_push(Path, #db{server=Server}=Db, DocId, Config) ->
             Doc = make_doc(FinalCouchapp),
             {ok, _} = couchbeam:save_doc(Db, Doc);
         false ->
-            Doc = make_doc(Couchapp2), 
+            Doc = make_doc(Couchapp2),
             Doc1 = couchbeam:save_doc(Db, Doc),
             send_attachments(Db, Couchapp2#couchapp{doc=Doc1})
     end,
