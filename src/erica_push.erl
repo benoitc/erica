@@ -29,6 +29,9 @@ push([DbKey], Config) ->
 push([Path, DbKey|_], Config) ->
     push1(Path, DbKey, Config).
 
+push1(".", DbKey, Config) ->
+    push1("./", DbKey, Config);
+
 push1(Path, DbKey, Config) ->
     Path1 = filename:absname(Path),
     case erica_util:in_couchapp(Path1) of
