@@ -14,10 +14,10 @@
 -define(UNIX_BROWSERS, ["mozilla-firefox", "firefox",
         "mozilla-firebird", "firebird", "seamonkey", "mozilla",
         "netscape", "galeon", "epiphany", "skipstone", "opera",
-        "mosaic"]).
+        "mosaic","chromium"]).
 -define(UNIX_TERM_BROWSERS, ["links", "elinks", "lynx", "w3m"]).
 -define(WIN_BROWSERS, ["firefox", "firebird", "seamonkey", "mozilla",
-        "netscape", "opera"]).
+        "netscape", "opera","chrome"]).
 
 
 browse([], Config) ->
@@ -141,7 +141,7 @@ find_browser([Name|Rest], Type, Location) ->
 
 unix_browser_cmd("mozilla-firefox", Path, Location) ->
     mozilla_browser_cmd(Path, Location);
-unix_browser_cmd("irefox", Path, Location) ->
+unix_browser_cmd("firefox", Path, Location) ->
     mozilla_browser_cmd(Path, Location);
 unix_browser_cmd("mozilla-firebird", Path, Location) ->
     mozilla_browser_cmd(Path, Location);
@@ -169,6 +169,10 @@ unix_browser_cmd("links", Path, Location) ->
 unix_browser_cmd("lynx", Path, Location) ->
     generic_browser_cmd(Path, Location);
 unix_browser_cmd("w3m", Path, Location) ->
+    generic_browser_cmd(Path, Location);
+unix_browser_cmd("chromium", Path, Location) ->
+    generic_browser_cmd(Path, Location);
+unix_browser_cmd("chrome", Path, Location) ->
     generic_browser_cmd(Path, Location);
 unix_browser_cmd("elinks", Path, Location) ->
     mozilla_browser_cmd(Path, Location).
