@@ -14,10 +14,10 @@
 -define(UNIX_BROWSERS, ["mozilla-firefox", "firefox",
         "mozilla-firebird", "firebird", "seamonkey", "mozilla",
         "netscape", "galeon", "epiphany", "skipstone", "opera",
-        "mosaic"]).
+        "mosaic","chromium"]).
 -define(UNIX_TERM_BROWSERS, ["links", "elinks", "lynx", "w3m"]).
 -define(WIN_BROWSERS, ["firefox", "firebird", "seamonkey", "mozilla",
-        "netscape", "opera"]).
+        "netscape", "opera","chrome"]).
 
 
 browse([], Config) ->
@@ -100,25 +100,25 @@ launch_unix_browser(Location) ->
 
 launch_x11_unix_browser(Env, Location) ->
     case proplists:get_value("GNOME_DESKTOP_SESSION_ID", Env) of
-    undefined ->
-        case proplists:get_value("GNOME_DESKTOP_SESSION_ID", Env) of
-        undefined ->
-            find_browser(?UNIX_BROWSERS, unix, Location);
-        _ ->
-            case erica_util:find_executable(kfmclient) of
-            {ok, Path} ->
-                Cmd = Path ++ " openUrl " ++ Location,
-                erica_util:sh(Cmd, erica_util:os_env());
-            false ->
-                find_browser(?UNIX_BROWSERS, unix, Location)
+	undefined ->
+	    case proplists:get_value("GNOME_DESKTOP_SESSION_ID", Env) of
+	    undefined ->
+		find_browser(?UNIX_BROWSERS, unix, Location);
+	    _ ->
+		case erica_util:find_executable(kfmclient) of
+		{ok, Path} ->
+		    Cmd = Path ++ " openUrl " ++ Location,
+		    erica_util:sh(Cmd, erica_util:os_env());
+		false ->
+		    find_browser(?UNIX_BROWSERS, unix, Location)
             end
         end;
-    _ ->
-        case erica_util:find_executable("gnome-open") of
-        {ok, Path} ->
-            generic_browser_cmd(Path, Location);
-        false ->
-            find_browser(?UNIX_BROWSERS, unix, Location)
+	_ ->
+	    case erica_util:find_executable("gnome-open") of
+	    {ok, Path} ->
+		generic_browser_cmd(Path, Location);
+	    false ->
+		find_browser(?UNIX_BROWSERS, unix, Location)
         end
     end.
 
@@ -128,20 +128,27 @@ find_browser([], _Type, _Location) ->
     halt(1);
 find_browser([Name|Rest], Type, Location) ->
     case erica_util:find_executable(Name) of
-    false ->
-        find_browser(Rest, Type, Location);
-    {ok, Path} ->
-        case Type of
-        unix ->
-            unix_browser_cmd(Name, Path, Location);
-        _ ->
-            generic_browser_cmd(Path, Location)
-        end
+	false ->
+	    find_browser(Rest, Type, Location);
+	{ok, Path} ->
+	    case Type of
+		unix ->
+		    unix_browser_cmd(Name, Path, Location);
+		_ ->
+		    generic_browser_cmd(Path, Location)
+	    end;
+	Local ->
+	    case Type of
+		unix ->
+		    catch unix_browser_cmd(Name, Local, Location);
+		_ ->
+		    generic_browser_cmd(Local, Location)
+	    end		    
     end.
 
 unix_browser_cmd("mozilla-firefox", Path, Location) ->
     mozilla_browser_cmd(Path, Location);
-unix_browser_cmd("irefox", Path, Location) ->
+unix_browser_cmd("firefox", Path, Location) ->
     mozilla_browser_cmd(Path, Location);
 unix_browser_cmd("mozilla-firebird", Path, Location) ->
     mozilla_browser_cmd(Path, Location);
@@ -170,6 +177,10 @@ unix_browser_cmd("lynx", Path, Location) ->
     generic_browser_cmd(Path, Location);
 unix_browser_cmd("w3m", Path, Location) ->
     generic_browser_cmd(Path, Location);
+unix_browser_cmd("chromium", Path, Location) ->
+    generic_browser_cmd(Path, Location);
+unix_browser_cmd("chrome", Path, Location) ->
+    generic_browser_cmd(Path, Location);
 unix_browser_cmd("elinks", Path, Location) ->
     mozilla_browser_cmd(Path, Location).
 
@@ -185,6 +196,3 @@ mozilla_browser_cmd(Path, Location) ->
 galeon_browser_cmd(Path, Location) ->
     Cmd = Path ++ "-w " ++ Location,
     erica_util:sh(Cmd, erica_util:os_env()).
-
-
-

@@ -142,7 +142,9 @@ db_options_from_url(Url) ->
             end
     end.
 
-
+in_couchapp("") ->
+    {ok, Dir} = file:get_cwd(),
+    in_couchapp(Dir);
 in_couchapp("/") ->
     {error, not_found};
 in_couchapp(Path) ->
