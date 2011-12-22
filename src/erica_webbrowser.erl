@@ -100,25 +100,25 @@ launch_unix_browser(Location) ->
 
 launch_x11_unix_browser(Env, Location) ->
     case proplists:get_value("GNOME_DESKTOP_SESSION_ID", Env) of
-    undefined ->
-        case proplists:get_value("GNOME_DESKTOP_SESSION_ID", Env) of
-        undefined ->
-            find_browser(?UNIX_BROWSERS, unix, Location);
-        _ ->
-            case erica_util:find_executable(kfmclient) of
-            {ok, Path} ->
-                Cmd = Path ++ " openUrl " ++ Location,
-                erica_util:sh(Cmd, erica_util:os_env());
-            false ->
-                find_browser(?UNIX_BROWSERS, unix, Location)
+	undefined ->
+	    case proplists:get_value("GNOME_DESKTOP_SESSION_ID", Env) of
+	    undefined ->
+		find_browser(?UNIX_BROWSERS, unix, Location);
+	    _ ->
+		case erica_util:find_executable(kfmclient) of
+		{ok, Path} ->
+		    Cmd = Path ++ " openUrl " ++ Location,
+		    erica_util:sh(Cmd, erica_util:os_env());
+		false ->
+		    find_browser(?UNIX_BROWSERS, unix, Location)
             end
         end;
-    _ ->
-        case erica_util:find_executable("gnome-open") of
-        {ok, Path} ->
-            generic_browser_cmd(Path, Location);
-        false ->
-            find_browser(?UNIX_BROWSERS, unix, Location)
+	_ ->
+	    case erica_util:find_executable("gnome-open") of
+	    {ok, Path} ->
+		generic_browser_cmd(Path, Location);
+	    false ->
+		find_browser(?UNIX_BROWSERS, unix, Location)
         end
     end.
 
@@ -128,7 +128,7 @@ find_browser([], _Type, _Location) ->
     halt(1);
 find_browser([Name|Rest], Type, Location) ->
     case erica_util:find_executable(Name) of
-    false ->
+	false ->
 	    find_browser(Rest, Type, Location);
 	{ok, Path} ->
 	    case Type of
@@ -140,7 +140,7 @@ find_browser([Name|Rest], Type, Location) ->
 	Local ->
 	    case Type of
 		unix ->
-		    unix_browser_cmd(Name, Local, Location);
+		    catch unix_browser_cmd(Name, Local, Location);
 		_ ->
 		    generic_browser_cmd(Local, Location)
 	    end		    
@@ -196,6 +196,3 @@ mozilla_browser_cmd(Path, Location) ->
 galeon_browser_cmd(Path, Location) ->
     Cmd = Path ++ "-w " ++ Location,
     erica_util:sh(Cmd, erica_util:os_env()).
-
-
-
