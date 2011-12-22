@@ -129,7 +129,7 @@ This is fully configurable in `.couchapprc` or in `~/.erica.conf` .
 
 ### 3. Clone
 
-Did you see an interresting couchapp you want to reuse? Or just working
+Did you see an interesting couchapp you want to reuse? Or just working
 with a friend on the same couchapp ? With the `clone` command you can
 replicate a couchapp on your filesystem, edit it and push the results
 after:
@@ -143,8 +143,13 @@ you want to clone it to another folder, just do:
 
 ## More
 
-If you have any question contact us on irc freenode **#couchapp** or on
+Add an `.ericaignore` file to the root of your app, as a JSON array
+of regular expressions of files or folders to be excluded from pushes.
+
+    ["passwords.txt", "^\.ssh", "^\.*"]
+
+## Getting Help
+
+If you have any questions contact us on irc freenode **#couchapp** or on
 the mailing-list: http://groups.google.com/group/couchapp .
 
-
-    
