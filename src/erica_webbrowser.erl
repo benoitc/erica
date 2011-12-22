@@ -129,14 +129,21 @@ find_browser([], _Type, _Location) ->
 find_browser([Name|Rest], Type, Location) ->
     case erica_util:find_executable(Name) of
     false ->
-        find_browser(Rest, Type, Location);
-    {ok, Path} ->
-        case Type of
-        unix ->
-            unix_browser_cmd(Name, Path, Location);
-        _ ->
-            generic_browser_cmd(Path, Location)
-        end
+	    find_browser(Rest, Type, Location);
+	{ok, Path} ->
+	    case Type of
+		unix ->
+		    unix_browser_cmd(Name, Path, Location);
+		_ ->
+		    generic_browser_cmd(Path, Location)
+	    end;
+	Local ->
+	    case Type of
+		unix ->
+		    unix_browser_cmd(Name, Local, Location);
+		_ ->
+		    generic_browser_cmd(Local, Location)
+	    end		    
     end.
 
 unix_browser_cmd("mozilla-firefox", Path, Location) ->
