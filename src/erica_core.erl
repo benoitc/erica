@@ -26,7 +26,7 @@ run(RawArgs) ->
     {Options, Commands} = parse_args(RawArgs),
 
     %% load couchbeam
-    {ok, _} = couchbeam:start(),
+    ok = couchbeam:start(),
 
     %% Initialize logging system
     erica_log:init(),
