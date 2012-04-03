@@ -5,7 +5,7 @@
 
 -module(erica_util).
 
--include_lib("ibrowse/src/ibrowse.hrl").
+-include_lib("ibrowse/include/ibrowse.hrl").
 -include_lib("erica/include/erica.hrl").
 
 -define(BLOCKSIZE, 32768).
