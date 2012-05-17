@@ -51,7 +51,15 @@ db_from_string(DbString) ->
     end,
     Url = ibrowse_lib:parse_url(DbUrl),
 
-    Server = couchbeam:server_connection(Url#url.host, Url#url.port),
+    ServerOptions = case Url#url.protocol of
+        https ->
+            [{is_ssl, true}];
+        _ ->
+            []
+    end,
+
+    Server = couchbeam:server_connection(Url#url.host, Url#url.port,
+                                        "", ServerOptions),
 
     Options = case Url#url.username of
         undefined -> [];
