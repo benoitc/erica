@@ -111,21 +111,21 @@ parse_couchapp_url(AppUrl) ->
             %% did we set dbname & other things in args?
             case erica_config:get_global(db) of
                 undefined ->
-                    {error, 
+                    {error,
                         "clone: invalid url and db name not provided"};
                 DbName ->
                     case erica_config:get_global(appid) of
                         undefined ->
-                            {error, 
+                            {error,
                                 "invalid url and app name not provided"};
                         AppId ->
-                            {ok, Db} = couchbeam:open_or_create_db(Server, 
+                            {ok, Db} = couchbeam:open_or_create_db(Server,
                                 DbName, DbOptions),
                             DocId = erica_config:get_global(docid, AppId),
                             {ok, Db, AppId, DocId}
                     end
             end;
-            
+
         Error ->
             Error
     end.
@@ -330,9 +330,9 @@ sh_loop(Port) ->
         {Port, {data, {_, "_port_cmd_status_ " ++ Status}}} ->
             (catch erlang:port_close(Port)), % sigh () for indentation
             case list_to_integer(Status) of
-                0  -> 
+                0  ->
                     ok;
-                Rc -> 
+                Rc ->
                     io:format("error, ~p~n", [Rc]),
                     erlang:halt(1)
             end;
