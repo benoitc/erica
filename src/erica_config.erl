@@ -24,7 +24,7 @@ new(Options) ->
     UserConf = case filelib:is_regular(UserConfFile) of
         true ->
             {ok, Bin} = file:read_file(UserConfFile),
-            ejson:decode(Bin);
+            couchbeam_ejson:decode(Bin);
         false ->
             {[]}
     end,
@@ -46,7 +46,7 @@ update(AppDir, #config{dbs=Dbs, hooks=Hooks, extensions=Extensions,
     AppConf = case filelib:is_regular(RcFile) of
         true ->
             {ok, Bin} = file:read_file(RcFile),
-            ejson:decode(Bin);
+            couchbeam_ejson:decode(Bin);
         false ->
             {[]}
     end,

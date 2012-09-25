@@ -139,7 +139,7 @@ apply_json_macros1([Match|Rest], Source, Doc, AppDir) ->
             Path = filename:join(AppDir, JsonPath1),
             Values = obj_from_dir(filelib:wildcard(Path), AttDir, []),
             lists:flatten(["var _attachments = ",
-                    ejson:encode({Values}), ";\n"]);
+                    couchbeam_ejson:encode({Values}), ";\n"]);
         _ ->
             Props = [list_to_binary(P) || P <- string:tokens(binary_to_list(JsonPath),
                     ".")],
@@ -148,7 +148,7 @@ apply_json_macros1([Match|Rest], Source, Doc, AppDir) ->
                     [VarName|Fields] = Props,
                     Value1 = nested_value(Fields, Value),
                     lists:flatten(["var ", VarName, " = ",
-                            ejson:encode(Value1), ";\n"]);
+                            couchbeam_ejson:encode(Value1), ";\n"]);
                 _Error ->
                     ?ERROR("json macro: can't find ~p~n", [JsonPath]),
                     ""

@@ -49,7 +49,7 @@ do_web(Path, Config) ->
     %% get port from params, default to autodetect
     Port = list_to_integer(erica_config:get_global(port, "0")),
     Ip = erica_config:get_global(ip, "127.0.0.1"),
-    
+
     %% docid of document
     DocId = erica_push:id_from_path(Path, Config),
     <<"_design/", AppName/binary>> = DocId,
@@ -59,7 +59,7 @@ do_web(Path, Config) ->
             apply(?MODULE, dispatch, [Req, Path, Config, DocId,
                     AppName, StaticFiles, Templates])
     end,
-    
+
     Options = [
         {port, Port},
         {ip, Ip},
@@ -71,17 +71,17 @@ do_web(Path, Config) ->
             port)),
     Location = binary_to_list(
         iolist_to_binary(["http://127.0.0.1:", PortStr])),
-    
+
     case erica_config:get_global(browser, "0") of
         "0" -> ok;
         "false" -> ok;
         _ ->
-           %% open browser if browser var is 1 or true 
+           %% open browser if browser var is 1 or true
             erica_webbrowser:open_location(Location)
     end,
 
     ?CONSOLE("Erica Web started on ~p~n", [Location]),
-    
+
     receive
         http_stop ->
             Pid ! stop
@@ -105,7 +105,7 @@ dispatch(MochiReq, AppPath, Config, DocId, AppName, StaticFiles, Templates) ->
         config = Config,
         static_files = StaticFiles,
         templates = Templates},
-    try 
+    try
         handle_request(Req)
     catch
         _:forbidden ->
@@ -121,7 +121,7 @@ handle_request(#httpd{path_parts=[], app_name=Name, app_dir=Dir}=Req) ->
     Tree = [dict:from_list(Props) || Props <- tree(Dir, Dir)],
     Actions = render(Req, "tree_actions.html", [{rel_path, ""}]),
 
-    render_template(Req, "index.html", 
+    render_template(Req, "index.html",
         [{app_name, binary_to_list(Name)},
          {actions, Actions},
          {tree, Tree}]);
@@ -133,18 +133,18 @@ handle_request(#httpd{path_parts=["push"], app_dir=Dir, config=Config,
         'POST' ->
             case MochiReq:get_primary_header_value("content-type") of
                 "application/json" ->
-                    {Props} = ejson:decode(MochiReq:recv_body()),
+                    {Props} = couchbeam_ejson:decode(MochiReq:recv_body()),
                     DbKey = proplists:get_value(<<"url">>, Props),
                     Db = erica_util:db_from_key(Config,
                         binary_to_list(DbKey)),
                     try erica_push:do_push(Dir, Db, DocId, Config) of
-                        {ok, DisplayUrl0} -> 
+                        {ok, DisplayUrl0} ->
                             DisplayUrl = iolist_to_binary(DisplayUrl0),
                             JsonObj = {[
                                     {<<"ok">>, true},
                                     {<<"url">>, DisplayUrl}]},
                              MochiReq:ok({<<"application/json">>, [],
-                                     ejson:encode(JsonObj)})
+                                     couchbeam_ejson:encode(JsonObj)})
                     catch
                         _:Reason ->
                             ?ERROR("web push error: ~p~n", [Reason]),
@@ -153,7 +153,7 @@ handle_request(#httpd{path_parts=["push"], app_dir=Dir, config=Config,
                 _ ->
                     json_error(MochiReq, 406, "Content-Type not
                         accepted")
-            end;        
+            end;
         _ ->
             json_error(MochiReq, 405, "only POST is accepted")
     end;
@@ -165,16 +165,16 @@ handle_request(#httpd{path_parts=["upload"], app_dir=Dir, mochi_req=MochiReq}) -
             Form = mochiweb_multipart:parse_form(MochiReq),
             ?INFO("got ~p~n", [Form]),
             RelPath = proplists:get_value("path", Form),
-            
+
             {Name, {_ContentType, _}, Bin} = proplists:get_value("file",
                 Form),
-            
+
             FName = RelPath ++ "/" ++ Name,
             AName = ?UNQUOTE(filename:absname(FName, Dir)),
             ?DEBUG("Upload file ~p~n", [AName]),
             ok = check_path(AName, Dir),
             case filelib:ensure_dir(AName) of
-                ok -> 
+                ok ->
                     ok;
                 _ ->
                     DirName = filename:dirname(AName),
@@ -188,7 +188,7 @@ handle_request(#httpd{path_parts=["upload"], app_dir=Dir, mochi_req=MochiReq}) -
                 _ ->
                     ok = file:write_file(AName, Bin)
             end,
-            
+
             json_ok(MochiReq);
         _ ->
             json_error(MochiReq, 405, "only POST is accepted")
@@ -199,7 +199,7 @@ handle_request(#httpd{path_parts=["create"], app_dir=Dir, mochi_req=MochiReq}) -
         'POST' ->
             case MochiReq:get_primary_header_value("content-type") of
                 "application/json" ->
-                    {Props0} = ejson:decode(MochiReq:recv_body()),
+                    {Props0} = couchbeam_ejson:decode(MochiReq:recv_body()),
                     Actions = proplists:get_value(<<"actions">>, Props0),
                     ?DEBUG("actions ~p~n", [Actions]),
 
@@ -221,7 +221,7 @@ handle_request(#httpd{path_parts=["create"], app_dir=Dir, mochi_req=MochiReq}) -
                             ok = check_path(AName, Dir),
 
                             case filelib:ensure_dir(AName) of
-                                ok -> 
+                                ok ->
                                     ok;
                                 _ ->
                                     DirName = filename:dirname(AName),
@@ -245,7 +245,7 @@ handle_request(#httpd{path_parts=["create"], app_dir=Dir, mochi_req=MochiReq}) -
                 _ ->
                     json_error(MochiReq, 406, "Content-Type not
                         accepted")
-            end;        
+            end;
         _ ->
             json_error(MochiReq, 405, "only POST is accepted")
     end;
@@ -255,7 +255,7 @@ handle_request(#httpd{path_parts=["delete"], app_dir=Dir, mochi_req=MochiReq}) -
         'POST' ->
             case MochiReq:get_primary_header_value("content-type") of
                 "application/json" ->
-                    {Props} = ejson:decode(MochiReq:recv_body()),
+                    {Props} = couchbeam_ejson:decode(MochiReq:recv_body()),
                     Files = proplists:get_value(<<"files">>, Props),
                     lists:foreach(fun(File) ->
                                FName =
@@ -271,7 +271,7 @@ handle_request(#httpd{path_parts=["delete"], app_dir=Dir, mochi_req=MochiReq}) -
                 _ ->
                     json_error(MochiReq, 406, "Content-Type not
                         accepted")
-            end;        
+            end;
         _ ->
             json_error(MochiReq, 405, "only POST is accepted")
     end;
@@ -300,7 +300,7 @@ handle_request(#httpd{path_parts=["tree"|PathParts], app_name=Name,
         false ->
             [FileName|Rest] = lists:reverse(PathParts),
             BreadCrumb = breadcrumb(lists:reverse(Rest)),
-            
+
             Ext = filename:extension(FName),
 
             {ok, #file_info{size=S, mode=M}} = file:read_file_info(FName),
@@ -315,7 +315,7 @@ handle_request(#httpd{path_parts=["tree"|PathParts], app_name=Name,
                             {size, S},
                             {mode, M}]),
                     [{content, Content}];
-                    
+
                 false ->
                     {ok, Bin0} = file:read_file(FName),
                     Bin = mochiweb_html:escape(Bin0),
@@ -340,7 +340,7 @@ handle_request(#httpd{path_parts=["tree"|PathParts], app_name=Name,
 
     render_template(Req, Tmpl, Ctx);
 
-handle_request(#httpd{method='GET', path_parts=["edit"|PathParts], 
+handle_request(#httpd{method='GET', path_parts=["edit"|PathParts],
         app_name=Name, app_dir=Dir, mochi_req=MochiReq, path=Path}=Req) ->
 
     FName = ?UNQUOTE(filename:join([Dir|PathParts])),
@@ -369,7 +369,7 @@ handle_request(#httpd{method='GET', path_parts=["edit"|PathParts],
                     {breadcrumb, BreadCrumb}])
     end;
 
-handle_request(#httpd{method='POST', path_parts=["edit"|PathParts], 
+handle_request(#httpd{method='POST', path_parts=["edit"|PathParts],
         app_dir=Dir, mochi_req=MochiReq}) ->
 
     FName = ?UNQUOTE(filename:join([Dir|PathParts])),
@@ -382,7 +382,7 @@ handle_request(#httpd{method='POST', path_parts=["edit"|PathParts],
             ReqBody = MochiReq:recv_body(),
             case MochiReq:get_primary_header_value("content-type") of
                 "application/json" ->
-                    {Props} = ejson:decode(ReqBody),
+                    {Props} = couchbeam_ejson:decode(ReqBody),
 
                     Data = proplists:get_value(<<"data">>,
                             Props, ""),
@@ -416,8 +416,8 @@ json_respond(MochiReq, Status, JsonObj) ->
 
 json_respond(MochiReq, Status, ExtraHeaders, JsonObj) ->
     Headers = [{"Content-Type", "application/json"}] ++ ExtraHeaders,
-    MochiReq:respond({Status, Headers, ejson:encode(JsonObj)}).
-    
+    MochiReq:respond({Status, Headers, couchbeam_ejson:encode(JsonObj)}).
+
 
 json_error(MochiReq, Status, Error) when is_list(Error) ->
     json_error(MochiReq, Status, list_to_binary(Error));
@@ -433,7 +433,7 @@ json_ok(MochiReq) ->
 json_ok(MochiReq, Extra) ->
     JsonProps = [{<<"ok">>, true}] ++ Extra,
     MochiReq:ok({<<"application/json">>, [],
-            ejson:encode({JsonProps})}).
+            couchbeam_ejson:encode({JsonProps})}).
 
 host_headers(MochiReq) ->
     [ V || V <- [MochiReq:get_header_value(H)
@@ -464,15 +464,15 @@ render(#httpd{templates=Templates},Name, Ctx0) ->
 
         %% inneficient method to remove trailing new line.
         case lists:reverse(Rendered) of
-            [$\n|Rendered1] -> 
+            [$\n|Rendered1] ->
                 lists:reverse(Rendered1);
-            _ -> 
+            _ ->
                 Rendered
         end;
     _ ->
         ""
     end.
-    
+
 
 render_template(Req, Name, Ctx0) ->
     Ctx = dict:from_list(Ctx0),
@@ -488,9 +488,9 @@ render_template(Req, Name, Ctx0) ->
 
         %% inneficient method to remove trailing new line.
         Bin1 = case lists:reverse(Rendered) of
-            [$\n|Rendered1] -> 
+            [$\n|Rendered1] ->
                 lists:reverse(Rendered1);
-            _ -> 
+            _ ->
                 Rendered
         end,
         ContentType = mochiweb_util:guess_mime(Name),
@@ -583,8 +583,8 @@ breadcrumb(PathParts) ->
                 Active = if length(Paths) =:= length(PathParts) -> "active";
                     true -> ""
                 end,
-            
-                Prop = [{href, fix_evently(Href1)}, 
+
+                Prop = [{href, fix_evently(Href1)},
                         {name, Path},
                         {active, Active}],
                 {Href1, [dict:from_list(Prop)|Paths]}
@@ -637,7 +637,7 @@ check_path(Path, CouchappDir) ->
     S = size(CouchappDir),
     case Path1 of
         <<CouchappDir:S/binary, _/binary>> ->
-            
+
             ok;
         _ ->
             throw({forbidden, Path1})

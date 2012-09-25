@@ -1,15 +1,15 @@
 %%% -*- erlang -*-
 %%%
-%%% This file is part of erica released under the Apache 2 license. 
+%%% This file is part of erica released under the Apache 2 license.
 %%% See the NOTICE for more information.
 
 {application, erica,
  [{description, "erica: Couchdb Application Tool"},
-  {vsn, "0.2"},
+  {vsn, "0.2.1"},
   {modules, []},
   {registered, []},
   {applications, [kernel, stdlib]},
-  {included_applications, [crypto, sasl, ibrowse, ejson, couchbeam]},
+  {included_applications, [crypto, sasl, ibrowse, jiffy, couchbeam]},
   {env, [
     %% default log level
     {log_level, error},
