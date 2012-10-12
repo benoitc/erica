@@ -226,7 +226,5 @@ get_source_id(Source) ->
             || N <-binary_to_list(crypto:md5(Source))]).
 
 remove_function_name(Source) ->
-    %% "^\s*function\s+([^{]*)\s*{.*}\s*$"
-    %% "^\s*function([^{]*).*$$"
     re:replace(Source, "^\s*function\s+[^(]*", "function ", [ multiline, caseless, {return, binary}]).
 
