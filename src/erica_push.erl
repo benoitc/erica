@@ -46,9 +46,21 @@ push1(Path, DbKey, Config) ->
             ok;
 
         {error, not_found} ->
-            ?ERROR("Can't find initialized couchapp in '~p'~n", [Path]),
-            halt(1)
+            Config1 = erica_config:update(Path1, Config),
+
+            Db = erica_util:db_from_key(Config1, DbKey),
+            ?DEBUG("push ~s => ~s~n", [Path1, DbKey]),
+            {ok, _} = do_push(Path1, Db, Config1),
+            ok
     end.
+
+push2(CouchappDir, DbKey, Config) ->
+    Config1 = erica_config:update(CouchappDir, Config),
+
+    Db = erica_util:db_from_key(Config, DbKey),
+    ?DEBUG("push ~s => ~s~n", [CouchappDir, DbKey]),
+    {ok, _} = do_push(CouchappDir, Db, Config).
+
 
 do_push(Path, Db, Config) ->
     DocId = id_from_path(Path, Config),
