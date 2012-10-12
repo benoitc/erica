@@ -46,8 +46,9 @@ process_macros_fun([Prop|Rest], Obj, Objects, Doc, AppDir) ->
         undefined ->
             process_macros_fun(Rest, Obj, Objects, Doc, AppDir);
         Source when is_binary(Source) ->
+            Source0 = remove_function_name(Source),
             ?DEBUG("process function ~p~n", [Prop]),
-            Source1 = apply_macros(Source, Doc, AppDir),
+            Source1 = apply_macros(Source0, Doc, AppDir),
             Obj1 = couchbeam_doc:set_value(Prop, Source1, Obj),
             Objects1 = if Source =/= Source1 ->
                     SourceId = get_source_id(Source1),
@@ -60,7 +61,8 @@ process_macros_fun([Prop|Rest], Obj, Objects, Doc, AppDir) ->
         {Sources} ->
             ?DEBUG("process function ~p ~n", [Prop]),
             Sources1 = lists:foldl(fun({Fun1, Source}, Acc) ->
-                    Source1 = apply_macros(Source, Doc, AppDir),
+                    Source0 = remove_function_name(Source),
+                    Source1 = apply_macros(Source0, Doc, AppDir),
                     Parsed = if Source =/= Source1 ->
                             SourceId = get_source_id(Source1),
                             {Fun1, Source1, SourceId,
@@ -222,3 +224,7 @@ get_value([Name|_], Obj, _Len, _Count) ->
 get_source_id(Source) ->
     lists:flatten([io_lib:format("~.16b",[N])
             || N <-binary_to_list(crypto:md5(Source))]).
+
+remove_function_name(Source) ->
+    re:replace(Source, "^\s*function\s+[^(]*", "function ", [ multiline, caseless, {return, binary}]).
+
