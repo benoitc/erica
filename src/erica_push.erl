@@ -36,30 +36,20 @@ push1(Path, DbKey, Config) ->
     Path1 = filename:absname(Path),
     case erica_util:in_couchapp(Path1) of
         {ok, CouchappDir} ->
-            %% load app conf from .couchapprc and initialize ignore
-            %% patterns.
-            Config1 = erica_config:update(CouchappDir, Config),
-
-            Db = erica_util:db_from_key(Config1, DbKey),
-            ?DEBUG("push ~s => ~s~n", [CouchappDir, DbKey]),
-            {ok, _} = do_push(CouchappDir, Db, Config1),
+            push2(CouchappDir, DbKey, Config),
             ok;
 
         {error, not_found} ->
-            Config1 = erica_config:update(Path1, Config),
-
-            Db = erica_util:db_from_key(Config1, DbKey),
-            ?DEBUG("push ~s => ~s~n", [Path1, DbKey]),
-            {ok, _} = do_push(Path1, Db, Config1),
+            push2(Path1, DbKey, Config),
             ok
     end.
 
 push2(CouchappDir, DbKey, Config) ->
     Config1 = erica_config:update(CouchappDir, Config),
 
-    Db = erica_util:db_from_key(Config, DbKey),
+    Db = erica_util:db_from_key(Config1, DbKey),
     ?DEBUG("push ~s => ~s~n", [CouchappDir, DbKey]),
-    {ok, _} = do_push(CouchappDir, Db, Config).
+    {ok, _} = do_push(CouchappDir, Db, Config1).
 
 
 do_push(Path, Db, Config) ->
