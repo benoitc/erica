@@ -67,8 +67,18 @@ do_push(Path, #db{server=Server}=Db, DocId, Config) ->
     Couchapp = #couchapp{
         config=Config,
         path=Path,
-        ddoc_dir=filename:join(Path, "_couch"),
-        att_dir=Path,
+        ddoc_dir=case erica_config:get_global(webstyle, "0") of
+                    "1" ->
+                        filename:join(Path, "_couch");
+                    _ ->
+                        Path
+        end,
+        att_dir=case erica_config:get_global(webstyle, "0") of
+                    "1" ->
+                        Path;
+                    _ ->
+                        filename:join(Path, "_attachments")
+        end,
         docid=DocId,
         doc={[{<<"_id">>, DocId}]},
         old_doc = OldDoc
