@@ -28,6 +28,7 @@
 -record(couchapp, {
         config,
         path,
+        ddoc_dir,
         att_dir,
         docid,
         doc,
