@@ -300,9 +300,6 @@ process_path([File|Rest], Dir, #couchapp{config=Config, ddoc_dir=Path,
         false ->
             File1 = list_to_binary(File),
             RelPath = list_to_binary(erica_util:relpath(Fname, Path)),
-            ?CONSOLE("Rel path ~p ~n", [RelPath]),
-            ?CONSOLE("path ~p ~n", [Path]),
-            ?CONSOLE("path ~p ~n", [Fname]),
             Couchapp1 = case filelib:is_dir(Fname) of
                 true ->
                     case File1 of
@@ -333,7 +330,6 @@ process_dir([], _Dir, _Path, _Config, Doc, Manifest) ->
     {Doc, Manifest};
 process_dir([File|Rest], Dir, Path, Config, Doc, Manifest) ->
     Fname = filename:join(Dir, File),
-    ?CONSOLE("dir filename ~p ~n", [Fname]),
     case erica_ignore:ignore(erica_util:relpath(Fname, Path), Config) of
         true ->
             process_dir(Rest, Dir, Path, Config, Doc, Manifest);
@@ -341,8 +337,7 @@ process_dir([File|Rest], Dir, Path, Config, Doc, Manifest) ->
             File1 = list_to_binary(File),
 
             RelPath = list_to_binary(erica_util:relpath(Fname, Path)),
-            ?CONSOLE("dir File1 ~p ~n", [File1]),
-            ?CONSOLE("dir RelPath ~p ~n", [RelPath]),
+
 
             {Doc1, Manifest1} = case filelib:is_dir(Fname) of
                 true ->
@@ -393,7 +388,7 @@ attachments_from_fs1([], _Dir, _Couchapp, Att) ->
     Att;
 attachments_from_fs1([F|R], Dir, #couchapp{path=Root, config=Conf, ddoc_dir=Ddoc_Path}=Couchapp, Att) ->
     Path = filename:join(Dir, F),
-    case check_ignore_or_is_ddoc(Path, Root, Ddoc_Path, Conf) of
+    case is_ignore_attachment(Path, Root, Ddoc_Path, Conf) of
         true ->
             attachments_from_fs1(R, Dir, Couchapp, Att);
         false ->
@@ -411,7 +406,7 @@ attachments_from_fs1([F|R], Dir, #couchapp{path=Root, config=Conf, ddoc_dir=Ddoc
             attachments_from_fs1(R, Dir, Couchapp, Att1)
     end.
 
-check_ignore_or_is_ddoc(Path, Root, Ddoc_Path, Conf) ->
+is_ignore_attachment(Path, Root, Ddoc_Path, Conf) ->
     if Path =:= Ddoc_Path  -> true;
         true -> erica_ignore:ignore(erica_util:relpath(Path, Root), Conf)
     end.
