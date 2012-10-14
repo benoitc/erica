@@ -64,21 +64,14 @@ do_push(Path, #db{server=Server}=Db, DocId, Config) ->
             {[]}
     end,
 
+    RootFiles = filelib:wildcard("*", Path),
+    Detected_style = detect_style(RootFiles),
+    ?DEBUG("Detected Style: ~p ~n", [Detected_style]),
     Couchapp = #couchapp{
         config=Config,
         path=Path,
-        ddoc_dir=case erica_config:get_global(webstyle, "0") of
-                    "1" ->
-                        filename:join(Path, "_couch");
-                    _ ->
-                        Path
-        end,
-        att_dir=case erica_config:get_global(webstyle, "0") of
-                    "1" ->
-                        Path;
-                    _ ->
-                        filename:join(Path, "_attachments")
-        end,
+        ddoc_dir=choose_ddoc_dir(Detected_style, Path),
+        att_dir=choose_attach_dir(Detected_style, Path),
         docid=DocId,
         doc={[{<<"_id">>, DocId}]},
         old_doc = OldDoc
@@ -108,6 +101,44 @@ do_push(Path, #db{server=Server}=Db, DocId, Config) ->
     % log info
     erica_log:log(info, "~p has been pushed from ~s.~n", [CouchappUrl, Path]),
     {ok, DisplayUrl}.
+
+detect_style([]) ->
+    webstyle;
+detect_style(["_attachments"|_]) ->
+    traditional;
+detect_style(["_couch"|_])  ->
+    webstyle;
+detect_style(["index.html"|_]) ->
+    webstyle;
+detect_style(["_id"|_]) ->
+    traditional;
+detect_style(["views"|_]) ->
+    traditional;
+detect_style([_|Rest]) ->
+    detect_style(Rest).
+
+
+choose_ddoc_dir(Detected_style, Path) ->
+    case erica_config:get_global(webstyle, "0") of
+        "1" -> filename:join(Path, "_couch");
+         _  -> choose_ddoc_dir1(Detected_style, Path)
+    end.
+
+choose_ddoc_dir1(webstyle, Path) ->
+    filename:join(Path, "_couch");
+choose_ddoc_dir1(_, Path) ->
+    Path.
+
+choose_attach_dir(Detected_style, Path) ->
+    case erica_config:get_global(webstyle, "0") of
+        "1" -> Path;
+         _  -> choose_attach_dir1(Detected_style, Path)
+     end.
+
+choose_attach_dir1(webstyle, Path)
+    ->  Path;
+choose_attach_dir1(_, Path)
+    ->  filename:join(Path, "_attachments").
 
 index_url(CouchappUrl, #couchapp{doc=Doc}=Couchapp) ->
     CouchappObj = couchbeam_doc:get_value(<<"couchapp">>, Doc, {[]}),
