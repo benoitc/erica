@@ -471,7 +471,7 @@ encode_path(P) ->
             string:join(lists:reverse(Parts), "/")
     end.
 
-send_docs(#couchapp{path=Path}=Couchapp, Db) ->
+send_docs(#couchapp{ddoc_dir=Path}=Couchapp, Db) ->
     %This should be adjusted based on ddoc_dir
     DocPath = filename:join(Path, "_docs"),
     Files = filelib:wildcard("*", DocPath),
@@ -485,7 +485,7 @@ send_docs(#couchapp{path=Path}=Couchapp, Db) ->
 
 docs_from_fs1([], {Success, Total}, _, _ ) ->
     {Success, Total};
-docs_from_fs1([F|R],  {Success, Total}, #couchapp{path=Root, config=Conf}=Couchapp, Db) ->
+docs_from_fs1([F|R],  {Success, Total}, #couchapp{ddoc_dir=Root, config=Conf}=Couchapp, Db) ->
      %This should be adjusted based on ddoc_dir
     Path = filename:join(Root, '_docs'),
     DocPath = filename:join(Path, F),
