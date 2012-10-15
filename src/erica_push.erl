@@ -86,6 +86,9 @@ do_push(Path, #db{server=Server}=Db, DocId, Config) ->
             Doc1 = couchbeam:save_doc(Db, Doc),
             send_attachments(Db, Couchapp2#couchapp{doc=Doc1})
     end,
+
+    send_docs(Couchapp2, Db ),
+
     CouchappUrl = couchbeam:make_url(Server, couchbeam:doc_url(Db, DocId), []),
 
     DisplayUrl = index_url(CouchappUrl, Couchapp1),
@@ -417,3 +420,38 @@ encode_path(P) ->
                 end, [], string:tokens(P, "/")),
             string:join(lists:reverse(Parts), "/")
     end.
+
+send_docs(#couchapp{path=Path}=Couchapp, Db) ->
+    %This should be adjusted based on ddoc_dir
+    DocPath = filename:join(Path, "_docs"),
+    Files = filelib:wildcard("*", DocPath),
+    docs_from_fs1(Files,  Couchapp, Db).
+
+docs_from_fs1([], _, _) ->
+    true;
+docs_from_fs1([F|R],  #couchapp{path=Root, config=Conf}=Couchapp, Db) ->
+     %This should be adjusted based on ddoc_dir
+    Path = filename:join(Root, '_docs'),
+    DocPath = filename:join(Path, F),
+    Json = load_doc_from_fs(DocPath),
+    try couchbeam:save_doc(Db, Json) of
+        {ok, _} ->
+            ?CONSOLE("---> Doc uploaded: ~p ~n", [F]),
+            docs_from_fs1(R, Couchapp, Db);
+        {error, conflict} ->
+            ?CONSOLE("---> Failed Doc Upload ~p, Document Conflict ~n", [F]),
+            docs_from_fs1(R, Couchapp, Db)
+    catch
+        _:_ ->
+            ?CONSOLE("---> Failed Doc Upload ~p ~n", [F]),
+            docs_from_fs1(R, Couchapp, Db)
+    end.
+
+
+
+load_doc_from_fs(File) ->
+    {ok, Bin} = file:read_file(File),
+    couchbeam_ejson:decode(Bin).
+
+
+push_doc()
