@@ -433,15 +433,14 @@ docs_from_fs1([F|R],  #couchapp{path=Root, config=Conf}=Couchapp, Db) ->
      %This should be adjusted based on ddoc_dir
     Path = filename:join(Root, '_docs'),
     DocPath = filename:join(Path, F),
-    Json = load_doc_from_fs(DocPath),
-    try couchbeam:save_doc(Db, Json) of
-        {ok, _} ->
-            ?CONSOLE("---> Doc uploaded: ~p ~n", [F]),
-            docs_from_fs1(R, Couchapp, Db);
-        {error, conflict} ->
-            ?CONSOLE("---> Failed Doc Upload ~p, Document Conflict ~n", [F]),
+    try load_doc_from_fs(DocPath) of
+        Json ->
+            push_doc(Db, Json, F),
             docs_from_fs1(R, Couchapp, Db)
     catch
+        invalid_json:_ ->
+            ?CONSOLE("---> Failed Doc Upload ~p. Invalid JSON file. ~n", [F]),
+            docs_from_fs1(R, Couchapp, Db);
         _:_ ->
             ?CONSOLE("---> Failed Doc Upload ~p ~n", [F]),
             docs_from_fs1(R, Couchapp, Db)
@@ -454,4 +453,13 @@ load_doc_from_fs(File) ->
     couchbeam_ejson:decode(Bin).
 
 
-push_doc()
+push_doc(Db, Json, F) ->
+    try couchbeam:save_doc(Db, Json) of
+        {ok, _} ->
+            ?CONSOLE("---> Doc uploaded: ~p ~n", [F]);
+        {error, conflict} ->
+            ?CONSOLE("---> Failed Doc Upload ~p, Document Conflict ~n", [F])
+    catch
+        _:_ ->
+            ?CONSOLE("---> Failed Doc Upload ~p ~n", [F])
+    end.
