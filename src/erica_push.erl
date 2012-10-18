@@ -70,6 +70,7 @@ do_push(Path, #db{server=Server}=Db, DocId, Config) ->
     Couchapp = #couchapp{
         config=Config,
         path=Path,
+        pushed_by=pushed_by(Db),
         ddoc_dir=choose_ddoc_dir(Detected_style, Path),
         att_dir=choose_attach_dir(Detected_style, Path),
         docid=DocId,
@@ -248,6 +249,7 @@ make_doc(Couchapp) ->
     #couchapp{
         path=AppDir,
         doc=Doc,
+        pushed_by=Pushed_by,
         old_doc=OldDoc,
         manifest=Manifest,
         signatures=Signatures} = Couchapp,
@@ -260,17 +262,33 @@ make_doc(Couchapp) ->
                 couchbeam_doc:get_rev(OldDoc), Doc)
     end,
 
+    WebManifest = do_web_manifest(Couchapp),
+    Git = git_info(),
+    {{Year, Month, Day}, {Hour, Min, Sec}} = calendar:universal_time(),
+    Time = list_to_binary(lists:flatten(
+           	io_lib:fwrite("~4..0B-~2B-~2BT~2.10.0B:~2.10.0B:~2.10.0B",
+                                 [Year, Month, Day,  Hour, Min, Sec]))),
+    ?CONSOLE("---> Time: ~p ~n", [Time]),
+
     %% set manifest an signatures in couchapp object
     Doc2 = case couchbeam_doc:get_value(<<"couchapp">>, Doc1) of
         undefined ->
             couchbeam_doc:set_value(<<"couchapp">>, {[
+                        {<<"pushed_by">>, Pushed_by},
+                        {<<"push_time">>, Time},
+                        {<<"build_time">>, Time},
                         {<<"manifest">>, Manifest},
-                        {<<"signatures">>, {Signatures}}
+                        {<<"signatures">>, {Signatures}},
+                        {<<"config">>, WebManifest}
             ]}, Doc1);
         Meta ->
             Meta1 = couchbeam_doc:set_value(<<"manifest">>, Manifest, Meta),
+            Meta2 = couchbeam_doc:set_value(<<"config">>, WebManifest, Meta1),
+            Meta3 = couchbeam_doc:set_value(<<"pushed_by">>, Pushed_by, Meta2),
+            Meta4 = couchbeam_doc:set_value(<<"push_time">>, Time, Meta3),
+            Meta5 = couchbeam_doc:set_value(<<"build_time">>, Time, Meta4),
             FinalMeta = couchbeam_doc:set_value(<<"signatures">>,
-                {Signatures}, Meta1),
+                {Signatures}, Meta5),
             couchbeam_doc:set_value(<<"couchapp">>, FinalMeta, Doc1)
     end,
     erica_macros:process_macros(Doc2, AppDir).
@@ -485,7 +503,7 @@ send_docs(#couchapp{ddoc_dir=Path}=Couchapp, Db) ->
 
 docs_from_fs1([], {Success, Total}, _, _ ) ->
     {Success, Total};
-docs_from_fs1([F|R],  {Success, Total}, #couchapp{ddoc_dir=Root, config=Conf}=Couchapp, Db) ->
+docs_from_fs1([F|R],  {Success, Total}, #couchapp{ddoc_dir=Root}=Couchapp, Db) ->
      %This should be adjusted based on ddoc_dir
     Path = filename:join(Root, '_docs'),
     DocPath = filename:join(Path, F),
@@ -522,3 +540,35 @@ push_doc(Db, Json, F) ->
             ?DEBUG("---> Failed Doc Upload ~p ~n", [F]),
             0
     end.
+
+
+git_info() ->
+    Test = os:cmd("git rev-list HEAD --max-count=1"),
+    ?CONSOLE("---> Git info: ~p ~n", [Test]).
+
+pushed_by(Db) ->
+    {_, _, _, Cred} = Db,
+    pushed_by2(Cred).
+
+pushed_by2([]) -> false;
+pushed_by2([{_, {User, _}}]) -> list_to_binary(User).
+
+
+do_web_manifest(#couchapp{att_dir=Path}=Couchapp) ->
+    Files = filelib:wildcard("*.manifest", Path),
+    do_web_manifest1(Files, Path).
+
+do_web_manifest1([], _) ->
+    none;
+
+do_web_manifest1([F], Path) ->
+    Fname = filename:join(Path, F),
+    {ok, Bin} = file:read_file(Fname),
+    couchbeam_ejson:decode(Bin);
+
+
+do_web_manifest1([F,_], Path) ->
+    Fname = filename:join(Path, F),
+    {ok, Bin} = file:read_file(Fname),
+    couchbeam_ejson:decode(Bin).
+
