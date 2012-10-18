@@ -268,6 +268,7 @@ make_doc(Couchapp) ->
     Time = list_to_binary(lists:flatten(
            	io_lib:fwrite("~4..0B-~2B-~2BT~2.10.0B:~2.10.0B:~2.10.0B",
                                  [Year, Month, Day,  Hour, Min, Sec]))),
+    ?CONSOLE("---> Time: ~p ~n", [Time]),
 
     %% set manifest an signatures in couchapp object
     Doc2 = case couchbeam_doc:get_value(<<"couchapp">>, Doc1) of
