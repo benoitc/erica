@@ -32,6 +32,7 @@
         att_dir,
         docid,
         doc,
+        pushed_by,
         old_doc=nil,
         manifest=[],
         attachments=[],
