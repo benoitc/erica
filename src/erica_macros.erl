@@ -14,7 +14,7 @@
 
 process_macros(Doc, AppDir) ->
     Funs = [<<"shows">>, <<"lists">>, <<"updates">>, <<"filters">>,
-        <<"spatial">>, <<"validate_update_doc">>],
+        <<"spatial">>, <<"validate_doc_update">>],
     %% apply macros too functions
     {Doc1, Objects} = process_macros_fun(Funs, Doc, [], Doc, AppDir),
     {Doc2, FinalObjects} = case couchbeam_doc:get_value(<<"views">>, Doc1) of
