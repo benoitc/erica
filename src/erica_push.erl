@@ -263,7 +263,7 @@ make_doc(Couchapp) ->
     end,
 
     WebManifest = do_web_manifest(Couchapp),
-    Git = git_info(),
+    %Git = git_info(),
     {{Year, Month, Day}, {Hour, Min, Sec}} = calendar:universal_time(),
     Time = list_to_binary(lists:flatten(
            	io_lib:fwrite("~4..0B-~2B-~2BT~2.10.0B:~2.10.0B:~2.10.0B",
