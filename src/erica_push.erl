@@ -146,18 +146,23 @@ choose_attach_dir1(_, Path)
 
 index_url(CouchappUrl, #couchapp{doc=Doc}=Couchapp) ->
     CouchappObj = couchbeam_doc:get_value(<<"couchapp">>, Doc, {[]}),
+    HasRewrites = case couchbeam_doc:get_value(<<"rewrites">>, Doc, []) of
+        [] -> false;
+        _ -> true
+    end,
+
     FinalIndex = case couchbeam_doc:get_value(<<"index">>, CouchappObj) of
         undefined ->
-             case has_index_file(Couchapp) of
-                 true ->
-                     "/index.html";
-                 false ->
-                     ""
-             end;
+             index_url2(has_index_file(Couchapp), HasRewrites);
         Index ->
             Index
     end,
     CouchappUrl ++ FinalIndex.
+
+index_url2(true, true) -> "/_rewrite/";
+index_url2(true, false) -> "/index.html";
+index_url2(false, true) -> "/_rewrite/";
+index_url2(_, _) -> "".
 
 has_index_file(#couchapp{attachments=List}) ->
    lists:any(fun({File, _}) ->
