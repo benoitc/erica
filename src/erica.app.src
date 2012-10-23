@@ -5,11 +5,11 @@
 
 {application, erica,
  [{description, "erica: Couchdb Application Tool"},
-  {vsn, "0.2.1"},
+  {vsn, "0.2.2"},
   {modules, []},
   {registered, []},
   {applications, [kernel, stdlib]},
-  {included_applications, [crypto, sasl, ibrowse, jiffy, couchbeam]},
+  {included_applications, [crypto, sasl, ibrowse, ejson, couchbeam]},
   {env, [
     %% default log level
     {log_level, error},
