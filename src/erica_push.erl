@@ -110,7 +110,7 @@ detect_style([]) ->
     webstyle;
 detect_style(["_attachments"|_]) ->
     traditional;
-detect_style(["_couch"|_])  ->
+detect_style(["_ddoc"|_])  ->
     webstyle;
 detect_style(["index.html"|_]) ->
     webstyle;
@@ -124,12 +124,12 @@ detect_style([_|Rest]) ->
 
 choose_ddoc_dir(Detected_style, Path) ->
     case erica_config:get_global(webstyle, "0") of
-        "1" -> filename:join(Path, "_couch");
+        "1" -> filename:join(Path, "_ddoc");
          _  -> choose_ddoc_dir1(Detected_style, Path)
     end.
 
 choose_ddoc_dir1(webstyle, Path) ->
-    filename:join(Path, "_couch");
+    filename:join(Path, "_ddoc");
 choose_ddoc_dir1(_, Path) ->
     Path.
 

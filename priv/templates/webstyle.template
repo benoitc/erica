@@ -2,10 +2,10 @@
 
 {file, "webstyle/index.html", "{{appid}}/index.html"}.
 {file, "webstyle/app.manifest", "{{appid}}/app.manifest"}.
-{file, "webstyle/_couch/rewrites.json", "{{appid}}/_couch/rewrites.json"}.
-{file, "webstyle/_couch/validate_doc_update.js", "{{appid}}/_couch/validate_doc_update.js"}.
+{file, "webstyle/_ddoc/rewrites.json", "{{appid}}/_ddoc/rewrites.json"}.
+{file, "webstyle/_ddoc/validate_doc_update.js", "{{appid}}/_ddoc/validate_doc_update.js"}.
 
-{file, "webstyle/img/favicon.ico", "{{appid}}/img/promo/favicon.ico"}.
+{file, "webstyle/img/favicon.ico", "{{appid}}/img/favicon.ico"}.
 {file, "webstyle/img/promo/icon_16.png", "{{appid}}/img/promo/icon_16.png"}.
 {file, "webstyle/img/promo/icon_48.png", "{{appid}}/img/promo/icon_48.png"}.
 {file, "webstyle/img/promo/icon_96.png", "{{appid}}/img/promo/icon_96.png"}.
