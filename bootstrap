@@ -34,12 +34,16 @@ main(Args) ->
             ++ load_files("priv/web_static/*", ".")
             ++ load_files("priv/web_templates/*", "."),
 
+    %% On Windows the shebang is different, and the filename needs a suffix
+    Filename = script_suffix("erica"),
+    Header = escript_header(),
+
     case zip:create("mem", Files, [memory]) of
         {ok, {"mem", ZipBin}} ->
             %% Archive was successfully created. Prefix that binary with our
             %% header and write to "rebar" file
-            Script = <<"#!/usr/bin/env escript\n%%! -pa . -noshell -noinput -sasl errlog_type error\n", ZipBin/binary>>,
-            case file:write_file("erica", Script) of
+            Script = <<Header/binary, ZipBin/binary>>,
+            case file:write_file(Filename, Script) of
                 ok ->
                     ok;
                 {error, WriteError} ->
@@ -52,14 +56,15 @@ main(Args) ->
     end,
 
     %% Finally, update executable perms for our script
-    {ok, #file_info{mode = Mode}} = file:read_file_info("erica"),
-    ok = file:change_mode("erica", Mode bor 8#00100),
+    {ok, #file_info{mode = Mode}} = file:read_file_info(Filename),
+    ok = file:change_mode(Filename, Mode bor 8#00100),
 
     %% Add a helpful message
-    io:format("Congratulations! You now have a self-contained script called \"erica\" in\n"
-              "your current working directory. Place this script anywhere in your path\n"
-              "and you can use build and push your design docs and docs
-              like erica.\n").
+
+    io:format("Congratulations! You now have a self-contained script called '~s'~n"
+              "in your current working directory. Place this script anywhere "
+              "in your path\nand you can use, build and push your docs and "
+              "design docs with erica.\n", [Filename]).
 
 load_files(Wildcard, Dir) ->
     lists:foldl(fun(Filename, Acc) ->
@@ -84,4 +89,29 @@ read_file(Filename, Dir) ->
         false ->
             {ok, Bin} = file:read_file(filename:join(Dir, Filename)),
             {Filename, Bin}
+    end.
+
+
+escript_header() -> 
+    Shebang = case os:type() of
+    {win32,_} ->
+        %% set local environment so that path is clean on exit
+        %% prepend path to same directory as script to allow loading DLLs
+        %% start escript using the same script as entry point and append args
+        %% on return from escript skip to end of .cmd file
+        <<"@echo off & ",
+        "setlocal & ",
+        "path=%~dp0;%path%; & ",
+        "escript.exe \"%~dpn0.cmd\" %*",
+        " & goto :eof\r\n">>;
+    _ ->
+        %% must be a unix variant
+        <<"#!/usr/bin/env escript\n">>
+    end,
+    %% Erlang VM args are the same across platforms, and must occur in L2 or L3
+    <<Shebang/binary, "%%! -pa . -noshell -noinput -sasl errlog_type error\n">>.
+
+script_suffix(Prefix) -> case os:type() of
+    {win32, _ } -> Prefix ++ ".cmd";
+    _           -> Prefix
     end.
