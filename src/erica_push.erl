@@ -335,9 +335,10 @@ send_attachments1([{Fname, _Signature}|Rest], Doc, Db, AttDir) ->
         {content_length, FileInfo#file_info.size},
         {rev, couchbeam_doc:get_rev(Doc)}
     ],
+    Params2 = add_special_content_types(Params, Fname, FileInfo),
     RelPath = erica_util:relpath(Fname, AttDir),
     {ok, Doc1} = couchbeam:put_attachment(Db, couchbeam_doc:get_id(Doc),
-        RelPath, Fun, Params),
+        RelPath, Fun, Params2),
     send_attachments1(Rest, Doc1, Db, AttDir).
 
 attach_files([], Doc, _AttDir) ->
@@ -345,9 +346,31 @@ attach_files([], Doc, _AttDir) ->
 attach_files([{Fname, _Signature}|Rest], Doc, AttDir) ->
     {ok, Content} = file:read_file(Fname),
     RelPath = erica_util:relpath(Fname, AttDir),
-    Doc1 = couchbeam_attachments:add_inline(Doc, Content,
-        encode_path(RelPath)),
+    Doc1 = case guess_mime(Fname) of
+        undefined ->
+           couchbeam_attachments:add_inline(Doc, Content, encode_path(RelPath));
+        Mime ->
+            couchbeam_attachments:add_inline(Doc, Content, encode_path(RelPath), Mime)
+    end,
     attach_files(Rest, Doc1, AttDir).
+
+add_special_content_types(Params, Fname, FileInfo) ->
+    case guess_mime(Fname) of
+        undefined ->
+            Params;
+        Mime ->
+            Params ++ {content_type, Mime}
+    end.
+
+%% @spec guess_mime(string()) -> string()
+%% @doc  Guess the mime type of a file by the extension of its filename.
+guess_mime(File) ->
+    from_extension(filename:extension(File)).
+
+from_extension(".webapp") ->
+    "application/x-web-app-manifest+json";
+from_extension(_) ->
+    undefined.
 
 process_path([], _Dir, Couchapp) ->
     {ok, Couchapp};
