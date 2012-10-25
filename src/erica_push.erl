@@ -582,7 +582,7 @@ pushed_by2([{_, {User, _}}]) -> list_to_binary(User).
 
 
 do_web_manifest(#couchapp{att_dir=Path}=Couchapp) ->
-    Files = filelib:wildcard("*.manifest", Path),
+    Files = filelib:wildcard("*.webapp", Path),
     do_web_manifest1(Files, Path).
 
 do_web_manifest1([], _) ->
