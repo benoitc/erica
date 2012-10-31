@@ -1,3 +1,3 @@
 @echo off
 call rebar get-deps
-call rebar compile
+call rebar -D WITH_MOCHIJSON compile
