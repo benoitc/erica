@@ -9,7 +9,7 @@
   {modules, []},
   {registered, []},
   {applications, [kernel, stdlib]},
-  {included_applications, [crypto, sasl, ibrowse, jiffy, couchbeam]},
+  {included_applications, [crypto, sasl, ibrowse, couchbeam]},
   {env, [
     %% default log level
     {log_level, error},
