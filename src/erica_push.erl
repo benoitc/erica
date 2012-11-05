@@ -86,6 +86,9 @@ do_push(Path, #db{server=Server}=Db, DocId, Config) ->
             Doc1 = couchbeam:save_doc(Db, Doc),
             send_attachments(Db, Couchapp2#couchapp{doc=Doc1})
     end,
+
+    send_docs(Couchapp2, Db ),
+
     CouchappUrl = couchbeam:make_url(Server, couchbeam:doc_url(Db, DocId), []),
 
     DisplayUrl = index_url(CouchappUrl, Couchapp1),
@@ -416,4 +419,56 @@ encode_path(P) ->
                     [mochiweb_util:quote_plus(P1)|Acc]
                 end, [], string:tokens(P, "/")),
             string:join(lists:reverse(Parts), "/")
+    end.
+
+send_docs(#couchapp{path=Path}=Couchapp, Db) ->
+    %This should be adjusted based on ddoc_dir
+    DocPath = filename:join(Path, "_docs"),
+    Files = filelib:wildcard("*", DocPath),
+    {Success, Total} = docs_from_fs1(Files, {0,0},  Couchapp, Db),
+    case Total of
+        0 -> 0;
+        _ ->
+            ?CONSOLE("  > pushed ~B of ~B docs.~n", [Success, Total])
+    end.
+
+
+docs_from_fs1([], {Success, Total}, _, _ ) ->
+    {Success, Total};
+docs_from_fs1([F|R],  {Success, Total}, #couchapp{path=Root, config=Conf}=Couchapp, Db) ->
+     %This should be adjusted based on ddoc_dir
+    Path = filename:join(Root, '_docs'),
+    DocPath = filename:join(Path, F),
+    try load_doc_from_fs(DocPath) of
+        Json ->
+            DocPushed = push_doc(Db, Json, F),
+            docs_from_fs1(R, {Success + DocPushed, Total +1}, Couchapp, Db)
+    catch
+        invalid_json:_ ->
+            ?DEBUG("---> Failed Doc Upload ~p. Invalid JSON file. ~n", [F]),
+            docs_from_fs1(R, {Success, Total + 1}, Couchapp, Db );
+        _:_ ->
+            ?DEBUG("---> Failed Doc Upload ~p ~n", [F]),
+            docs_from_fs1(R, {Success, Total + 1}, Couchapp, Db)
+    end.
+
+
+
+load_doc_from_fs(File) ->
+    {ok, Bin} = file:read_file(File),
+    couchbeam_ejson:decode(Bin).
+
+
+push_doc(Db, Json, F) ->
+    try couchbeam:save_doc(Db, Json) of
+        {ok, _} ->
+            ?DEBUG("---> Doc uploaded: ~p ~n", [F]),
+            1;
+        {error, conflict} ->
+            ?DEBUG("---> Failed Doc Upload ~p, Document Conflict ~n", [F]),
+            0
+    catch
+        _:_ ->
+            ?DEBUG("---> Failed Doc Upload ~p ~n", [F]),
+            0
     end.
