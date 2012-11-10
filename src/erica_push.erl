@@ -36,19 +36,21 @@ push1(Path, DbKey, Config) ->
     Path1 = filename:absname(Path),
     case erica_util:in_couchapp(Path1) of
         {ok, CouchappDir} ->
-            %% load app conf from .couchapprc and initialize ignore
-            %% patterns.
-            Config1 = erica_config:update(CouchappDir, Config),
-
-            Db = erica_util:db_from_key(Config1, DbKey),
-            ?DEBUG("push ~s => ~s~n", [CouchappDir, DbKey]),
-            {ok, _} = do_push(CouchappDir, Db, Config1),
+            push2(CouchappDir, DbKey, Config),
             ok;
 
         {error, not_found} ->
-            ?ERROR("Can't find initialized couchapp in '~p'~n", [Path]),
-            halt(1)
+            push2(Path1, DbKey, Config),
+            ok
     end.
+
+push2(CouchappDir, DbKey, Config) ->
+    Config1 = erica_config:update(CouchappDir, Config),
+
+    Db = erica_util:db_from_key(Config1, DbKey),
+    ?DEBUG("push ~s => ~s~n", [CouchappDir, DbKey]),
+    {ok, _} = do_push(CouchappDir, Db, Config1).
+
 
 do_push(Path, Db, Config) ->
     DocId = id_from_path(Path, Config),
@@ -62,10 +64,15 @@ do_push(Path, #db{server=Server}=Db, DocId, Config) ->
             {[]}
     end,
 
+    RootFiles = filelib:wildcard("*", Path),
+    Detected_style = detect_style(RootFiles),
+    ?DEBUG("Detected Style: ~p ~n", [Detected_style]),
     Couchapp = #couchapp{
         config=Config,
         path=Path,
-        att_dir=filename:join(Path, "_attachments"),
+        pushed_by=pushed_by(Db),
+        ddoc_dir=choose_ddoc_dir(Detected_style, Path),
+        att_dir=choose_attach_dir(Detected_style, Path),
         docid=DocId,
         doc={[{<<"_id">>, DocId}]},
         old_doc = OldDoc
@@ -86,6 +93,9 @@ do_push(Path, #db{server=Server}=Db, DocId, Config) ->
             Doc1 = couchbeam:save_doc(Db, Doc),
             send_attachments(Db, Couchapp2#couchapp{doc=Doc1})
     end,
+
+    send_docs(Couchapp2, Db ),
+
     CouchappUrl = couchbeam:make_url(Server, couchbeam:doc_url(Db, DocId), []),
 
     DisplayUrl = index_url(CouchappUrl, Couchapp1),
@@ -96,20 +106,63 @@ do_push(Path, #db{server=Server}=Db, DocId, Config) ->
     erica_log:log(info, "~p has been pushed from ~s.~n", [CouchappUrl, Path]),
     {ok, DisplayUrl}.
 
+detect_style([]) ->
+    webstyle;
+detect_style(["_attachments"|_]) ->
+    traditional;
+detect_style(["_ddoc"|_])  ->
+    webstyle;
+detect_style(["index.html"|_]) ->
+    webstyle;
+detect_style(["_id"|_]) ->
+    traditional;
+detect_style(["views"|_]) ->
+    traditional;
+detect_style([_|Rest]) ->
+    detect_style(Rest).
+
+
+choose_ddoc_dir(Detected_style, Path) ->
+    case erica_config:get_global(webstyle, "0") of
+        "1" -> filename:join(Path, "_ddoc");
+         _  -> choose_ddoc_dir1(Detected_style, Path)
+    end.
+
+choose_ddoc_dir1(webstyle, Path) ->
+    filename:join(Path, "_ddoc");
+choose_ddoc_dir1(_, Path) ->
+    Path.
+
+choose_attach_dir(Detected_style, Path) ->
+    case erica_config:get_global(webstyle, "0") of
+        "1" -> Path;
+         _  -> choose_attach_dir1(Detected_style, Path)
+     end.
+
+choose_attach_dir1(webstyle, Path)
+    ->  Path;
+choose_attach_dir1(_, Path)
+    ->  filename:join(Path, "_attachments").
+
 index_url(CouchappUrl, #couchapp{doc=Doc}=Couchapp) ->
     CouchappObj = couchbeam_doc:get_value(<<"couchapp">>, Doc, {[]}),
+    HasRewrites = case couchbeam_doc:get_value(<<"rewrites">>, Doc, []) of
+        [] -> false;
+        _ -> true
+    end,
+
     FinalIndex = case couchbeam_doc:get_value(<<"index">>, CouchappObj) of
         undefined ->
-             case has_index_file(Couchapp) of
-                 true ->
-                     "/index.html";
-                 false ->
-                     ""
-             end;
+             index_url2(has_index_file(Couchapp), HasRewrites);
         Index ->
             Index
     end,
     CouchappUrl ++ FinalIndex.
+
+index_url2(true, true) -> "/_rewrite/";
+index_url2(true, false) -> "/index.html";
+index_url2(false, true) -> "/_rewrite/";
+index_url2(_, _) -> "".
 
 has_index_file(#couchapp{attachments=List}) ->
    lists:any(fun({File, _}) ->
@@ -138,9 +191,10 @@ id_from_path(Path, Config) ->
             end
     end.
 
-couchapp_from_fs(#couchapp{path=Path}=Couchapp) ->
-    Files = filelib:wildcard("*", Path),
-    process_path(Files, Path, Couchapp).
+couchapp_from_fs(#couchapp{ddoc_dir=Ddoc_Path}=Couchapp) ->
+    Couchapp1 = attachments_from_fs(Couchapp),
+    Files1 = filelib:wildcard("*", Ddoc_Path),
+    process_path(Files1, Ddoc_Path, Couchapp1).
 
 process_signatures(#couchapp{attachments=[]}=Couchapp) ->
     Couchapp;
@@ -200,6 +254,7 @@ make_doc(Couchapp) ->
     #couchapp{
         path=AppDir,
         doc=Doc,
+        pushed_by=Pushed_by,
         old_doc=OldDoc,
         manifest=Manifest,
         signatures=Signatures} = Couchapp,
@@ -212,17 +267,32 @@ make_doc(Couchapp) ->
                 couchbeam_doc:get_rev(OldDoc), Doc)
     end,
 
+    WebManifest = do_web_manifest(Couchapp),
+    %Git = git_info(),
+    {{Year, Month, Day}, {Hour, Min, Sec}} = calendar:universal_time(),
+    Time = list_to_binary(lists:flatten(
+           	io_lib:fwrite("~4..0B-~2B-~2BT~2.10.0B:~2.10.0B:~2.10.0B",
+                                 [Year, Month, Day,  Hour, Min, Sec]))),
+
     %% set manifest an signatures in couchapp object
     Doc2 = case couchbeam_doc:get_value(<<"couchapp">>, Doc1) of
         undefined ->
             couchbeam_doc:set_value(<<"couchapp">>, {[
+                        {<<"pushed_by">>, Pushed_by},
+                        {<<"push_time">>, Time},
+                        {<<"build_time">>, Time},
                         {<<"manifest">>, Manifest},
-                        {<<"signatures">>, {Signatures}}
+                        {<<"signatures">>, {Signatures}},
+                        {<<"config">>, WebManifest}
             ]}, Doc1);
         Meta ->
             Meta1 = couchbeam_doc:set_value(<<"manifest">>, Manifest, Meta),
+            Meta2 = couchbeam_doc:set_value(<<"config">>, WebManifest, Meta1),
+            Meta3 = couchbeam_doc:set_value(<<"pushed_by">>, Pushed_by, Meta2),
+            Meta4 = couchbeam_doc:set_value(<<"push_time">>, Time, Meta3),
+            Meta5 = couchbeam_doc:set_value(<<"build_time">>, Time, Meta4),
             FinalMeta = couchbeam_doc:set_value(<<"signatures">>,
-                {Signatures}, Meta1),
+                {Signatures}, Meta5),
             couchbeam_doc:set_value(<<"couchapp">>, FinalMeta, Doc1)
     end,
     erica_macros:process_macros(Doc2, AppDir).
@@ -265,9 +335,10 @@ send_attachments1([{Fname, _Signature}|Rest], Doc, Db, AttDir) ->
         {content_length, FileInfo#file_info.size},
         {rev, couchbeam_doc:get_rev(Doc)}
     ],
+    Params2 = add_special_content_types(Params, Fname, FileInfo),
     RelPath = erica_util:relpath(Fname, AttDir),
     {ok, Doc1} = couchbeam:put_attachment(Db, couchbeam_doc:get_id(Doc),
-        RelPath, Fun, Params),
+        RelPath, Fun, Params2),
     send_attachments1(Rest, Doc1, Db, AttDir).
 
 attach_files([], Doc, _AttDir) ->
@@ -275,9 +346,31 @@ attach_files([], Doc, _AttDir) ->
 attach_files([{Fname, _Signature}|Rest], Doc, AttDir) ->
     {ok, Content} = file:read_file(Fname),
     RelPath = erica_util:relpath(Fname, AttDir),
-    Doc1 = couchbeam_attachments:add_inline(Doc, Content,
-        encode_path(RelPath)),
+    Doc1 = case guess_mime(Fname) of
+        undefined ->
+           couchbeam_attachments:add_inline(Doc, Content, encode_path(RelPath));
+        Mime ->
+            couchbeam_attachments:add_inline(Doc, Content, encode_path(RelPath), Mime)
+    end,
     attach_files(Rest, Doc1, AttDir).
+
+add_special_content_types(Params, Fname, FileInfo) ->
+    case guess_mime(Fname) of
+        undefined ->
+            Params;
+        Mime ->
+            Params ++ {content_type, Mime}
+    end.
+
+%% @spec guess_mime(string()) -> string()
+%% @doc  Guess the mime type of a file by the extension of its filename.
+guess_mime(File) ->
+    from_extension(filename:extension(File)).
+
+from_extension(".webapp") ->
+    "application/x-web-app-manifest+json";
+from_extension(_) ->
+    undefined.
 
 process_path([], _Dir, Couchapp) ->
     {ok, Couchapp};
@@ -287,7 +380,7 @@ process_path([".ericaignore"|Rest], Dir, Couchapp) ->
     process_path(Rest, Dir, Couchapp);
 process_path(["_id"|Rest], Dir, Couchapp) ->
     process_path(Rest, Dir, Couchapp);
-process_path([File|Rest], Dir, #couchapp{config=Config, path=Path,
+process_path([File|Rest], Dir, #couchapp{config=Config, ddoc_dir=Path,
         doc=Doc, manifest=Manifest}=Couchapp) ->
     Fname = filename:join(Dir, File),
     case erica_ignore:ignore(erica_util:relpath(Fname, Path), Config) of
@@ -333,6 +426,8 @@ process_dir([File|Rest], Dir, Path, Config, Doc, Manifest) ->
             File1 = list_to_binary(File),
 
             RelPath = list_to_binary(erica_util:relpath(Fname, Path)),
+
+
             {Doc1, Manifest1} = case filelib:is_dir(Fname) of
                 true ->
                     Files = filelib:wildcard("*", Fname),
@@ -373,17 +468,16 @@ process_file(File, Fname) ->
             {list_to_binary(PropName), Value}
     end.
 
-attachments_from_fs(#couchapp{path=Path}=Couchapp) ->
-    AttPath = filename:join(Path, "_attachments"),
+attachments_from_fs(#couchapp{att_dir=AttPath}=Couchapp) ->
     Files = filelib:wildcard("*", AttPath),
     Attachments = attachments_from_fs1(Files, AttPath, Couchapp, []),
     Couchapp#couchapp{attachments=Attachments}.
 
 attachments_from_fs1([], _Dir, _Couchapp, Att) ->
     Att;
-attachments_from_fs1([F|R], Dir, #couchapp{path=Root, config=Conf}=Couchapp, Att) ->
+attachments_from_fs1([F|R], Dir, #couchapp{path=Root, config=Conf, ddoc_dir=Ddoc_Path}=Couchapp, Att) ->
     Path = filename:join(Dir, F),
-    case erica_ignore:ignore(erica_util:relpath(Path, Root), Conf) of
+    case is_ignore_attachment(Path, Root, Ddoc_Path, Conf) of
         true ->
             attachments_from_fs1(R, Dir, Couchapp, Att);
         false ->
@@ -401,6 +495,10 @@ attachments_from_fs1([F|R], Dir, #couchapp{path=Root, config=Conf}=Couchapp, Att
             attachments_from_fs1(R, Dir, Couchapp, Att1)
     end.
 
+is_ignore_attachment(Path, Root, Ddoc_Path, Conf) ->
+    if Path =:= Ddoc_Path  -> true;
+        true -> erica_ignore:ignore(erica_util:relpath(Path, Root), Conf)
+    end.
 is_utf8(S) ->
     try lists:all(fun(C) -> xmerl_ucs:is_incharset(C, 'utf-8') end, S)
     catch
@@ -417,3 +515,87 @@ encode_path(P) ->
                 end, [], string:tokens(P, "/")),
             string:join(lists:reverse(Parts), "/")
     end.
+
+send_docs(#couchapp{ddoc_dir=Path}=Couchapp, Db) ->
+    %This should be adjusted based on ddoc_dir
+    DocPath = filename:join(Path, "_docs"),
+    Files = filelib:wildcard("*", DocPath),
+    {Success, Total} = docs_from_fs1(Files, {0,0},  Couchapp, Db),
+    case Total of
+        0 -> 0;
+        _ ->
+            ?CONSOLE("  > pushed ~B of ~B docs.~n", [Success, Total])
+    end.
+
+
+docs_from_fs1([], {Success, Total}, _, _ ) ->
+    {Success, Total};
+docs_from_fs1([F|R],  {Success, Total}, #couchapp{ddoc_dir=Root}=Couchapp, Db) ->
+     %This should be adjusted based on ddoc_dir
+    Path = filename:join(Root, '_docs'),
+    DocPath = filename:join(Path, F),
+    try load_doc_from_fs(DocPath) of
+        Json ->
+            DocPushed = push_doc(Db, Json, F),
+            docs_from_fs1(R, {Success + DocPushed, Total +1}, Couchapp, Db)
+    catch
+        invalid_json:_ ->
+            ?DEBUG("---> Failed Doc Upload ~p. Invalid JSON file. ~n", [F]),
+            docs_from_fs1(R, {Success, Total + 1}, Couchapp, Db );
+        _:_ ->
+            ?DEBUG("---> Failed Doc Upload ~p ~n", [F]),
+            docs_from_fs1(R, {Success, Total + 1}, Couchapp, Db)
+    end.
+
+
+
+load_doc_from_fs(File) ->
+    {ok, Bin} = file:read_file(File),
+    couchbeam_ejson:decode(Bin).
+
+
+push_doc(Db, Json, F) ->
+    try couchbeam:save_doc(Db, Json) of
+        {ok, _} ->
+            ?DEBUG("---> Doc uploaded: ~p ~n", [F]),
+            1;
+        {error, conflict} ->
+            ?DEBUG("---> Failed Doc Upload ~p, Document Conflict ~n", [F]),
+            0
+    catch
+        _:_ ->
+            ?DEBUG("---> Failed Doc Upload ~p ~n", [F]),
+            0
+    end.
+
+
+git_info() ->
+    Test = os:cmd("git rev-list HEAD --max-count=1"),
+    ?CONSOLE("---> Git info: ~p ~n", [Test]).
+
+pushed_by(Db) ->
+    {_, _, _, Cred} = Db,
+    pushed_by2(Cred).
+
+pushed_by2([]) -> false;
+pushed_by2([{_, {User, _}}]) -> list_to_binary(User).
+
+
+do_web_manifest(#couchapp{att_dir=Path}=Couchapp) ->
+    Files = filelib:wildcard("*.webapp", Path),
+    do_web_manifest1(Files, Path).
+
+do_web_manifest1([], _) ->
+    none;
+
+do_web_manifest1([F], Path) ->
+    Fname = filename:join(Path, F),
+    {ok, Bin} = file:read_file(Fname),
+    couchbeam_ejson:decode(Bin);
+
+
+do_web_manifest1([F,_], Path) ->
+    Fname = filename:join(Path, F),
+    {ok, Bin} = file:read_file(Fname),
+    couchbeam_ejson:decode(Bin).
+

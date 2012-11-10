@@ -33,12 +33,15 @@ web([Path], Config) ->
     Path1 = filename:absname(Path),
     case erica_util:in_couchapp(Path1) of
         {ok, CouchappDir} ->
-            Config1 = erica_config:update(CouchappDir, Config),
-            do_web(CouchappDir, Config1);
+            web1(CouchappDir,  Config);
         {error, not_found} ->
-            ?ERROR("Can't find initialized couchapp in '~p'~n", [Path]),
-            halt(1)
+            web1(Path1,  Config)
     end.
+
+web1(CouchappDir, Config) ->
+    Config1 = erica_config:update(CouchappDir, Config),
+    do_web(CouchappDir, Config1).
+
 
 do_web(Path, Config) ->
 
