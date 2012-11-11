@@ -15,7 +15,7 @@ start_erica() ->
     case application:load(erica) of
         ok ->
             ok;
-        {already_loaded, _} ->
+        {error, {already_loaded, _}} ->
             ok;
         Error ->
             Error
