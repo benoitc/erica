@@ -482,7 +482,7 @@ render_template(Req, Name, Ctx0) ->
         {Name, {_FileInfo, Bin}} ->
             {Name, Bin};
         _ ->
-            Path = filname:join([priv_dir(), "web_templates", Name]),
+            Path = filename:join([priv_dir(), "web_templates", Name]),
             case filelib:is_file(Path) of
                 true ->
                     {ok, Bin} = file:read_file(Path),
@@ -517,7 +517,7 @@ serve_file(#httpd{mochi_req=MochiReq, static_files=Files}, Name) ->
         {Name, {FileInfo, Bin}} ->
             serve_file(MochiReq, Name, FileInfo, Bin);
         _ ->
-            Path = filname:join([priv_dir(), "web_static", Name]),
+            Path = filename:join([priv_dir(), "web_static", Name]),
             case filelib:is_file(Path) of
                 true ->
                     {ok, Bin} = file:read_file(Path),
