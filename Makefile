@@ -10,6 +10,7 @@ install: all
 	
 compile:
 	@./rebar compile
+	@escript bootstrap
 
 deps:
 	@./rebar get-deps
