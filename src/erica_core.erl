@@ -10,17 +10,28 @@
 
 -export([run/1]).
 
+
+start_erica() ->
+    case application:load(erica) of
+        ok ->
+            ok;
+        {already_loaded, _} ->
+            ok;
+        Error ->
+            Error
+    end.
+
 run(["compile"]) ->
     ok;
 run(["help"]) ->
     help(),
     ok;
 run(["version"]) ->
-    ok = application:load(erica),
+    ok = start_erica(),
     version(),
     ok;
 run(RawArgs) ->
-    ok = application:load(erica),
+    ok = start_erica(),
 
     %% parse arguments
     {Options, Commands} = parse_args(RawArgs),
