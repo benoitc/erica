@@ -478,43 +478,77 @@ render_template(Req, Name, Ctx0) ->
     Ctx = dict:from_list(Ctx0),
 
     #httpd{mochi_req=MochiReq, templates=Templates}=Req,
-    case lists:keyfind(Name, 1, Templates) of
-    {Name, {_FileInfo, Bin}} ->
-        %% Be sure to escape any double-quotes before rendering...
-        ReOpts = [global, {return, list}],
-        Str0 = re:replace(Bin, "\\\\", "\\\\\\", ReOpts),
-        Str1 = re:replace(Str0, "\"", "\\\\\"", ReOpts),
-        Rendered = mustache:render(Str1, Ctx),
+    Res = case lists:keyfind(Name, 1, Templates) of
+        {Name, {_FileInfo, Bin}} ->
+            {Name, Bin};
+        _ ->
+            Path = filname:join([priv_dir(), "web_templates", Name]),
+            case filelib:is_file(Path) of
+                true ->
+                    {ok, Bin} = file:read_file(Path),
+                    {Name, Bin};
+                false ->
+                    not_found
+            end
+    end,
+    case Res of
+        {Name, Bin0} ->
+            %% Be sure to escape any double-quotes before rendering...
+            ReOpts = [global, {return, list}],
+            Str0 = re:replace(Bin0, "\\\\", "\\\\\\", ReOpts),
+            Str1 = re:replace(Str0, "\"", "\\\\\"", ReOpts),
+            Rendered = mustache:render(Str1, Ctx),
 
-        %% inneficient method to remove trailing new line.
-        Bin1 = case lists:reverse(Rendered) of
-            [$\n|Rendered1] ->
-                lists:reverse(Rendered1);
-            _ ->
-                Rendered
-        end,
-        ContentType = mochiweb_util:guess_mime(Name),
-        MochiReq:ok({ContentType, [], Bin1});
-    _ ->
-        MochiReq:not_found()
+            %% inneficient method to remove trailing new line.
+            Bin1 = case lists:reverse(Rendered) of
+                [$\n|Rendered1] ->
+                    lists:reverse(Rendered1);
+                _ ->
+                    Rendered
+            end,
+            ContentType = mochiweb_util:guess_mime(Name),
+            MochiReq:ok({ContentType, [], Bin1});
+        _ ->
+            MochiReq:not_found()
     end.
 
 serve_file(#httpd{mochi_req=MochiReq, static_files=Files}, Name) ->
     case lists:keyfind(Name, 1, Files) of
-    {Name, {FileInfo, Bin}} ->
-        LastModified = httpd_util:rfc1123_date(FileInfo#file_info.mtime),
-        case MochiReq:get_header_value("if-modified-since") of
+        {Name, {FileInfo, Bin}} ->
+            serve_file(MochiReq, Name, FileInfo, Bin);
+        _ ->
+            Path = filname:join([priv_dir(), "web_static", Name]),
+            case filelib:is_file(Path) of
+                true ->
+                    {ok, Bin} = file:read_file(Path),
+                    {ok, FileInfo} = file:read_file_info(Path),
+                    serve_file(MochiReq, Name, FileInfo, Bin);
+                false ->
+
+                    MochiReq:not_found()
+            end
+    end.
+
+serve_file(MochiReq, Name, FileInfo, Bin) ->
+    LastModified = httpd_util:rfc1123_date(FileInfo#file_info.mtime),
+    case MochiReq:get_header_value("if-modified-since") of
         LastModified ->
             MochiReq:respond({304, [], ""});
         _ ->
             ContentType = mochiweb_util:guess_mime(Name),
             MochiReq:ok({ContentType,  [{"last-modified", LastModified}],
-                    Bin})
-        end;
-    _ ->
-        MochiReq:not_found()
+                         Bin})
     end.
 
+priv_dir() ->
+    case code:priv_dir(ericq) of
+        {error, _} ->
+            EbinDir = filename:dirname(code:which(?MODULE)),
+            AppPath = filename:dirname(EbinDir),
+            filename:join(AppPath, "priv");
+        Dir ->
+            Dir
+    end.
 
 cache_templates() ->
     {ok, RegExp} = re:compile(<<"^priv\/web_templates\/(.*)$">>, []),
