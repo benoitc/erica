@@ -32,18 +32,21 @@ browse1(Path, DbKey, Config) ->
     Path1 = filename:absname(Path),
     case erica_util:in_couchapp(Path1) of
         {ok, CouchappDir} ->
-            %% load app conf from .couchapprc and initialize ignore
-            %% patterns.
-            Config1 = erica_config:update(CouchappDir, Config),
-
-            Db = erica_util:db_from_key(Config1, DbKey),
-            ?DEBUG("browse ~p to ~p~n", [DbKey, CouchappDir]),
-            do_browse(CouchappDir, Db, Config1);
+            browse2(CouchappDir, DbKey, Config),
+            ok;
 
         {error, not_found} ->
-            ?ERROR("Can't find initialized couchapp in '~p'~n", [Path]),
-            halt(1)
+            browse2(Path1, DbKey, Config),
+            ok
     end.
+
+browse2(CouchappDir, DbKey, Config) ->
+    Config1 = erica_config:update(CouchappDir, Config),
+
+    Db = erica_util:db_from_key(Config1, DbKey),
+    ?DEBUG("push ~s => ~s~n", [CouchappDir, DbKey]),
+    do_browse(CouchappDir, Db, Config1).
+
 
 
 do_browse(Path, Db, Config) ->
