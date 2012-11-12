@@ -12,7 +12,7 @@
   {included_applications, [crypto, sasl, ibrowse, couchbeam]},
   {env, [
     %% default log level
-    {log_level, error},
+    {log_level, debug},
 
     %% list of commands modules
     {modules, [

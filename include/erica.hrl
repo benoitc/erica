@@ -28,9 +28,11 @@
 -record(couchapp, {
         config,
         path,
+        ddoc_dir,
         att_dir,
         docid,
         doc,
+        pushed_by,
         old_doc=nil,
         manifest=[],
         attachments=[],
