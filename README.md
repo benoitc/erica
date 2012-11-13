@@ -1,10 +1,9 @@
 #Erica
 
-## Made couchapp development easy
+## Making CouchDB development easy
  
-Erica is a tool compatible with
-[couchapp](http://github.com/couchapp/couchapp) that helps you to create
-and manage your couchapps (CouchDB embedded applications).
+Erica is a tool that helps you to create couchdb design docs,
+and web applications (couchapps), and generally get files to couchdb.
 
 ##Requirements
 
@@ -25,7 +24,68 @@ To install it on your system, run the command line:
 
     $ make install
 
-Usage:
+## Quick Start: Design Docs
+
+So need to make and mange design docs for couchdb?
+
+    # erica create-ddoc
+    # cd myapp
+    # erica push myapp
+
+Go ahead and create views, shows, lists, etc.
+
+
+## Quick Start: Webapps
+
+To create a webapp, follow this pattern.
+
+    # erica create-webapp
+    # cd myapp
+    # erica push myapp
+
+This is an 'attachment first' style couchapp. Anything related to the design doc lives in _ddoc.
+
+After any changes, push it to your couchdb node
+
+    $ erica push http://127.0.0.1:5984/testdb
+
+Then visit the result on
+
+    http://127.0.0.1:5984/testdb/_design/myapp/_rewrite/
+
+That's it.
+
+Note: By default the CouchDB Node uri is 127.0.0.1:5984 so you could
+just use the db name in push command line if you want:eri
+
+    $ erica push testdb
+
+
+## Detailed Usage:
+
+    # erica command
+
+Where available commands are:
+
+    push           [options...] [dir]    dest  push anything to couchdb
+    create-webapp  [appid=myapp] ...     Create a webapp. Default:
+                                         appid=myapp, lang=javascript
+    create-ddoc    [appid=myapp] ...     Create a blank ddoc, Default:
+                                         appid=myapp, lang=javascript
+    create-app     appid=AppID lang=Lang Create a blank couchapp, Default:
+                                         appid=myapp, lang=javascript
+    create         template= [vars...]   create an application using a
+                                         template
+    init                                 initialize a .couchapprc
+    clone          [option] source dir   clone a document from couchdb
+    browse                               display the erica in the
+                                         browser.
+    web            port=Port [dir]       launch the web ui
+    help                                 Show the program options
+    version                              Show version information
+
+
+And more general options
 
     $ erica -h
     Usage: erica [-h] [-c] [-v] [-f] [-V] [--is-ddoc <is_ddoc>] [--docid <docid>] [--atomic <atomic>] [...] <command,...>
@@ -40,42 +100,16 @@ Usage:
       --atomic		Send attachments inline with push command
       command		Command to run (e.g. push)
 
-Available commands are:
 
-    init                                 initialize a erica
-    push        [options...] [dir] dest  push a document to couchdb
-    clone       [option] source dir      clone a document from couchdb
-    browse                               display the erica in the
-                                         browser.
-    web         port=Port [dir]          launch the web ui
-    create-app  appid=AppID lang=Lang    Create a blank couchapp, Default:
-                                         appid=myapp, lang=javascript
-    create      template= [vars...]      create an application using a
-                                         template
-    help                                 Show the program options
-    version                              Show version information
-    
-Provided templates are for now:
 
-* simpleapp (the default create used for create-app command)
-* example: a simple couchapp exampole
-* couchapp: a simple template with the good old couchapp javascript
-  library.
 
-You can add your own template in ~/.erica/templates.
+### 1 . About the Design Doc
 
-## First steps
-
-Here we will show you how to create your first application and main
-usages of commands.
-
-### 1 . create your first application
-
-You can use a template to create your first application. Like the
-generic one. It will create a simple project that you can use for a
+You can use a template to create your design doc.
+It will create a simple project that you can use for a
 start:
 
-    $ erica create-app appid=myapp lang=javascript
+    $ erica create-ddoc appid=myapp lang=javascript
     ==> tmp (create-app)
     Writing myapp/_id
     Writing myapp/language
@@ -100,34 +134,11 @@ where you can put all the attachments. You can put your views functions in
 * *.couchapprc* is where you set some config infos for your app.
     
 Note: **erica** is language agnostic, so if you want to create your couchapp in
-coffescript, just replace javascript by coffescript or yuse the language
+coffescript, just replace javascript by coffescript or use the language
 you want if an couchapp server exists for it.
 
-### 2. Let's create a simple hello world
 
-Add an index.html in your attachments folder:
-
-    $ cd myapp
-    $ echo "hello world" > _attachments/index.html
-
-Then push it to your couchdb node
-
-    $ erica push http://127.0.0.1:5984/testdb
-
-Then visit the result on
-
-    http://127.0.0.1:5984/testdb/_design/myapp/index.html
-
-That's it.
-
-Note: By default the CouchDB Node uri is 127.0.0.1:5984 so you could
-just use the db name in push command line if you want:
-
-    $ erica push testdb
-
-This is fully configurable in `.couchapprc` or in `~/.erica.conf` .
-
-### 3. Clone
+### 2. Clone
 
 Did you see an interesting couchapp you want to reuse? Or just working
 with a friend on the same couchapp ? With the `clone` command you can
@@ -147,6 +158,20 @@ Add an `.ericaignore` file to the root of your app, as a JSON array
 of regular expressions of files or folders to be excluded from pushes.
 
     ["passwords.txt", "^\.ssh", "^\.*"]
+
+When using templates, follow this format
+
+    # ercia create template=name
+
+Provided templates are for now:
+
+* web (the template used with the create-web command)
+* ddoc (the default create used for create-ddoc command)
+* example: a simple couchapp exampole
+* couchapp: a simple template with the good old couchapp javascript library.
+
+You can add your own template in ~/.erica/templates.
+
 
 ## Getting Help
 

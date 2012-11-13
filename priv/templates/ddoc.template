@@ -2,4 +2,7 @@
 {template, "_id", "{{appid}}/_id"}.
 {template, "language", "{{appid}}/language"}.
 {file, "couchapp_rc", "{{appid}}/.couchapprc"}.
+{file, "ddoc/views/by_type/map.js", "{{appid}}/views/by_type/map.js"}.
+{dir, "{{appid}}/lists"}.
+{dir, "{{appid}}/shows"}.
 {dir, "{{appid}}/_attachments"}.
