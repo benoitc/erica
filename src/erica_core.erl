@@ -110,6 +110,7 @@ parse_args(Args) ->
             %% Set global variables based on getopt options
             set_global_flag(Options, verbose),
             set_global_flag(Options, force),
+            set_global_flag(Options, webstyle),
 
             %% Filter all the flags (i.e. strings of form key=value) from the
             %% command line arguments. What's left will be the commands to run.
@@ -130,6 +131,7 @@ option_spec_list() ->
      {commands, $c, "commands",   undefined, "Show available commands"},
      {verbose,  $v, "verbose",    undefined, "Be verbose about what gets done"},
      {force,    $f, "force",      undefined, "Force"},
+     {webstyle, $w, "webstyle",   undefined, "Web style project."},
      {version,  $V, "version",    undefined, "Show version information"},
      {is_ddoc, undefined, "is-ddoc", {boolean, true}, "Tell to push command if you send a design document or not."},
      {docid, undefined, "docid",  string, "Set docid with push command"},
