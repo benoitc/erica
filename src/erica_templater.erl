@@ -4,7 +4,8 @@
 %%% See the NOTICE for more information.
 -module(erica_templater).
 
--export(['create-app'/2,
+-export(['create-ddoc'/2,
+         'create-webapp'/2,
          'list-templates'/2,
          create/2]).
 
@@ -20,9 +21,14 @@
 %% Public API
 %% ===================================================================
 
-'create-app'(Args, Config) ->
-    %% Alias for create w/ template=simpleapp
-    erica_config:set_global(template, "simpleapp"),
+'create-ddoc'(Args, Config) ->
+    %% Alias for create w/ template=ddoc
+    erica_config:set_global(template, "ddoc"),
+    create(Args, Config).
+
+'create-webapp'(Args, Config) ->
+    %% Alias for create w/ template=web
+    erica_config:set_global(template, "web"),
     create(Args, Config).
 
 'list-templates'(_Argsg, _Config) ->

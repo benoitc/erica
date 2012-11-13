@@ -1,0 +1,27 @@
+{
+  "name": "My App",
+  "version" : "0.0.4",
+  "description": "My elevator pitch goes here",
+  "long_description" : "Something  really important",
+  "launch_path": "/",
+  "url": "https://github.com/garden20/baseline-garden-app",
+  "categories": ["learning"],
+  "flattr_user_id" : "eckoit",
+  "icons": {
+         "16": "img/promo/icon_16.png",
+         "48": "img/promo/icon_48.png",
+         "96": "img/promo/icon_96.png",
+         "128": "img/promo/icon_128.png"
+  },
+  "promo_images": {
+         "small": "img/promo/promo_small.png"
+  },
+  "screenshots": [
+     "img/promo/screenshot1.png"
+  ],
+  "developer": {
+    "name": "Ryan Ramage",
+    "url": "http://your-homepage-here.org"
+  },
+  "default_locale": "en"
+}
