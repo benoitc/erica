@@ -1,0 +1,15 @@
+{variables, [{appid, "myapp"}, {lang, "javascript"}]}.
+
+{file, "webstyle/index.html", "{{appid}}/index.html"}.
+{file, "webstyle/app.webapp", "{{appid}}/app.webapp"}.
+{file, "webstyle/_ddoc/rewrites.json", "{{appid}}/_ddoc/rewrites.json"}.
+{file, "webstyle/_ddoc/validate_doc_update.js", "{{appid}}/_ddoc/validate_doc_update.js"}.
+
+{file, "webstyle/img/favicon.ico", "{{appid}}/img/favicon.ico"}.
+{file, "webstyle/img/promo/icon_16.png", "{{appid}}/img/promo/icon_16.png"}.
+{file, "webstyle/img/promo/icon_48.png", "{{appid}}/img/promo/icon_48.png"}.
+{file, "webstyle/img/promo/icon_96.png", "{{appid}}/img/promo/icon_96.png"}.
+{file, "webstyle/img/promo/icon_128.png", "{{appid}}/img/promo/icon_128.png"}.
+{file, "webstyle/img/promo/promo_small.png", "{{appid}}/img/promo/promo_small.png"}.
+{file, "webstyle/img/promo/screenshot1.png", "{{appid}}/img/promo/screenshot1.png"}.
+
