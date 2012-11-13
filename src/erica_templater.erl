@@ -5,7 +5,7 @@
 -module(erica_templater).
 
 -export(['create-ddoc'/2,
-         'create-web'/2,
+         'create-webapp'/2,
          'list-templates'/2,
          create/2]).
 
@@ -26,7 +26,7 @@
     erica_config:set_global(template, "ddoc"),
     create(Args, Config).
 
-'create-web'(Args, Config) ->
+'create-webapp'(Args, Config) ->
     %% Alias for create w/ template=web
     erica_config:set_global(template, "web"),
     create(Args, Config).

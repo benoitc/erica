@@ -192,20 +192,20 @@ help() ->
 %%
 commands() ->
     S = <<"
-push        [options...] [dir] dest  push a document to couchdb
-create-web  [appid=myapp] ...        Create a webapp. Default:
-                                     appid=myapp, lang=javascript
-create-ddoc [appid=myapp] ...        Create a blank ddoc, Default:
-                                     appid=myapp, lang=javascript
-create      template= [vars...]      create an application using a
-                                     template
-init                                 initialize a .couchapprc
-clone       [option] source dir      clone a document from couchdb
-browse                               display the erica in the
-                                     browser.
-web         port=Port [dir]          launch the web ui
-help                                 Show the program options
-version                              Show version information
+push           [options...] [dir] dest  push a document to couchdb
+create-webapp  [appid=myapp] ...        Create a webapp. Default:
+                                        appid=myapp, lang=javascript
+create-ddoc    [appid=myapp] ...        Create a blank ddoc, Default:
+                                        appid=myapp, lang=javascript
+create         template= [vars...]      create an application using a
+                                        template
+init                                    initialize a .couchapprc
+clone          [option] source dir      clone a document from couchdb
+browse                                  display the erica in the
+                                        browser.
+web            port=Port [dir]          launch the web ui
+help                                    Show the program options
+version                                 Show version information
 
 ">>,
     io:put_chars(S),

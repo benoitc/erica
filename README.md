@@ -39,7 +39,7 @@ Go ahead and create views, shows, lists, etc.
 
 To create a webapp, follow this pattern.
 
-    # erica create-web
+    # erica create-webapp
     # cd myapp
     # erica push myapp
 
@@ -67,20 +67,20 @@ just use the db name in push command line if you want:eri
 
 Where available commands are:
 
-    push        [options...] [dir] dest  push anything to couchdb
-    create-web  [appid=myapp] ...        Create a webapp. Default:
+    push           [options...] [dir]    dest  push anything to couchdb
+    create-webapp  [appid=myapp] ...     Create a webapp. Default:
                                          appid=myapp, lang=javascript
-    create-ddoc [appid=myapp] ...        Create a blank ddoc, Default:
+    create-ddoc    [appid=myapp] ...     Create a blank ddoc, Default:
                                          appid=myapp, lang=javascript
-    create-app  appid=AppID lang=Lang    Create a blank couchapp, Default:
+    create-app     appid=AppID lang=Lang Create a blank couchapp, Default:
                                          appid=myapp, lang=javascript
-    create      template= [vars...]      create an application using a
+    create         template= [vars...]   create an application using a
                                          template
     init                                 initialize a .couchapprc
-    clone       [option] source dir      clone a document from couchdb
+    clone          [option] source dir   clone a document from couchdb
     browse                               display the erica in the
                                          browser.
-    web         port=Port [dir]          launch the web ui
+    web            port=Port [dir]       launch the web ui
     help                                 Show the program options
     version                              Show version information
 
