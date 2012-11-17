@@ -28,7 +28,7 @@ To install it on your system, run the command line:
 
 So need to make and mange design docs for couchdb?
 
-    # erica create-ddoc
+    # erica create-app
     # cd myapp
     # erica push myapp
 
