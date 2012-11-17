@@ -8,8 +8,9 @@
   {vsn, "0.2.1"},
   {modules, []},
   {registered, []},
-  {applications, [kernel, stdlib]},
-  {included_applications, [crypto, sasl, ibrowse, couchbeam]},
+  {applications, [kernel, stdlib, crypto, lager, sasl, public_key, ssl,
+                    inets, ibrowse, mochiweb]},
+
   {env, [
     %% default log level
     {log_level, debug},
