@@ -195,7 +195,7 @@ commands() ->
 push           [options...] [dir] dest  push a document to couchdb
 create-webapp  [appid=myapp] ...        Create a webapp. Default:
                                         appid=myapp, lang=javascript
-create-ddoc    [appid=myapp] ...        Create a blank ddoc, Default:
+create-app     [appid=myapp] ...        Create a blank ddoc, Default:
                                         appid=myapp, lang=javascript
 create         template= [vars...]      create an application using a
                                         template

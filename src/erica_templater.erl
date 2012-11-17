@@ -4,7 +4,7 @@
 %%% See the NOTICE for more information.
 -module(erica_templater).
 
--export(['create-ddoc'/2,
+-export(['create-app'/2,
          'create-webapp'/2,
          'list-templates'/2,
          create/2]).
@@ -21,7 +21,7 @@
 %% Public API
 %% ===================================================================
 
-'create-ddoc'(Args, Config) ->
+'create-app'(Args, Config) ->
     %% Alias for create w/ template=ddoc
     erica_config:set_global(template, "ddoc"),
     create(Args, Config).
@@ -149,9 +149,9 @@ render(Bin, Context) ->
 
     %% inneficient method to remove trailing new line.
     case lists:reverse(Rendered) of
-        [$\n|Rendered1] -> 
+        [$\n|Rendered1] ->
             lists:reverse(Rendered1);
-        _ -> 
+        _ ->
             Rendered
     end.
 
