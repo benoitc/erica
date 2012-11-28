@@ -12,9 +12,22 @@ and web applications (couchapps), and generally get files to couchdb.
 
 ##Installation
 
-Couchapp requires Erlang R13B04 (or higher) with crypto support.
+
+Couchapp requires Erlang R15B01 (or higher) with crypto support.
+
+To instal it from source you will have to clone the repository from
+github. Dependencies will be fetched during the build.
 
     $ git clone git://github.com/benoitc/erica.git
+
+
+You can also download the latested tarball available on the [download
+page](https://github.com/benoitc/erica/downloads):
+
+    $ curl -L -O https://github.com/downloads/benoitc/erica/erica-<vsn>.tar.gz
+
+Then build the sources:
+
     $ cd erica
     $ make
 
