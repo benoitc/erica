@@ -69,6 +69,10 @@ do_web(Path, Config) ->
         {name, erica_http},
         {loop, Loop}],
 
+    %% only log errors
+    application:set_env(sasl, errlog_type, error),
+
+    %% start mochiweb
     Pid = mochiweb_http:start(Options),
     PortStr = integer_to_list(mochiweb_socket_server:get(erica_http,
             port)),
