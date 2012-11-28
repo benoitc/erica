@@ -1,12 +1,10 @@
-ARCH= $(shell uname -m)
+PREFIX?= /usr/local
 ERICA_TAG=	$(shell git describe --tags --always)
 REVISION?=	$(shell echo $(ERICA_TAG) | sed -e 's/^$(REPO)-//')
 PKG_VERSION?=	$(shell echo $(REVISION) | tr - .)
 WITHOUT_CURL?=1
 
 .PHONY: deps doc
-
-PREFIX?= /usr/local
 
 all: deps compile
 
@@ -21,8 +19,7 @@ deps:
 	@./rebar get-deps
 
 doc:
-	@mkdir -p doc
-	@$(ERL) -noshell -run edoc_run application '$(APP)' '"."' '[{preprocess, true},{includes, ["."]}, {dir, "./doc"}]'
+	@./rebar doc	
 
 
 clean:
