@@ -1,5 +1,4 @@
 ARCH= $(shell uname -m)
-REPO=rcouch
 ERICA_TAG=	$(shell git describe --tags --always)
 REVISION?=	$(shell echo $(ERICA_TAG) | sed -e 's/^$(REPO)-//')
 PKG_VERSION?=	$(shell echo $(REVISION) | tr - .)
@@ -39,8 +38,8 @@ distclean: clean
 archive = git archive --format=tar --prefix=$(1)/ HEAD | (cd $(2) && tar xf -)
 
 buildtar = mkdir distdir && \
-		 git clone . distdir/rcouch-clone && \
-		 cd distdir/rcouch-clone && \
+		 git clone . distdir/erica-clone && \
+		 cd distdir/erica-clone && \
 		 git checkout $(ERICA_TAG) && \
 		 $(call archive,$(ERICA_TAG),..) && \
 		 mkdir ../$(ERICA_TAG)/deps && \
