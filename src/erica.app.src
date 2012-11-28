@@ -13,7 +13,7 @@
 
   {env, [
     %% default log level
-    {log_level, debug},
+    {log_level, error},
 
     %% list of commands modules
     {modules, [
