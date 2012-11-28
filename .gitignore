@@ -11,3 +11,6 @@ deps
 ebin/*
 erl_crash.dump
 erica
+
+*.gz
+distdir
