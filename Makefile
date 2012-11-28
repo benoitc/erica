@@ -57,4 +57,4 @@ distdir: rebar
 
 dist $(ERICA_TAG).tar.gz: distdir
 	cd distdir; \
-	tar czf ../$(ERICA_TAG).tar.gz $(ERICA_TAG)
+	tar czf ../erica-$(ERICA_TAG).tar.gz $(ERICA_TAG)
