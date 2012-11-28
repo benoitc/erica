@@ -55,6 +55,12 @@ buildtar = mkdir distdir && \
 distdir: rebar
 	$(if $(ERICA_TAG), $(call buildtar), $(error "You can't generate a release tarball from a non-tagged revision. Run 'git checkout <tag>', then 'make dist'"))
 
-dist $(ERICA_TAG).tar.gz: distdir
+cleandist:
+	@rm -rf distdir
+	@rm -rf *.gz
+
+dist $(ERICA_TAG).tar.gz: cleandist distdir
 	cd distdir; \
 	tar czf ../$(ERICA_TAG).tar.gz $(ERICA_TAG)
+	openssl sha1 $(ERICA_TAG).tar.gz > $(ERICA_TAG).tar.gz.info
+	openssl md5 $(ERICA_TAG).tar.gz >> $(ERICA_TAG).tar.gz.info
