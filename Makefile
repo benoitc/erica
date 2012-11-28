@@ -19,7 +19,7 @@ deps:
 	@./rebar get-deps
 
 doc:
-	@./rebar doc	
+	@./rebar doc
 
 
 clean:
