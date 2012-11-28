@@ -5,7 +5,7 @@
 
 {application, erica,
  [{description, "erica: Couchdb Application Tool"},
-  {vsn, "0.2.1"},
+  {vsn, "0.3.0"},
   {modules, []},
   {registered, []},
   {applications, [kernel, stdlib, crypto, lager, sasl, public_key, ssl,
