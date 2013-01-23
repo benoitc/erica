@@ -27,7 +27,7 @@ clone(_, _) ->
 %% ====================================================================
 
 clone1(Path, Url, Config) ->
-    case erica_util:parse_couchapp_url(Url) of
+    case erica_util:parse_couchapp_url(Url, false) of
         {ok, Db, AppName, DocId} ->
             Path1 = case Path of
                 "." ->
@@ -163,7 +163,7 @@ doc_to_fs([{PropName, Value}|Rest], Dir, Manifest, Objects, Depth) ->
                         undefined ->
                             Value;
                         Encoded ->
-                            base64:decode(Encoded)
+                            Encoded
                     end,
                     {Path ++ Ext, V1};
                 Ext ->

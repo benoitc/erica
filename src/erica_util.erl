@@ -18,12 +18,12 @@
          normalize_path/1,
          user_path/0,
          in_couchapp/1,
-         db_from_string/1,
+         db_from_string/1, db_from_string/2,
          db_from_config/2,
          db_from_key/2,
          v2a/1,
          relpath/2,
-         parse_couchapp_url/1,
+         parse_couchapp_url/1, parse_couchapp_url/2,
          make_dir/1,
          escript_foldl/3,
          find_files/2,
@@ -43,6 +43,10 @@ v2a(V) when is_binary(V) ->
     list_to_atom(binary_to_list(V)).
 
 db_from_string(DbString) ->
+    db_from_string(DbString, true).
+
+db_from_string(DbString, IsCreateDb) ->
+
     DbUrl = case mochiweb_util:urlsplit(DbString) of
         {[], [], Path, _, _} ->
             "http://127.0.0.1:5984/" ++ Path;
@@ -73,7 +77,13 @@ db_from_string(DbString) ->
     end,
 
     "/" ++ DbName = Url#url.path,
-    {ok, Db} = couchbeam:open_or_create_db(Server, DbName, Options),
+
+    {ok, Db} = case IsCreateDb of
+        true ->
+            couchbeam:open_or_create_db(Server, DbName, Options);
+        false ->
+            couchbeam:open_db(Server, DbName, Options)
+    end,
     Db.
 
 %% @doc fetch a couchbeam database handler by being given a url or
@@ -102,6 +112,9 @@ db_from_config(Config, DbString) ->
     end.
 
 parse_couchapp_url(AppUrl) ->
+    parse_couchapp_url(AppUrl, true).
+
+parse_couchapp_url(AppUrl, IsCreateDb) ->
     Url = ibrowse_lib:parse_url(AppUrl),
     PathParts = string:tokens(Url#url.path, "/"),
 
@@ -111,8 +124,12 @@ parse_couchapp_url(AppUrl) ->
 
     case parse_couchapp_path(PathParts) of
         {DbName, AppName, DocId} ->
-            {ok, Db} = couchbeam:open_or_create_db(Server, DbName,
-                DbOptions),
+            {ok, Db} = case IsCreateDb of
+                true ->
+                    couchbeam:open_or_create_db(Server, DbName, DbOptions);
+                false ->
+                    couchbeam:open_db(Server, DbName, DbOptions)
+            end,
             AppName1 = erica_config:get_global(appid, AppName),
             {ok, Db, AppName1, DocId};
         invalid_url ->
@@ -127,8 +144,12 @@ parse_couchapp_url(AppUrl) ->
                             {error,
                                 "invalid url and app name not provided"};
                         AppId ->
-                            {ok, Db} = couchbeam:open_or_create_db(Server,
-                                DbName, DbOptions),
+                            {ok, Db} = case IsCreateDb of
+                                true ->
+                                    couchbeam:open_or_create_db(Server, DbName, DbOptions);
+                                false ->
+                                    couchbeam:open_db(Server, DbName, DbOptions)
+                            end,
                             DocId = erica_config:get_global(docid, AppId),
                             {ok, Db, AppId, DocId}
                     end
