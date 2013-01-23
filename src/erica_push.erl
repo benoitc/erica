@@ -573,13 +573,14 @@ git_info() ->
     Test = os:cmd("git rev-list HEAD --max-count=1"),
     ?CONSOLE("---> Git info: ~p ~n", [Test]).
 
-pushed_by(Db) ->
-    {_, _, _, Cred} = Db,
-    pushed_by2(Cred).
-
-pushed_by2([]) -> false;
-pushed_by2([{_, {User, _}}]) -> list_to_binary(User).
-
+pushed_by(#db{options=Options}) ->
+    io:format("ici", []),
+    case proplists:get_value(basic_auth, Options) of
+        undefined ->
+            false;
+        {User, _} ->
+            list_to_binary(User)
+    end.
 
 do_web_manifest(#couchapp{att_dir=Path}=Couchapp) ->
     Files = filelib:wildcard("*.webapp", Path),
