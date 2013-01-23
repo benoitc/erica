@@ -574,7 +574,6 @@ git_info() ->
     ?CONSOLE("---> Git info: ~p ~n", [Test]).
 
 pushed_by(#db{options=Options}) ->
-    io:format("ici", []),
     case proplists:get_value(basic_auth, Options) of
         undefined ->
             false;
