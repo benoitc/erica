@@ -53,7 +53,7 @@ db_from_string(DbString) ->
 
     ServerOptions = case Url#url.protocol of
         https ->
-            [{is_ssl, true}];
+            [{is_ssl, true}, {ssl_options, [{verify, verify_none}]}];
         _ ->
             []
     end,
