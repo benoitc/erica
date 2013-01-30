@@ -7,7 +7,7 @@ and web applications (couchapps), and generally get files to couchdb.
 
 ##Requirements
 
-* Erlang R14 or sup
+* Erlang R15B01 (or higher) with crypto support
 * gcc
 
 ##Installation
