@@ -369,6 +369,13 @@ guess_mime(File) ->
 
 from_extension(".webapp") ->
     "application/x-web-app-manifest+json";
+
+from_extension(".webm") ->
+    "video/webm";
+
+from_extension(".mp4") ->
+    "video/mp4";
+
 from_extension(_) ->
     undefined.
 
