@@ -100,6 +100,7 @@ escript_header() ->
         "setlocal & ",
         "path=%~dp0;%path%; & ",
         "escript.exe \"%~dpn0.cmd\" %*",
+        "endlocal & ",
         " & goto :eof\r\n">>;
     _ ->
         %% must be a unix variant
