@@ -369,6 +369,8 @@ guess_mime(File) ->
 
 from_extension(".webapp") ->
     "application/x-web-app-manifest+json";
+from_extension(".appcache") ->
+    "text/cache-manifest";
 from_extension(_) ->
     undefined.
 
