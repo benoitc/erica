@@ -13,7 +13,7 @@ main(Args) ->
     true = code:add_path("deps/oauth/ebin"),
     true = code:add_path("deps/couchbeam/ebin"),
 
-
+    Base_name = "erica",
 
     %% Run erica to do proper .app validation and such
     erica:main(["compile"] ++ Args),
@@ -31,37 +31,41 @@ main(Args) ->
             ++ load_files("priv/web_static/*", ".")
             ++ load_files("priv/web_templates/*", "."),
 
-    %% On Windows the shebang is different, and the filename needs a suffix
-    Filename = script_suffix("erica"),
-    Header = escript_header(),
-
+    %% Write the ez archive with a different name/shebang header per platform
     case zip:create("mem", Files, [memory]) of
         {ok, {"mem", ZipBin}} ->
             %% Archive was successfully created. Prefix that binary with our
             %% header and write to "rebar" file
-            Script = <<Header/binary, ZipBin/binary>>,
-            case file:write_file(Filename, Script) of
-                ok ->
-                    ok;
-                {error, WriteError} ->
-                    io:format("Failed to write erica script: ~p\n", [WriteError]),
-                    halt(1)
-            end;
+            Unix_Header = escript_header(unix),
+            Unix_Script = <<Unix_Header/binary, ZipBin/binary>>,
+            write_script(Base_name, Unix_Script),
+            %% On Windows the shebang is different, and the filename needs a suffix
+            Windows_Header = escript_header(windows),
+            Windows_Script = <<Windows_Header/binary, ZipBin/binary>>,
+            write_script(Base_name ++ ".cmd", Windows_Script);
         {error, ZipError} ->
             io:format("Failed to construct erica archive: ~p\n", [ZipError]),
             halt(1)
     end,
-
-    %% Finally, update executable perms for our script
-    {ok, #file_info{mode = Mode}} = file:read_file_info(Filename),
-    ok = file:change_mode(Filename, Mode bor 8#00100),
 
     %% Add a helpful message
 
     io:format("Congratulations! You now have a self-contained script called '~s'~n"
               "in your current working directory. Place this script anywhere "
               "in your path\nand you can use, build and push your docs and "
-              "design docs with erica.\n", [Filename]).
+              "design docs with erica.\n", [Base_name]).
+
+write_script(Filename, Script) ->
+    case file:write_file(Filename, Script) of
+        ok ->
+            ok;
+        {error, WriteError} ->
+            io:format("Failed to write erica script: ~p\n", [WriteError]),
+            halt(1)
+    end,
+    %% Finally, update executable perms for the script
+    {ok, #file_info{mode = Mode}} = file:read_file_info(Filename),
+    ok = file:change_mode(Filename, Mode bor 8#00100).
 
 load_files(Wildcard, Dir) ->
     lists:foldl(fun(Filename, Acc) ->
@@ -89,27 +93,22 @@ read_file(Filename, Dir) ->
     end.
 
 
-escript_header() ->
-    Shebang = case os:type() of
-    {win32,_} ->
+escript_header(Os_Type) ->
+    Shebang = case Os_Type  of
+    windows ->
         %% set local environment so that path is clean on exit
         %% prepend path to same directory as script to allow loading DLLs
         %% start escript using the same script as entry point and append args
         %% on return from escript skip to end of .cmd file
         <<"@echo off & ",
         "setlocal & ",
-        "path=%~dp0;%path%; & ",
-        "escript.exe \"%~dpn0.cmd\" %*",
+        "path=%~dp0;%path% & ",
+        "escript.exe \"%~dpn0.cmd\" %* & ",
         "endlocal & ",
-        " & goto :eof\r\n">>;
+        "goto :eof\r\n">>;
     _ ->
         %% must be a unix variant
         <<"#!/usr/bin/env escript\n">>
     end,
     %% Erlang VM args are the same across platforms, and must occur in L2 or L3
     <<Shebang/binary, "%%! -pa . -noshell -noinput -sasl errlog_type error\n">>.
-
-script_suffix(Prefix) -> case os:type() of
-    {win32, _ } -> Prefix ++ ".cmd";
-    _           -> Prefix
-    end.

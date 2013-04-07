@@ -24,7 +24,7 @@ doc:
 
 clean:
 	@./rebar clean
-	@rm -f erica
+	@rm -f erica erica.cmd
 
 distclean: clean
 	@./rebar delete-deps
