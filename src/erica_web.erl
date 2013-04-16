@@ -96,14 +96,14 @@ do_web(Path, Config) ->
     ok.
 
 dispatch(MochiReq, AppPath, Config, DocId, AppName, StaticFiles, Templates) ->
-    RawUri = MochiReq:get(raw_path),
+    RawUri = mochiweb_request:get(raw_path, MochiReq),
     {"/" ++ Path, _, _} = mochiweb_util:urlsplit_path(RawUri),
     PathParts = [mochiweb_util:unquote(Part) || Part <-
         string:tokens(Path, "/")],
 
     Req = #httpd{
         mochi_req = MochiReq,
-        method = MochiReq:get(method),
+        method = mochiweb_request:get(method, MochiReq),
         path = Path,
         path_parts = PathParts,
         doc_id = DocId,
@@ -116,10 +116,10 @@ dispatch(MochiReq, AppPath, Config, DocId, AppName, StaticFiles, Templates) ->
         handle_request(Req)
     catch
         _:forbidden ->
-            MochiReq:respond({403, [], "forbidden"});
+            mochiweb_request:respond({403, [], "forbidden"}, MochiReq);
         _:Error ->
-            MochiReq:respond({500, [], io_lib:format("Error: ~p~n",
-                        [Error])})
+            mochiweb_request:respond({500, [], io_lib:format("Error: ~p~n",
+                        [Error])}, MochiReq)
     end.
 
 
@@ -136,11 +136,15 @@ handle_request(#httpd{path_parts=[], app_name=Name, app_dir=Dir}=Req) ->
 handle_request(#httpd{path_parts=["push"], app_dir=Dir, config=Config,
         doc_id=DocId, mochi_req=MochiReq}) ->
 
-    case MochiReq:get(method) of
+    case mochiweb_request:get(method, MochiReq) of
         'POST' ->
-            case MochiReq:get_primary_header_value("content-type") of
+            case
+                mochiweb_request:get_primary_header_value("content-type",
+                                                         MochiReq) of
                 "application/json" ->
-                    {Props} = couchbeam_ejson:decode(MochiReq:recv_body()),
+                    {Props} = couchbeam_ejson:decode(
+                            mochiweb_request:recv_body(MochiReq)
+                    ),
                     DbKey = proplists:get_value(<<"url">>, Props),
                     Db = erica_util:db_from_key(Config,
                         binary_to_list(DbKey)),
@@ -150,8 +154,9 @@ handle_request(#httpd{path_parts=["push"], app_dir=Dir, config=Config,
                             JsonObj = {[
                                     {<<"ok">>, true},
                                     {<<"url">>, DisplayUrl}]},
-                             MochiReq:ok({<<"application/json">>, [],
-                                     couchbeam_ejson:encode(JsonObj)})
+                             mochiweb_request:ok({<<"application/json">>, [],
+                                     couchbeam_ejson:encode(JsonObj)},
+                                                 MochiReq)
                     catch
                         _:Reason ->
                             ?ERROR("web push error: ~p~n", [Reason]),
@@ -167,7 +172,7 @@ handle_request(#httpd{path_parts=["push"], app_dir=Dir, config=Config,
 
 
 handle_request(#httpd{path_parts=["upload"], app_dir=Dir, mochi_req=MochiReq}) ->
-    case MochiReq:get(method) of
+    case mochiweb_request:get(method, MochiReq) of
         'POST' ->
             Form = mochiweb_multipart:parse_form(MochiReq),
             ?INFO("got ~p~n", [Form]),
@@ -202,11 +207,15 @@ handle_request(#httpd{path_parts=["upload"], app_dir=Dir, mochi_req=MochiReq}) -
     end;
 
 handle_request(#httpd{path_parts=["create"], app_dir=Dir, mochi_req=MochiReq}) ->
-    case MochiReq:get(method) of
+    case mochiweb_request:get(method, MochiReq) of
         'POST' ->
-            case MochiReq:get_primary_header_value("content-type") of
+            case
+                mochiweb_request:get_primary_header_value("content-type",
+                                                         MochiReq) of
                 "application/json" ->
-                    {Props0} = couchbeam_ejson:decode(MochiReq:recv_body()),
+                    {Props0} = couchbeam_ejson:decode(
+                            mochiweb_request:recv_body(MochiReq)
+                    ),
                     Actions = proplists:get_value(<<"actions">>, Props0),
                     ?DEBUG("actions ~p~n", [Actions]),
 
@@ -258,11 +267,15 @@ handle_request(#httpd{path_parts=["create"], app_dir=Dir, mochi_req=MochiReq}) -
     end;
 
 handle_request(#httpd{path_parts=["delete"], app_dir=Dir, mochi_req=MochiReq}) ->
-    case MochiReq:get(method) of
+    case mochiweb_request:get(method, MochiReq) of
         'POST' ->
-            case MochiReq:get_primary_header_value("content-type") of
+            case
+                mochiweb_request:get_primary_header_value("content-type",
+                                                         MochiReq) of
                 "application/json" ->
-                    {Props} = couchbeam_ejson:decode(MochiReq:recv_body()),
+                    {Props} = couchbeam_ejson:decode(
+                            mochiweb_request:recv_body(MochiReq)
+                    ),
                     Files = proplists:get_value(<<"files">>, Props),
                     lists:foreach(fun(File) ->
                                FName =
@@ -285,7 +298,8 @@ handle_request(#httpd{path_parts=["delete"], app_dir=Dir, mochi_req=MochiReq}) -
 
 handle_request(#httpd{path_parts=["tree"], mochi_req=MochiReq}) ->
     Location = absolute_uri(MochiReq, "/"),
-    MochiReq:respond({301, [{"Location", Location}], <<>>});
+    mochiweb_request:respond({301, [{"Location", Location}], <<>>},
+                             MochiReq);
 
 handle_request(#httpd{path_parts=["tree"|PathParts], app_name=Name,
         app_dir=Dir}=Req) ->
@@ -355,8 +369,8 @@ handle_request(#httpd{method='GET', path_parts=["edit"|PathParts],
 
     case filelib:is_dir(FName) of
         true ->
-            MochiReq:respond({"415", [], "A directory can't be
-                    edited"});
+            mochiweb_request:respond({"415", [], "A directory can't be
+                    edited"}, MochiReq);
         false ->
             [FileName|Rest] = lists:reverse(PathParts),
             BreadCrumb = breadcrumb(lists:reverse(Rest)),
@@ -386,8 +400,10 @@ handle_request(#httpd{method='POST', path_parts=["edit"|PathParts],
         true ->
             json_error(MochiReq, 415, "A directory can't be edited");
         false ->
-            ReqBody = MochiReq:recv_body(),
-            case MochiReq:get_primary_header_value("content-type") of
+            ReqBody = mochiweb_request:recv_body(MochiReq),
+            case
+                mochiweb_request:get_primary_header_value("content-type",
+                                                         MochiReq) of
                 "application/json" ->
                     {Props} = couchbeam_ejson:decode(ReqBody),
 
@@ -412,7 +428,7 @@ handle_request(#httpd{method='POST', path_parts=["edit"|PathParts],
 handle_request(#httpd{path_parts=["raw"|PathParts],
         mochi_req=MochiReq, app_dir=Dir}) ->
     Path = ?UNQUOTE(string:join(PathParts, "/")),
-    MochiReq:serve_file(Path, Dir);
+    mochiweb_request:serve_file(Path, Dir, MochiReq);
 
 handle_request(#httpd{path=Path}=Req) ->
     serve_file(Req, ?UNQUOTE(Path)).
@@ -423,7 +439,8 @@ json_respond(MochiReq, Status, JsonObj) ->
 
 json_respond(MochiReq, Status, ExtraHeaders, JsonObj) ->
     Headers = [{"Content-Type", "application/json"}] ++ ExtraHeaders,
-    MochiReq:respond({Status, Headers, couchbeam_ejson:encode(JsonObj)}).
+    mochiweb_request:respond({Status, Headers,
+                              couchbeam_ejson:encode(JsonObj)}, MochiReq).
 
 
 json_error(MochiReq, Status, Error) when is_list(Error) ->
@@ -439,11 +456,11 @@ json_ok(MochiReq) ->
 
 json_ok(MochiReq, Extra) ->
     JsonProps = [{<<"ok">>, true}] ++ Extra,
-    MochiReq:ok({<<"application/json">>, [],
-            couchbeam_ejson:encode({JsonProps})}).
+    mochiweb_request:ok({<<"application/json">>, [],
+            couchbeam_ejson:encode({JsonProps})}, MochiReq).
 
 host_headers(MochiReq) ->
-    [ V || V <- [MochiReq:get_header_value(H)
+    [ V || V <- [mochiweb_request:get_header_value(H, MochiReq)
                              || H <- ["x-forwarded-host",
                                       "x-forwarded-server",
                                       "host"]],
@@ -454,7 +471,8 @@ absolute_uri(MochiReq, Path) ->
         [H|_] ->
             H;
         _ ->
-            {ok, {Address, Port}} = inet:sockname(MochiReq:get(socket)),
+            {ok, {Address, Port}} = inet:sockname(mochiweb_request:get(socket,
+                                                                    MochiReq)),
             inet_parse:ntoa(Address) ++ ":" ++ integer_to_list(Port)
     end,
     "http://" ++ Host ++ Path.
@@ -514,9 +532,9 @@ render_template(Req, Name, Ctx0) ->
                     Rendered
             end,
             ContentType = mochiweb_util:guess_mime(Name),
-            MochiReq:ok({ContentType, [], Bin1});
+           mochiweb_request:ok({ContentType, [], Bin1}, MochiReq);
         _ ->
-            MochiReq:not_found()
+            mochiweb_request:not_found(MochiReq)
     end.
 
 serve_file(#httpd{mochi_req=MochiReq, static_files=Files}, Name) ->
@@ -532,19 +550,19 @@ serve_file(#httpd{mochi_req=MochiReq, static_files=Files}, Name) ->
                     serve_file(MochiReq, Name, FileInfo, Bin);
                 false ->
 
-                    MochiReq:not_found()
+                    mochiweb_request:not_found(MochiReq)
             end
     end.
 
 serve_file(MochiReq, Name, FileInfo, Bin) ->
     LastModified = httpd_util:rfc1123_date(FileInfo#file_info.mtime),
-    case MochiReq:get_header_value("if-modified-since") of
+    case mochiweb_request:get_header_value("if-modified-since", MochiReq) of
         LastModified ->
-            MochiReq:respond({304, [], ""});
+            mochiweb_request:respond({304, [], ""}, MochiReq);
         _ ->
             ContentType = mochiweb_util:guess_mime(Name),
-            MochiReq:ok({ContentType,  [{"last-modified", LastModified}],
-                         Bin})
+            mochiweb_request:ok({ContentType,  [{"last-modified", LastModified}],
+                         Bin}, MochiReq)
     end.
 
 priv_dir() ->
