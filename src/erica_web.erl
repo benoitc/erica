@@ -76,7 +76,7 @@ do_web(Path, Config) ->
     Pid = mochiweb_http:start(Options),
     PortStr = integer_to_list(mochiweb_socket_server:get(erica_http, port)),
     Location = binary_to_list(
-        iolist_to_binary(["http://", Ip, PortStr])),
+        iolist_to_binary(["http://", Ip, ":", PortStr])),
 
     case erica_config:get_global(browser, "0") of
         "0" -> ok;
