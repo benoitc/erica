@@ -18,8 +18,11 @@ of CouchDB.
 
 ##Download
 
-Signed [releases](https://people.apache.org/~dch/dist/tools/)
+* Signed [releases](https://people.apache.org/~dch/dist/tools/)
 are available from [dch](https://twitter.com/dch__)'s site.
+* Unix users will need to `chmod +x erica` and ensure it is on your PATH.
+* Windows users should use `erica.cmd` and simply drop it
+into your `%COUCHDB%/bin` directory.
 
 ##Installation
 
