@@ -1,25 +1,32 @@
 #Erica
 
 ## Making CouchDB development easy
- 
+
 Erica is a tool that helps you to create couchdb design docs,
-and web applications (couchapps), and generally get files to couchdb.
+and web applications (couchapps), and generally get files in and out
+of CouchDB.
 
 ##Requirements
 
-* Erlang R14 or sup
+###Runtime
+* Erlang R14B04 or higher with crypto support
+
+###Compiling
 * gcc
+* [rebar](https://github.com/rebar/rebar)
+* git
+
+##Download
+
+Signed [releases](https://people.apache.org/~dch/dist/tools/)
+are available from [dch](https://twitter.com/dch__)'s site.
 
 ##Installation
 
-
-Couchapp requires Erlang R15B01 (or higher) with crypto support.
-
-To instal it from source you will have to clone the repository from
+To install it from source you will have to clone the repository from
 github. Dependencies will be fetched during the build.
 
     $ git clone git://github.com/benoitc/erica.git
-
 
 You can also download the latested tarball available on the [download
 page](https://github.com/benoitc/erica/downloads):
