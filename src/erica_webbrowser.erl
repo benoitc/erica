@@ -75,7 +75,6 @@ do_browse(Path, #db{server=Server}=Db, DocId, Config) ->
 
     CouchappUrl = couchbeam:make_url(Server, couchbeam:doc_url(Db, DocId), []),
     BrowseUrl = erica_push:index_url(CouchappUrl, Couchapp1),
-    io:format("browse url: ~p~n", [BrowseUrl]),
     open_location(BrowseUrl).
 
 
