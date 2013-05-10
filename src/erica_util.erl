@@ -176,6 +176,8 @@ in_couchapp("") ->
     in_couchapp(Dir);
 in_couchapp("/") ->
     {error, not_found};
+in_couchapp(".") ->
+    in_couchapp(filename:abspath(""));
 in_couchapp(Path) ->
     RcPath = filename:join(Path, ".couchapprc"),
     case filelib:is_regular(RcPath) of
@@ -197,7 +199,7 @@ find_executable(Name) ->
     case os:find_executable(Name) of
         false -> false;
         Path ->
-            "\"" ++ filename:nativename(Path) ++ "\""
+            {ok, "\"" ++ filename:nativename(Path) ++ "\""}
     end.
 
 %% normalize path.

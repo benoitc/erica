@@ -14,7 +14,8 @@
 -export([push/2]).
 
 -export([make_doc/1, couchapp_from_fs/1, process_signatures/1,
-        id_from_path/2, index_url/2, do_push/3, do_push/4]).
+        id_from_path/2, index_url/2, do_push/3, do_push/4,
+        detect_style/1, choose_ddoc_dir/2]).
 
 %% ====================================================================
 %% Public API
@@ -191,10 +192,10 @@ id_from_path(Path, Config) ->
             end
     end.
 
-couchapp_from_fs(#couchapp{ddoc_dir=Ddoc_Path}=Couchapp) ->
+couchapp_from_fs(#couchapp{ddoc_dir=DdocPath}=Couchapp) ->
     Couchapp1 = attachments_from_fs(Couchapp),
-    Files1 = filelib:wildcard("*", Ddoc_Path),
-    process_path(Files1, Ddoc_Path, Couchapp1).
+    Files1 = filelib:wildcard("*", DdocPath),
+    process_path(Files1, DdocPath, Couchapp1).
 
 process_signatures(#couchapp{attachments=[]}=Couchapp) ->
     Couchapp;

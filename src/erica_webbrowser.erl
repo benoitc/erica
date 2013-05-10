@@ -42,7 +42,6 @@ browse1(Path, DbKey, Config) ->
 
 browse2(CouchappDir, DbKey, Config) ->
     Config1 = erica_config:update(CouchappDir, Config),
-
     Db = erica_util:db_from_key(Config1, DbKey),
     ?DEBUG("push ~s => ~s~n", [CouchappDir, DbKey]),
     do_browse(CouchappDir, Db, Config1).
@@ -60,11 +59,14 @@ do_browse(Path, #db{server=Server}=Db, DocId, Config) ->
         {error, not_found} ->
             {[]}
     end,
-
+    RootFiles = filelib:wildcard("*", Path),
+    DetectedStyle = erica_push:detect_style(RootFiles),
+    AttsPath = filename:join(Path, "_attachments"),
     Couchapp = #couchapp{
         config=Config,
         path=Path,
-        att_dir=filename:join(Path, "_attachments"),
+        ddoc_dir=erica_push:choose_ddoc_dir(DetectedStyle, Path),
+        att_dir=erica_push:choose_ddoc_dir(DetectedStyle, AttsPath),
         docid=DocId,
         doc={[{<<"_id">>, DocId}]},
         old_doc = OldDoc
@@ -73,6 +75,7 @@ do_browse(Path, #db{server=Server}=Db, DocId, Config) ->
 
     CouchappUrl = couchbeam:make_url(Server, couchbeam:doc_url(Db, DocId), []),
     BrowseUrl = erica_push:index_url(CouchappUrl, Couchapp1),
+    io:format("browse url: ~p~n", [BrowseUrl]),
     open_location(BrowseUrl).
 
 
@@ -123,7 +126,8 @@ launch_x11_unix_browser(Env, Location) ->
                 false ->
                     find_browser(?UNIX_BROWSERS, unix, Location)
             end
-    end.
+    end,
+    erlang:halt(0).
 
 
 find_browser([], _Type, _Location) ->
