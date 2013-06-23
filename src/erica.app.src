@@ -8,7 +8,7 @@
   {vsn, "0.4.0"},
   {modules, []},
   {registered, []},
-  {applications, [kernel, stdlib, crypto, lager, sasl, public_key, ssl,
+  {applications, [kernel, stdlib, crypto, lager, sasl, asn1, public_key, ssl,
                     inets, ibrowse, mochiweb]},
 
   {env, [
