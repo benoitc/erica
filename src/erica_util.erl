@@ -72,7 +72,8 @@ db_from_string(DbString, IsCreateDb) ->
                 undefined ->
                     [{basic_auth, {Username, ""}}];
                 Password ->
-                    [{basic_auth, {Username, Password}}]
+                    EscapedPassword = http_uri:decode(Password), 
+                    [{basic_auth, {Username, EscapedPassword}}]
             end
     end,
 
