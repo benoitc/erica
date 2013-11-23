@@ -16,6 +16,10 @@ of CouchDB.
 * [rebar](https://github.com/rebar/rebar)
 * git
 
+####Installing Dependencies on Debian/Ubuntu
+
+    sudo apt-get install rebar erlang-src
+
 ##Download
 
 * Signed [releases](https://people.apache.org/~dch/dist/tools/)
@@ -155,7 +159,7 @@ where you can put all the attachments. You can put your views functions in
 * *_id* is where you set the document id
 * *languages* is where you set the language of your application
 * *.couchapprc* is where you set some config infos for your app.
-    
+
 Note: **erica** is language agnostic, so if you want to create your couchapp in
 coffescript, just replace javascript by coffescript or use the language
 you want if an couchapp server exists for it.
@@ -168,7 +172,7 @@ with a friend on the same couchapp ? With the `clone` command you can
 replicate a couchapp on your filesystem, edit it and push the results
 after:
 
-    $ erica clone http://127.0.0.1:5984/testdb/_design/myapp 
+    $ erica clone http://127.0.0.1:5984/testdb/_design/myapp
 
 This command will clone the couchapp `myapp` in the `myapp` folder. If
 you want to clone it to another folder, just do:
@@ -200,4 +204,3 @@ You can add your own template in ~/.erica/templates.
 
 If you have any questions contact us on irc freenode **#couchapp** or on
 the mailing-list: http://groups.google.com/group/couchapp .
-
