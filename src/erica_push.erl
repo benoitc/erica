@@ -58,6 +58,8 @@ do_push(Path, Db, Config) ->
     do_push(Path, Db, DocId, Config).
 
 do_push(Path, #db{server=Server}=Db, DocId, Config) ->
+    io:format("docid ~p~n", [DocId]),
+    io:format("db ~p~n", [Db]),
     OldDoc = case couchbeam:open_doc(Db, DocId) of
         {ok, OldDoc1} ->
             OldDoc1;
@@ -88,6 +90,7 @@ do_push(Path, #db{server=Server}=Db, DocId, Config) ->
         true ->
             FinalCouchapp = process_attachments(Couchapp2),
             Doc = make_doc(FinalCouchapp),
+            io:format("doc ~p~n", [Doc]),
             {ok, _} = couchbeam:save_doc(Db, Doc);
         false ->
             Doc = make_doc(Couchapp2),
@@ -97,7 +100,8 @@ do_push(Path, #db{server=Server}=Db, DocId, Config) ->
 
     send_docs(Couchapp2, Db ),
 
-    CouchappUrl = couchbeam:make_url(Server, couchbeam:doc_url(Db, DocId), []),
+    CouchappUrl = hackney_url:make_url(couchbeam:server_url(Server),
+                                       couchbeam:doc_url(Db, DocId), []),
 
     DisplayUrl = index_url(CouchappUrl, Couchapp1),
 
@@ -597,7 +601,7 @@ do_web_manifest(#couchapp{att_dir=Path}=Couchapp) ->
     do_web_manifest1(Files, Path).
 
 do_web_manifest1([], _) ->
-    none;
+    {[]};
 
 do_web_manifest1([F], Path) ->
     Fname = filename:join(Path, F),
