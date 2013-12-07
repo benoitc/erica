@@ -58,8 +58,6 @@ do_push(Path, Db, Config) ->
     do_push(Path, Db, DocId, Config).
 
 do_push(Path, #db{server=Server}=Db, DocId, Config) ->
-    io:format("docid ~p~n", [DocId]),
-    io:format("db ~p~n", [Db]),
     OldDoc = case couchbeam:open_doc(Db, DocId) of
         {ok, OldDoc1} ->
             OldDoc1;
@@ -90,7 +88,6 @@ do_push(Path, #db{server=Server}=Db, DocId, Config) ->
         true ->
             FinalCouchapp = process_attachments(Couchapp2),
             Doc = make_doc(FinalCouchapp),
-            io:format("doc ~p~n", [Doc]),
             {ok, _} = couchbeam:save_doc(Db, Doc);
         false ->
             Doc = make_doc(Couchapp2),
@@ -162,12 +159,12 @@ index_url(CouchappUrl, #couchapp{doc=Doc}=Couchapp) ->
         Index ->
             Index
     end,
-    CouchappUrl ++ FinalIndex.
+    << CouchappUrl/binary, FinalIndex/binary >>.
 
-index_url2(true, true) -> "/_rewrite/";
-index_url2(true, false) -> "/index.html";
-index_url2(false, true) -> "/_rewrite/";
-index_url2(_, _) -> "".
+index_url2(true, true) -> <<"/_rewrite/">>;
+index_url2(true, false) -> <<"/index.html">>;
+index_url2(false, true) -> <<"/_rewrite/">>;
+index_url2(_, _) -> <<"">>.
 
 has_index_file(#couchapp{attachments=List}) ->
    lists:any(fun({File, _}) ->

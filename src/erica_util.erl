@@ -42,14 +42,6 @@ v2a(V) when is_list(V) ->
 v2a(V) when is_binary(V) ->
     list_to_atom(binary_to_list(V)).
 
-%% @doc joins the list of binaries with Sep
--spec join([binary()], binary()) -> binary().
-join([], _) -> <<>>;
-join([Bin], _) -> Bin;
-join([Bin|Bins], Sep) -> join(Bins, Sep, Bin).
-
-join([], _, Acc) -> Acc;
-join([Bin|Bins], Sep, Acc) -> join(Bins, Sep, <<Acc/binary, Sep/binary, Bin/binary>>).
 
 db_from_url(Url) ->
     ParsedUrl = hackney_url:parse_url(Url),
@@ -58,7 +50,7 @@ db_from_url(Url) ->
     [<<>> | Parts] = binary:split(Path, <<"/">>),
     [DbName | Rest] = lists:reverse(Parts),
 
-    Prefix = join([<<>> | lists:reverse(Rest)], <<"/">>),
+    Prefix = hackney_util:join([<<>> | lists:reverse(Rest)], <<"/">>),
     NUrl = hackney_url:unparse_url(ParsedUrl#hackney_url{path=Prefix}),
     {DbName, NUrl}.
 
@@ -74,10 +66,8 @@ db_from_string(DbString, IsCreateDb) ->
         << "https://", _/binary >> ->
             db_from_url(DbString);
         _ ->
-            {DbString, <<"http://127.0.0.1:5984/">>}
+            {DbString, <<"http://127.0.0.1:5984">>}
     end,
-    io:format("dbname ~p~n", [DbName]),
-
     Server = couchbeam:server_connection(Url),
 
     {ok, Db} = case IsCreateDb of
@@ -274,12 +264,12 @@ md5_file(File) ->
 %% ====================================================================
 
 parse_couchapp_path([AppName, <<"_design">>, DbName | Rest]) ->
-    ServerPath = join([<<>> | lists:reverse(Rest)], <<"/">>),
+    ServerPath = hackney_util:join([<<>> | lists:reverse(Rest)], <<"/">>),
     {DbName, AppName, <<"_design/", AppName/binary >>, ServerPath};
 parse_couchapp_path([AppName, "_design", DbName]) ->
     {DbName, AppName, <<"_design/", AppName/binary >>, <<>>};
 parse_couchapp_path([DbName, DocId | Rest]) ->
-    ServerPath = join([<<>> | lists:reverse(Rest)], <<"/">>),
+    ServerPath =  hackney_util:jjoin([<<>> | lists:reverse(Rest)], <<"/">>),
     {DbName, DocId, DocId, ServerPath};
 parse_couchapp_path(_) ->
     invalid_url.
