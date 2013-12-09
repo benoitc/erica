@@ -1,4 +1,4 @@
-PREFIX?= /usr/local
+PREFIX?= /usr/local/bin
 ERICA_TAG=	$(shell git describe --tags --always)
 REVISION?=	$(shell echo $(ERICA_TAG) | sed -e 's/^$(REPO)-//')
 PKG_VERSION?=	$(shell echo $(REVISION) | tr - .)
@@ -9,7 +9,7 @@ WITHOUT_CURL?=1
 all: deps compile
 
 install: all
-	@install -m 0755 -c erica $(PREFIX)/bin
+	@install -m 0755 -c erica $(PREFIX)/erica
 	
 compile:
 	@./rebar compile
