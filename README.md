@@ -188,7 +188,7 @@ of regular expressions of files or folders to be excluded from pushes.
 
 When using templates, follow this format
 
-    # ercia create template=name
+    # erica create template=name
 
 Provided templates are for now:
 
