@@ -226,5 +226,5 @@ get_source_id(Source) ->
             || N <- binary_to_list(crypto:md5(Source))]).
 
 remove_function_name(Source) ->
-    re:replace(Source, "^\s*function\s+[^(]*", "function ", [ multiline, caseless, {return, binary}]).
+    re:replace(Source, "^function\s+[^(]*", "function ", [ multiline, caseless, {return, binary}]).
 
