@@ -51,6 +51,15 @@ To install it on your system, run the command line:
 
     $ make install
 
+### Upgrade from  the source repository
+
+When you want to upgrade from the source repository, run the following
+commands:
+
+    $ git pull --rebase
+    $ make upgrade
+    $ make install
+
 ## Quick Start: Design Docs
 
 So need to make and mange design docs for couchdb?

@@ -21,13 +21,20 @@ deps:
 doc:
 	@./rebar doc
 
-
 clean:
 	@./rebar clean
 	@rm -f erica erica.cmd
 
 distclean: clean
 	@./rebar delete-deps
+
+upgrade: distclean all
+
+update: clean
+	@./rebar update-deps
+	@./rebar get-deps
+	@./rebar compile
+	@escript bootstrap
 
 ##
 ## release tarballs
