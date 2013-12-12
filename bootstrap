@@ -9,7 +9,9 @@ main(Args) ->
     %% Add ebin/ to our path
     true = code:add_path("ebin"),
     true = code:add_path("deps/mochiweb/ebin"),
-    true = code:add_path("deps/ibrowse/ebin"),
+    true = code:add_path("deps/jsx/ebin"),
+    true = code:add_path("deps/mimetypes/ebin"),
+    true = code:add_path("deps/hackney/ebin"),
     true = code:add_path("deps/oauth/ebin"),
     true = code:add_path("deps/couchbeam/ebin"),
 
@@ -24,7 +26,10 @@ main(Args) ->
     %% works properly.
     Files = load_files("*", "ebin")
             ++ load_files("*", "deps/mochiweb/ebin")
-            ++ load_files("*", "deps/ibrowse/ebin")
+            ++ load_files("*", "deps/hackney/ebin")
+            ++ load_files("*", "deps/mimetypes/ebin")
+            ++ load_files("*", "deps/jsx/ebin")
+            ++ load_files("*", "deps/hackney/ebin")
             ++ load_files("*", "deps/oauth/ebin")
             ++ load_files("*", "deps/couchbeam/ebin")
             ++ load_files("priv/templates/*", ".")

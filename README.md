@@ -17,6 +17,10 @@ of CouchDB.
 * git
 * erlang-src
 
+####Installing Dependencies on Debian/Ubuntu
+
+    sudo apt-get install rebar erlang-src erlang-xmerl
+
 ##Download
 
 * Signed [releases](https://people.apache.org/~dch/dist/tools/)
@@ -46,6 +50,15 @@ Then you can use the generated script **erica** .
 
 To install it on your system, run the command line:
 
+    $ make install
+
+### Upgrade from  the source repository
+
+When you want to upgrade from the source repository, run the following
+commands:
+
+    $ git pull --rebase
+    $ make upgrade
     $ make install
 
 ## Quick Start: Design Docs
@@ -156,7 +169,7 @@ where you can put all the attachments. You can put your views functions in
 * *_id* is where you set the document id
 * *languages* is where you set the language of your application
 * *.couchapprc* is where you set some config infos for your app.
-    
+
 Note: **erica** is language agnostic, so if you want to create your couchapp in
 coffescript, just replace javascript by coffescript or use the language
 you want if an couchapp server exists for it.
@@ -169,7 +182,7 @@ with a friend on the same couchapp ? With the `clone` command you can
 replicate a couchapp on your filesystem, edit it and push the results
 after:
 
-    $ erica clone http://127.0.0.1:5984/testdb/_design/myapp 
+    $ erica clone http://127.0.0.1:5984/testdb/_design/myapp
 
 This command will clone the couchapp `myapp` in the `myapp` folder. If
 you want to clone it to another folder, just do:
@@ -185,7 +198,7 @@ of regular expressions of files or folders to be excluded from pushes.
 
 When using templates, follow this format
 
-    # ercia create template=name
+    # erica create template=name
 
 Provided templates are for now:
 
@@ -201,4 +214,3 @@ You can add your own template in ~/.erica/templates.
 
 If you have any questions contact us on irc freenode **#couchapp** or on
 the mailing-list: http://groups.google.com/group/couchapp .
-

@@ -97,7 +97,8 @@ do_push(Path, #db{server=Server}=Db, DocId, Config) ->
 
     send_docs(Couchapp2, Db ),
 
-    CouchappUrl = couchbeam:make_url(Server, couchbeam:doc_url(Db, DocId), []),
+    CouchappUrl = hackney_url:make_url(couchbeam:server_url(Server),
+                                       couchbeam:doc_url(Db, DocId), []),
 
     DisplayUrl = index_url(CouchappUrl, Couchapp1),
 
@@ -158,12 +159,12 @@ index_url(CouchappUrl, #couchapp{doc=Doc}=Couchapp) ->
         Index ->
             Index
     end,
-    CouchappUrl ++ FinalIndex.
+    << CouchappUrl/binary, FinalIndex/binary >>.
 
-index_url2(true, true) -> "/_rewrite/";
-index_url2(true, false) -> "/index.html";
-index_url2(false, true) -> "/_rewrite/";
-index_url2(_, _) -> "".
+index_url2(true, true) -> <<"/_rewrite/">>;
+index_url2(true, false) -> <<"/index.html">>;
+index_url2(false, true) -> <<"/_rewrite/">>;
+index_url2(_, _) -> <<"">>.
 
 has_index_file(#couchapp{attachments=List}) ->
    lists:any(fun({File, _}) ->
@@ -597,7 +598,7 @@ do_web_manifest(#couchapp{att_dir=Path}=Couchapp) ->
     do_web_manifest1(Files, Path).
 
 do_web_manifest1([], _) ->
-    none;
+    {[]};
 
 do_web_manifest1([F], Path) ->
     Fname = filename:join(Path, F),

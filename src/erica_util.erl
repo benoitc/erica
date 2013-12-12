@@ -5,7 +5,7 @@
 
 -module(erica_util).
 
--include_lib("ibrowse/include/ibrowse.hrl").
+-include_lib("hackney/include/hackney.hrl").
 -include_lib("erica/include/erica.hrl").
 
 -define(BLOCKSIZE, 32768).
@@ -42,47 +42,39 @@ v2a(V) when is_list(V) ->
 v2a(V) when is_binary(V) ->
     list_to_atom(binary_to_list(V)).
 
+
+db_from_url(Url) ->
+    ParsedUrl = hackney_url:parse_url(Url),
+    #hackney_url{path=Path} = ParsedUrl,
+
+    [<<>> | Parts] = binary:split(Path, <<"/">>),
+    [DbName | Rest] = lists:reverse(Parts),
+
+    Prefix = hackney_util:join([<<>> | lists:reverse(Rest)], <<"/">>),
+    NUrl = hackney_url:unparse_url(ParsedUrl#hackney_url{path=Prefix}),
+    {DbName, NUrl}.
+
 db_from_string(DbString) ->
     db_from_string(DbString, true).
 
+db_from_string(DbString, IsCreateDb) when is_list(DbString) ->
+    db_from_string(list_to_binary(DbString), IsCreateDb);
 db_from_string(DbString, IsCreateDb) ->
-
-    DbUrl = case mochiweb_util:urlsplit(DbString) of
-        {[], [], Path, _, _} ->
-            "http://127.0.0.1:5984/" ++ Path;
+    {DbName, Url} = case DbString of
+        << "http://", _/binary >> ->
+            db_from_url(DbString);
+        << "https://", _/binary >> ->
+            db_from_url(DbString);
         _ ->
-            DbString
+            {DbString, <<"http://127.0.0.1:5984">>}
     end,
-    Url = ibrowse_lib:parse_url(DbUrl),
-
-    ServerOptions = case Url#url.protocol of
-        https ->
-            [{is_ssl, true}, {ssl_options, [{verify, verify_none}]}];
-        _ ->
-            []
-    end,
-
-    Server = couchbeam:server_connection(Url#url.host, Url#url.port,
-                                        "", ServerOptions),
-
-    Options = case Url#url.username of
-        undefined -> [];
-        Username ->
-            case Url#url.password of
-                undefined ->
-                    [{basic_auth, {Username, ""}}];
-                Password ->
-                    [{basic_auth, {Username, Password}}]
-            end
-    end,
-
-    "/" ++ DbName = Url#url.path,
+    Server = couchbeam:server_connection(Url),
 
     {ok, Db} = case IsCreateDb of
         true ->
-            couchbeam:open_or_create_db(Server, DbName, Options);
+            couchbeam:open_or_create_db(Server, DbName);
         false ->
-            couchbeam:open_db(Server, DbName, Options)
+            couchbeam:open_db(Server, DbName)
     end,
     Db.
 
@@ -94,7 +86,7 @@ db_from_key(Config, Key) ->
             db_from_string(Key);
         Doc ->
             Url = couchbeam_doc:get_value(<<"db">>, Doc),
-            db_from_string(binary_to_list(Url))
+            db_from_string(Url)
     end.
 
 
@@ -115,24 +107,26 @@ parse_couchapp_url(AppUrl) ->
     parse_couchapp_url(AppUrl, true).
 
 parse_couchapp_url(AppUrl, IsCreateDb) ->
-    Url = ibrowse_lib:parse_url(AppUrl),
-    PathParts = string:tokens(Url#url.path, "/"),
+    ParsedUrl = hackney_url:parse_url(AppUrl),
+    [<<>> | PathParts] = binary:split(ParsedUrl#hackney_url.path, <<"/">>,
+                                      [global, trim]),
 
-    Server = couchbeam:server_connection(Url#url.host,
-        Url#url.port),
-    DbOptions = db_options_from_url(Url),
-
-    case parse_couchapp_path(PathParts) of
-        {DbName, AppName, DocId} ->
+    case parse_couchapp_path(lists:reverse(PathParts)) of
+        {DbName, AppName, DocId, ServerPath} ->
+            ParsedUrl1 = ParsedUrl#hackney_url{path=ServerPath},
+            ServerUrl = hackney_url:unparse_url(ParsedUrl1),
+            Server = couchbeam:server_connection(ServerUrl),
             {ok, Db} = case IsCreateDb of
                 true ->
-                    couchbeam:open_or_create_db(Server, DbName, DbOptions);
+                    couchbeam:open_or_create_db(Server, DbName);
                 false ->
-                    couchbeam:open_db(Server, DbName, DbOptions)
+                    couchbeam:open_db(Server, DbName)
             end,
             AppName1 = erica_config:get_global(appid, AppName),
             {ok, Db, AppName1, DocId};
         invalid_url ->
+            Server = couchbeam:server_connection(AppUrl),
+
             %% did we set dbname & other things in args?
             case erica_config:get_global(db) of
                 undefined ->
@@ -146,9 +140,9 @@ parse_couchapp_url(AppUrl, IsCreateDb) ->
                         AppId ->
                             {ok, Db} = case IsCreateDb of
                                 true ->
-                                    couchbeam:open_or_create_db(Server, DbName, DbOptions);
+                                    couchbeam:open_or_create_db(Server, DbName);
                                 false ->
-                                    couchbeam:open_db(Server, DbName, DbOptions)
+                                    couchbeam:open_db(Server, DbName)
                             end,
                             DocId = erica_config:get_global(docid, AppId),
                             {ok, Db, AppId, DocId}
@@ -159,17 +153,6 @@ parse_couchapp_url(AppUrl, IsCreateDb) ->
             Error
     end.
 
-db_options_from_url(Url) ->
-    case Url#url.username of
-        undefined -> [];
-        Username ->
-            case Url#url.password of
-                undefined ->
-                    [{basic_auth, {Username, ""}}];
-                Password ->
-                    [{basic_auth, {Username, Password}}]
-            end
-    end.
 
 in_couchapp("") ->
     {ok, Dir} = file:get_cwd(),
@@ -280,11 +263,14 @@ md5_file(File) ->
 %% Internal functions
 %% ====================================================================
 
-
-parse_couchapp_path([DbName, "_design", AppName|_]) ->
-    {DbName, AppName, "_design/" ++ AppName};
-parse_couchapp_path([DbName, DocId]) ->
-    {DbName, DocId, DocId};
+parse_couchapp_path([AppName, <<"_design">>, DbName | Rest]) ->
+    ServerPath = hackney_util:join([<<>> | lists:reverse(Rest)], <<"/">>),
+    {DbName, AppName, <<"_design/", AppName/binary >>, ServerPath};
+parse_couchapp_path([AppName, "_design", DbName]) ->
+    {DbName, AppName, <<"_design/", AppName/binary >>, <<>>};
+parse_couchapp_path([DbName, DocId | Rest]) ->
+    ServerPath =  hackney_util:jjoin([<<>> | lists:reverse(Rest)], <<"/">>),
+    {DbName, DocId, DocId, ServerPath};
 parse_couchapp_path(_) ->
     invalid_url.
 
@@ -308,7 +294,7 @@ loop (P, C) ->
         loop(P, crypto:md5_update(C, Bin));
     eof ->
         file:close(P),
-        {ok, crypto:md5_final(C)}
+        {ok, couchbeam_util:to_binary(crypto:md5_final(C))}
     end.
 
 %% TODO: Rename emulate_escript_foldl to escript_foldl and remove

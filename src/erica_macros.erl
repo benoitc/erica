@@ -222,9 +222,9 @@ get_value([Name|_], Obj, _Len, _Count) ->
     end.
 
 get_source_id(Source) ->
-    lists:flatten([io_lib:format("~.16b",[N])
-            || N <-binary_to_list(crypto:md5(Source))]).
+    iolist_to_binary([io_lib:format("~.16b",[N])
+            || N <- binary_to_list(crypto:md5(Source))]).
 
 remove_function_name(Source) ->
-    re:replace(Source, "^\s*function\s+[^(]*", "function ", [ multiline, caseless, {return, binary}]).
+    re:replace(Source, "^function\s+[^(]*", "function ", [ multiline, caseless, {return, binary}]).
 
