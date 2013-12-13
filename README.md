@@ -15,6 +15,7 @@ of CouchDB.
 * gcc
 * [rebar](https://github.com/rebar/rebar)
 * git
+* erlang-src
 
 ####Installing Dependencies on Debian/Ubuntu
 
