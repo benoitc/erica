@@ -186,6 +186,8 @@ find_executable(Name) ->
     end.
 
 %% normalize path.
+normalize_path(Path) when is_binary(Path) ->
+    normalize_path(binary_to_list(Path));
 normalize_path(Path)  ->
     "/" ++ string:join(normalize_path1(string:tokens(Path,
                 "/"), []), [?SEPARATOR]).
