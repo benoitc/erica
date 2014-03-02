@@ -104,23 +104,20 @@ attachments_to_fs([AttName|Rest], Db, DocId, AttDir) ->
 
     %% we stream attachments.
     {ok, Fd} = file:open(Path, [write]),
-    {ok, Ref} = couchbeam:stream_fetch_attachment(Db, DocId, AttName1,
-        self()),
-    wait_for_attachment(Ref, Fd, AttName1, Rest, Db, DocId, AttDir).
+    {ok, Ref} = couchbeam:fetch_attachment(Db, DocId, AttName1, [stream]),
+
+    fetch_attachment(couchbeam:stream_attachment(Ref), Ref, Fd, AttName),
+    attachments_to_fs(Rest, Db, DocId, AttDir).
 
 
-wait_for_attachment(Ref, Fd, AttName, Rest, Db, DocId, AttDir) ->
-    receive
-        {Ref, done} ->
-            file:close(Fd),
-            attachments_to_fs(Rest, Db, DocId, AttDir);
-        {Ref, {error, Error}} ->
-            ?ERROR("error fetching '~p' [~p]~n", [AttName, Error]),
-            attachments_to_fs(Rest, Db, DocId, AttDir);
-        {Ref, {ok, Bin}} ->
-            file:write(Fd, Bin),
-            wait_for_attachment(Ref, Fd, AttName, Rest, Db, DocId, AttDir)
-    end.
+fetch_attachment(done, _Ref, Fd, _AttName) ->
+    file:close(Fd);
+fetch_attachment({ok, Bin}, Ref, Fd, AttName) ->
+    file:write(Fd, Bin),
+    fetch_attachment(couchbeam:stream_attachment(Ref), Ref, Fd, AttName);
+fetch_attachment({error, Reason}, _Ref, Fd, AttName) ->
+    ?ERROR("error fetching '~p' [~p]~n", [AttName, Reason]),
+    file:close(Fd).
 
 doc_to_fs([], _Dir, _Manifest, _Objects, _Depth) ->
     ok;

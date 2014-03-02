@@ -37,6 +37,7 @@ run(RawArgs) ->
     {Options, Commands} = parse_args(RawArgs),
 
     %% load couchbeam
+    ok = hackney:start(),
     ok = couchbeam:start(),
 
     %% Initialize logging system

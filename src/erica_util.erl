@@ -6,6 +6,7 @@
 -module(erica_util).
 
 -include_lib("hackney/include/hackney.hrl").
+-include_lib("hackney_lib/include/hackney_lib.hrl").
 -include_lib("erica/include/erica.hrl").
 
 -define(BLOCKSIZE, 32768).
@@ -50,7 +51,7 @@ db_from_url(Url) ->
     [<<>> | Parts] = binary:split(Path, <<"/">>),
     [DbName | Rest] = lists:reverse(Parts),
 
-    Prefix = hackney_util:join([<<>> | lists:reverse(Rest)], <<"/">>),
+    Prefix = hackney_bstr:join([<<>> | lists:reverse(Rest)], <<"/">>),
     NUrl = hackney_url:unparse_url(ParsedUrl#hackney_url{path=Prefix}),
     {DbName, NUrl}.
 
@@ -266,12 +267,12 @@ md5_file(File) ->
 %% ====================================================================
 
 parse_couchapp_path([AppName, <<"_design">>, DbName | Rest]) ->
-    ServerPath = hackney_util:join([<<>> | lists:reverse(Rest)], <<"/">>),
+    ServerPath = hackney_bstr:join([<<>> | lists:reverse(Rest)], <<"/">>),
     {DbName, AppName, <<"_design/", AppName/binary >>, ServerPath};
 parse_couchapp_path([AppName, "_design", DbName]) ->
     {DbName, AppName, <<"_design/", AppName/binary >>, <<>>};
 parse_couchapp_path([DbName, DocId | Rest]) ->
-    ServerPath =  hackney_util:jjoin([<<>> | lists:reverse(Rest)], <<"/">>),
+    ServerPath =  hackney_bstr:join([<<>> | lists:reverse(Rest)], <<"/">>),
     {DbName, DocId, DocId, ServerPath};
 parse_couchapp_path(_) ->
     invalid_url.
