@@ -19,7 +19,7 @@ of CouchDB.
 
 ####Installing Dependencies on Debian/Ubuntu
 
-    sudo apt-get install rebar erlang-src erlang-xmerl
+    sudo apt-get install rebar erlang-src erlang-xmerl erlang-parsetools
 
 ##Download
 
