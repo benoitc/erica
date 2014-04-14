@@ -11,7 +11,6 @@ main(Args) ->
     true = code:add_path("deps/mochiweb/ebin"),
     true = code:add_path("deps/jsx/ebin"),
     true = code:add_path("deps/mimetypes/ebin"),
-    true = code:add_path("deps/ets_lru/ebin"),
     true = code:add_path("deps/idna/ebin"),
     true = code:add_path("deps/hackney_lib/ebin"),
     true = code:add_path("deps/hackney/ebin"),
@@ -32,7 +31,6 @@ main(Args) ->
             ++ load_files("*", "deps/hackney/ebin")
             ++ load_files("*", "deps/mimetypes/ebin")
             ++ load_files("*", "deps/jsx/ebin")
-            ++ load_files("*", "deps/ets_lru/ebin")
             ++ load_files("*", "deps/idna/ebin")
             ++ load_files("*", "deps/hackney_lib/ebin")
             ++ load_files("*", "deps/hackney/ebin")
