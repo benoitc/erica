@@ -21,6 +21,10 @@ of CouchDB.
 
     sudo apt-get install rebar erlang-src erlang-xmerl
 
+####Installing Dependencies on Fedora
+    
+    sudo yum install erlang-rebar
+
 ##Download
 
 * Signed [releases](https://people.apache.org/~dch/dist/tools/)
