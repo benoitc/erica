@@ -5,11 +5,12 @@
 
 {application, erica,
  [{description, "erica: Couchdb Application Tool"},
-  {vsn, "0.4.1"},
+  {vsn, "0.5.0"},
   {modules, []},
   {registered, []},
   {applications, [kernel, stdlib, crypto, lager, sasl, asn1, public_key, ssl,
-                    inets, hackney, mochiweb]},
+                    inets, idna, hackney, mochiweb]},
+  {include_applications, [hackney_lib]},
 
   {env, [
     %% default log level
