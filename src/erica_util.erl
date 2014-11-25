@@ -6,7 +6,7 @@
 -module(erica_util).
 
 -include_lib("hackney/include/hackney.hrl").
--include_lib("hackney_lib/include/hackney_lib.hrl").
+-include_lib("hackney/include/hackney_lib.hrl").
 -include_lib("erica/include/erica.hrl").
 
 -define(BLOCKSIZE, 32768).
