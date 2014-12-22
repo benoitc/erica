@@ -176,7 +176,7 @@ id_from_path(Path, Config) ->
     case filelib:is_regular(IdFile) of
         true ->
             {ok, Bin} = file:read_file(IdFile),
-            [Id|_] = binary:split(Bin, <<"\n">>, [trim]),
+            [Id|_] = binary:split(Bin, [<<"\n">>, <<"\r\n">>], [trim]),
             Id;
         false ->
             case erica_config:get(Config, docid) of
