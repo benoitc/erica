@@ -208,7 +208,7 @@ Provided templates are for now:
 
 * web (the template used with the create-web command)
 * ddoc (the default create used for create-ddoc command)
-* example: a simple couchapp exampole
+* example: a simple couchapp example
 * couchapp: a simple template with the good old couchapp javascript library.
 
 You can add your own template in ~/.erica/templates.
