@@ -116,7 +116,7 @@ parse_couchapp_url(AppUrl, IsCreateDb) ->
         {DbName, AppName, DocId, ServerPath} ->
             ParsedUrl1 = ParsedUrl#hackney_url{path=ServerPath},
             ServerUrl = hackney_url:unparse_url(ParsedUrl1),
-            Server = couchbeam:server_connection(ServerUrl),
+            Server = couchbeam:server_connection(ServerUrl, [insecure]),
             {ok, Db} = case IsCreateDb of
                 true ->
                     couchbeam:open_or_create_db(Server, DbName);
@@ -126,7 +126,7 @@ parse_couchapp_url(AppUrl, IsCreateDb) ->
             AppName1 = erica_config:get_global(appid, AppName),
             {ok, Db, AppName1, DocId};
         invalid_url ->
-            Server = couchbeam:server_connection(AppUrl),
+            Server = couchbeam:server_connection(AppUrl, [insecure]),
 
             %% did we set dbname & other things in args?
             case erica_config:get_global(db) of
