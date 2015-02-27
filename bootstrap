@@ -11,7 +11,7 @@ main(Args) ->
     true = code:add_path("deps/mochiweb/ebin"),
     true = code:add_path("deps/jsx/ebin"),
     true = code:add_path("deps/idna/ebin"),
-    true = code:add_path("deps/ssl_verify_hostname/ebib"),
+    true = code:add_path("deps/ssl_verify_hostname/ebin"),
     true = code:add_path("deps/hackney/ebin"),
     true = code:add_path("deps/oauth/ebin"),
     true = code:add_path("deps/couchbeam/ebin"),
