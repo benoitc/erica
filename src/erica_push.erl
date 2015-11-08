@@ -172,26 +172,26 @@ has_index_file(#couchapp{attachments=List}) ->
    end, List).
 
 id_from_path(Path, Config) ->
-    IdFile = filename:join(Path, "_id"),
-    case filelib:is_regular(IdFile) of
-        true ->
-            {ok, Bin} = file:read_file(IdFile),
-            [Id|_] = binary:split(Bin, [<<"\n">>, <<"\r\n">>], [trim]),
-            Id;
-        false ->
-            case erica_config:get(Config, docid) of
-                undefined ->
+    case erica_config:get(Config, docid) of
+		undefined ->
+			IdFile = filename:join(Path, "_id"),
+			case filelib:is_regular(IdFile) of
+				true ->
+					{ok, Bin} = file:read_file(IdFile),
+					[Id|_] = binary:split(Bin, [<<"\n">>, <<"\r\n">>], [trim]),
+					Id;
+				false ->
                     Fname = list_to_binary(filename:basename(Path)),
                     case erica_config:get(Config, is_ddoc) of
                         true ->
                             <<"_design/", Fname/binary>>;
                         false ->
                             Fname
-                    end;
-                DocId ->
-                    DocId
-            end
-    end.
+                    end
+			end;
+		DocId ->
+			erlang:list_to_binary(DocId)
+	end.
 
 couchapp_from_fs(#couchapp{ddoc_dir=DdocPath}=Couchapp) ->
     Couchapp1 = attachments_from_fs(Couchapp),
