@@ -1,4 +1,4 @@
-#Erica
+# Erica
 
 ## Making CouchDB development easy
 
@@ -6,26 +6,26 @@ Erica is a tool that helps you to create couchdb design docs,
 and web applications (couchapps), and generally get files in and out
 of CouchDB.
 
-##Requirements
+## Requirements
 
-###Runtime
+### Runtime
 * Erlang R14B04 or higher with crypto support
 
-###Compiling
+### Compiling
 * gcc
 * [rebar](https://github.com/rebar/rebar)
 * git
 * erlang-src
 
-####Installing Dependencies on Debian/Ubuntu
+#### Installing Dependencies on Debian/Ubuntu
 
     sudo apt-get install rebar erlang-src erlang-xmerl erlang-parsetools
 
-####Installing Dependencies on Fedora
+#### Installing Dependencies on Fedora
     
     sudo yum install erlang-rebar
 
-##Download
+## Download
 
 * Signed [releases](https://people.apache.org/~dch/dist/tools/)
 are available from [dch](https://twitter.com/dch__)'s site.
@@ -33,7 +33,7 @@ are available from [dch](https://twitter.com/dch__)'s site.
 * Windows users should use `erica.cmd` and simply drop it
 into your `%COUCHDB%/bin` directory.
 
-##Installation
+## Installation
 
 To install it from source you will have to clone the repository from
 github. Dependencies will be fetched during the build.
