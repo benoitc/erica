@@ -14,29 +14,29 @@ install: all
 	@install -m 0755 -c erica $(PREFIX)/erica
 
 compile:
-	@./rebar compile
-	@escript bootstrap
+	@escript.exe rebar compile
+	@escript.exe bootstrap
 
 deps:
-	@./rebar get-deps
+	@escript.exe rebar get-deps
 
 doc:
-	@./rebar doc
+	@escript.exe rebar doc
 
 clean:
-	@./rebar clean
+	@escript.exe rebar clean
 	@rm -f erica erica.cmd
 
 distclean: clean
-	@./rebar delete-deps
+	@escript.exe rebar delete-deps
 
 upgrade: distclean all
 
 update: clean
-	@./rebar update-deps
-	@./rebar get-deps
-	@./rebar compile
-	@escript bootstrap
+	@escript.exe rebar update-deps
+	@escript.exe rebar get-deps
+	@escript.exe rebar compile
+	@escript.exe bootstrap
 
 ##
 ## release tarballs
